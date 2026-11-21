@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>見てわかる！TCP/IP 4階層モデルとパケット通信アニメーション（中学技術）</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans JP', 'Inter', sans-serif;
+      background-color: #f0f4f8;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+    .layer-box {
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .layer-active {
+      transform: scale(1.03);
+      box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 8px 10px -6px rgba(59, 130, 246, 0.2);
+      z-index: 10;
+    }
+    .capsule-part {
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .animate-pulse-ring {
+      animation: pulse-ring 1.8s infinite ease-in-out;
+    }
+    @keyframes float-bit {
+      0% { transform: translateX(0px); opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { transform: translateX(24px); opacity: 0.3; }
+    }
+    .bit-stream {
+      animation: float-bit 1s infinite linear;
+    }
+    .step-dot {
+      transition: all 0.25s ease;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-indigo-700 via-blue-700 to-sky-600 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shadow-inner">
+          🌐
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-400 text-slate-900 text-xs font-extrabold px-2 py-0.5 rounded-full">中学技術・情報</span>
+            <h1 class="text-lg md:text-xl font-black tracking-tight">TCP/IP 4階層モデル 通信アニメーション</h1>
+          </div>
+          <p class="text-xs text-sky-100 hidden sm:block">データが「カプセル化」されて相手に届くまでの仕組みを体験しよう！</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs & Sound Toggle -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <nav class="flex bg-slate-900/30 p-1 rounded-xl backdrop-blur-sm">
+          <button id="tabBtnAnim" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition bg-white text-indigo-700 shadow">
+            🎬 通信アニメーション
+          </button>
+          <button id="tabBtnCompare" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition text-white hover:bg-white/10">
+            🔍 4層の役割＆TCP/UDP実験
+          </button>
+          <button id="tabBtnQuiz" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition text-white hover:bg-white/10">
+            🎯 確認クイズ(5問)
+          </button>
+        </nav>
+
+        <button id="soundToggleBtn" class="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-xs font-bold flex items-center gap-1 transition" title="効果音のON/OFF">
+          <span id="soundIcon">🔊</span>
+          <span id="soundLabel" class="hidden md:inline">音ON</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 py-4">
+
+    <!-- ==================== TAB 1: ANIMATION VIEW ==================== -->
+    <section id="viewAnim" class="space-y-4">
+
+      <!-- Top Control Bar: Scenario + Custom Message + Analogy Switch -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">① 送るデータを選ぶ:</span>
+          <div class="flex flex-wrap gap-1.5">
+            <button data-scenario="chat" class="scenario-btn px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-indigo-600 bg-indigo-50 text-indigo-700 transition">
+              💬 チャット送信
+            </button>
+            <button data-scenario="web" class="scenario-btn px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition">
+              🌍 Webページ閲覧
+            </button>
+            <button data-scenario="photo" class="scenario-btn px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition">
+              📸 写真の送信
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-1 min-w-[220px] max-w-sm">
+          <label for="customMsgInput" class="text-xs font-bold text-slate-500 whitespace-nowrap">送る文字:</label>
+          <input id="customMsgInput" type="text" maxlength="18" value="明日ひま？遊ぼう！" class="w-full px-3 py-1.5 text-sm font-bold bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800" />
+        </div>
+
+        <!-- Analogy Mode Toggle -->
+        <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+          <span class="text-sm">📦</span>
+          <span class="text-xs font-bold text-amber-900">宅配便のたとえ表示:</span>
+          <button id="analogyToggleBtn" class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-amber-500 text-white shadow-sm transition">
+            ON
+          </button>
+        </div>
+      </div>
+
+      <!-- Stepper Progress & Playback Controls -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <!-- Playback Buttons -->
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <button id="btnReset" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1" title="最初に戻る">
+              ⏮ <span class="hidden sm:inline">最初へ</span>
+            </button>
+            <button id="btnPrev" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1">
+              ◀ 前へ
+            </button>
+            <button id="btnPlayPause" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-extrabold shadow-sm transition flex items-center gap-1.5">
+              <span id="playIcon">▶</span> <span id="playText">自動再生</span>
+            </button>
+            <button id="btnNext" class="px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition flex items-center gap-1">
+              次へ ▶
+            </button>
+          </div>
+
+          <!-- Speed Selector & Step Indicator -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1 text-xs font-bold text-slate-600">
+              <span>速度:</span>
+              <select id="speedSelect" class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 focus:outline-none">
+                <option value="4200">ゆっくり (授業解説用)</option>
+                <option value="2800" selected>ふつう</option>
+                <option value="1600">はやい</option>
+              </select>
+            </div>
+            <div class="bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-extrabold">
+              STEP <span id="stepNumDisplay">1</span> / 9
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive 9-Step Timeline Bar -->
+        <div id="stepDotsContainer" class="grid grid-cols-9 gap-1 pt-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Current Step Explanation Banner (Teacher / Student Friendly) -->
+      <div id="explanationBanner" class="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl shadow-md p-4 sm:p-5 transition-all">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+          <div class="lg:col-span-7 space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="stepPhaseBadge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-400 text-slate-950">送信側・カプセル化</span>
+              <span id="stepLayerBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/15 text-sky-200">第4層：アプリケーション層</span>
+            </div>
+            <h2 id="stepTitle" class="text-lg sm:text-xl font-black text-white leading-snug">
+              STEP 1: アプリケーション層でメッセージを作る
+            </h2>
+            <p id="stepDesc" class="text-xs sm:text-sm text-slate-200 leading-relaxed">
+              人間が使うアプリ（メッセージアプリやWebブラウザ）が、送りたい文字や画像をコンピュータが扱えるデータ形式にします。
+            </p>
+          </div>
+
+          <!-- Analogy Box inside Banner -->
+          <div id="analogyBox" class="lg:col-span-5 bg-amber-400/15 border border-amber-400/40 rounded-xl p-3 flex items-start gap-3">
+            <div id="analogyEmoji" class="text-3xl shrink-0 bg-amber-400/20 w-12 h-12 rounded-xl flex items-center justify-center">
+              🎁
+            </div>
+            <div>
+              <div class="text-xs font-extrabold text-amber-300 flex items-center gap-1">
+                <span>📦 宅配便でたとえると…</span>
+              </div>
+              <p id="analogyText" class="text-xs sm:text-sm font-bold text-amber-50 mt-0.5 leading-relaxed">
+                友達に送りたい「手紙やプレゼントの中身」を用意する段階です！
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Visual Stage: 3 Columns (Sender Tower | Capsule & Network Stage | Receiver Tower) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+
+        <!-- Left Column: SENDER (送信側コンピュータ) -->
+        <div class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-2xl">💻</span>
+                <div>
+                  <h3 class="text-sm font-black text-slate-800">送信側コンピュータ</h3>
+                  <p class="text-[11px] font-semibold text-slate-500">IP: <span class="font-mono text-indigo-600">192.168.1.10</span></p>
+                </div>
+              </div>
+              <span class="bg-blue-100 text-blue-800 text-[11px] font-extrabold px-2 py-0.5 rounded-md">上から下へ ↓</span>
+            </div>
+
+            <!-- Sender 4 Layers Stack -->
+            <div class="space-y-2.5" id="senderLayers">
+              <!-- Layer 4: Application -->
+              <div id="sender-L4" data-step="1" class="layer-box cursor-pointer rounded-xl border-2 border-rose-200 bg-rose-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-rose-700 bg-rose-200/80 px-2 py-0.5 rounded">第4層</span>
+                  <span class="text-[11px] font-mono font-bold text-rose-600">HTTP / DNS / SMTP</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>アプリケーション層</span>
+                  <span class="text-base">📱</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">アプリのデータを作る</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  🎁 プレゼントを用意
+                </div>
+              </div>
+
+              <div class="flex justify-center text-slate-400 text-xs font-bold leading-none">▼ カプセル化</div>
+
+              <!-- Layer 3: Transport -->
+              <div id="sender-L3" data-step="2" class="layer-box cursor-pointer rounded-xl border-2 border-amber-200 bg-amber-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded">第3層</span>
+                  <span class="text-[11px] font-mono font-bold text-amber-700">TCP / UDP</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>トランスポート層</span>
+                  <span class="text-base">🔢</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">分割して通し番号・ポート番号を付与</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  📦 箱詰め＆部屋番号記入
+                </div>
+              </div>
+
+              <div class="flex justify-center text-slate-400 text-xs font-bold leading-none">▼ カプセル化</div>
+
+              <!-- Layer 2: Internet -->
+              <div id="sender-L2" data-step="3" class="layer-box cursor-pointer rounded-xl border-2 border-emerald-200 bg-emerald-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-emerald-800 bg-emerald-200/80 px-2 py-0.5 rounded">第2層</span>
+                  <span class="text-[11px] font-mono font-bold text-emerald-700">IP (IPv4 / IPv6)</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>インターネット層</span>
+                  <span class="text-base">🗺️</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">宛先と送信元のIPアドレスを付与</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  🏷️ 住所ラベル（送り状）貼付
+                </div>
+              </div>
+
+              <div class="flex justify-center text-slate-400 text-xs font-bold leading-none">▼ カプセル化</div>
+
+              <!-- Layer 1: Network Interface -->
+              <div id="sender-L1" data-step="4" class="layer-box cursor-pointer rounded-xl border-2 border-sky-200 bg-sky-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-sky-800 bg-sky-200/80 px-2 py-0.5 rounded">第1層</span>
+                  <span class="text-[11px] font-mono font-bold text-sky-700">Ethernet / Wi-Fi</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>ネットワークIF層</span>
+                  <span class="text-base">📡</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">MACアドレス付与＆0と1の信号へ変換</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  🚚 トラックに積んで出発
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-100 text-center">
+            <span class="text-[11px] text-slate-400 font-semibold">💡 各層をクリックするとその場面へジャンプします</span>
+          </div>
+        </div>
+
+        <!-- Center Column: CAPSULE ZOOM & NETWORK ROUTE STAGE -->
+        <div class="lg:col-span-6 flex flex-col gap-4">
+
+          <!-- Top Box: Packet Capsule Visualizer (カプセル化・非カプセル化の断面図) -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex-1 flex flex-col justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div>
+                <h3 class="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                  <span>🔍 パケットの中身（カプセル化の様子）</span>
+                </h3>
+                <p class="text-[11px] text-slate-500">下の層に行くほど「ヘッダ（案内ラベル）」が外側にくっつきます</p>
+              </div>
+              <span id="capsuleStatusTag" class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800">
+                現在の状態: アプリデータ作成
+              </span>
+            </div>
+
+            <!-- Dynamic Packet Capsule Nested Diagram -->
+            <div class="my-auto py-4 flex flex-col items-center justify-center">
+              <div class="w-full overflow-x-auto pb-2">
+                <div class="min-w-[420px] flex items-center justify-center gap-1 px-2">
+
+                  <!-- MAC Header (Layer 1) -->
+                  <div id="cap-mac" class="capsule-part hidden flex-col items-center bg-sky-500 text-white rounded-l-xl p-2 shadow-md border-2 border-sky-600 shrink-0">
+                    <span class="text-[10px] font-black bg-sky-800/60 px-1.5 py-0.5 rounded">第1層</span>
+                    <span class="text-xs font-black mt-1">MACヘッダ</span>
+                    <span class="text-[10px] text-sky-100 font-mono">隣の機器宛</span>
+                    <span class="analogy-tag text-[10px] bg-amber-300 text-slate-900 font-bold px-1.5 rounded mt-1">🚚 トラック</span>
+                  </div>
+
+                  <!-- IP Header (Layer 2) -->
+                  <div id="cap-ip" class="capsule-part hidden flex-col items-center bg-emerald-500 text-white rounded-l-lg p-2 shadow-md border-2 border-emerald-600 shrink-0">
+                    <span class="text-[10px] font-black bg-emerald-800/60 px-1.5 py-0.5 rounded">第2層</span>
+                    <span class="text-xs font-black mt-1">IPヘッダ</span>
+                    <span class="text-[10px] text-emerald-100 font-mono">宛先IP住所</span>
+                    <span class="analogy-tag text-[10px] bg-amber-300 text-slate-900 font-bold px-1.5 rounded mt-1">🏷️ 住所ラベル</span>
+                  </div>
+
+                  <!-- TCP Header (Layer 3) -->
+                  <div id="cap-tcp" class="capsule-part hidden flex-col items-center bg-amber-500 text-white rounded-l-lg p-2 shadow-md border-2 border-amber-600 shrink-0">
+                    <span class="text-[10px] font-black bg-amber-800/60 px-1.5 py-0.5 rounded">第3層</span>
+                    <span class="text-xs font-black mt-1">TCPヘッダ</span>
+                    <span class="text-[10px] text-amber-100 font-mono">ポート・番号1/2</span>
+                    <span class="analogy-tag text-[10px] bg-amber-200 text-slate-900 font-bold px-1.5 rounded mt-1">📦 小分け箱</span>
+                  </div>
+
+                  <!-- App Data (Layer 4 Core) -->
+                  <div id="cap-app" class="capsule-part flex flex-col items-center justify-center bg-rose-500 text-white rounded-xl p-3 shadow-lg border-2 border-rose-600 min-w-[145px]">
+                    <div class="flex items-center gap-1">
+                      <span class="text-[10px] font-black bg-rose-800/60 px-1.5 py-0.5 rounded">第4層 データ本体</span>
+                    </div>
+                    <div id="cap-payload-text" class="text-xs sm:text-sm font-black mt-1.5 bg-white text-rose-700 px-2.5 py-1 rounded-lg shadow-inner max-w-[160px] truncate">
+                      💬「明日ひま？遊ぼう！」
+                    </div>
+                    <span class="analogy-tag text-[10px] bg-amber-200 text-slate-900 font-bold px-1.5 rounded mt-1.5">🎁 プレゼントの中身</span>
+                  </div>
+
+                  <!-- Frame Trailer (Layer 1) -->
+                  <div id="cap-fcs" class="capsule-part hidden flex-col items-center bg-sky-500 text-white rounded-r-xl p-2 shadow-md border-2 border-sky-600 shrink-0">
+                    <span class="text-[10px] font-black bg-sky-800/60 px-1.5 py-0.5 rounded">第1層</span>
+                    <span class="text-xs font-black mt-1">トレーラ</span>
+                    <span class="text-[10px] text-sky-100 font-mono">エラー確認</span>
+                    <span class="analogy-tag text-[10px] bg-amber-300 text-slate-900 font-bold px-1.5 rounded mt-1">🔒 封印</span>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Binary Wave Indicator (Visible on Step 4, 5, 6) -->
+              <div id="binarySignalBar" class="hidden mt-3 w-full max-w-md bg-slate-900 text-emerald-400 font-mono text-xs px-4 py-2 rounded-xl border border-emerald-500/40 shadow-inner flex items-center justify-between">
+                <span class="text-[11px] font-sans font-bold text-sky-300">⚡ 電気・光・電波の信号:</span>
+                <span class="tracking-widest font-bold bit-stream">01011010 11001011 00110101</span>
+              </div>
+            </div>
+
+            <!-- Metadata Summary Strip -->
+            <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 grid grid-cols-3 gap-2 text-center text-[11px]">
+              <div class="bg-white p-1.5 rounded-lg border border-slate-200">
+                <span class="text-slate-400 font-bold block">送信元IPアドレス</span>
+                <span class="font-mono font-extrabold text-slate-700">192.168.1.10</span>
+              </div>
+              <div class="bg-white p-1.5 rounded-lg border border-slate-200">
+                <span class="text-slate-400 font-bold block">宛先ポート（アプリ）</span>
+                <span id="metaPortText" class="font-mono font-extrabold text-amber-700">443 (HTTPSチャット)</span>
+              </div>
+              <div class="bg-white p-1.5 rounded-lg border border-slate-200">
+                <span class="text-slate-400 font-bold block">宛先IPアドレス</span>
+                <span class="font-mono font-extrabold text-indigo-600">203.0.113.5</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Box: Network Routing Map (インターネットとルーターの中継) -->
+          <div id="networkStageCard" class="bg-slate-900 text-white rounded-2xl shadow-sm border border-slate-800 p-4 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🌐</span>
+                <h3 class="text-xs sm:text-sm font-black text-sky-300">ネットワーク経路（ルーターによるバケツリレー中継）</h3>
+              </div>
+              <span id="routerStatusBadge" class="text-[11px] font-bold bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full border border-slate-700">
+                待機中
+              </span>
+            </div>
+
+            <!-- Visual Nodes: Sender PC -> Router A -> Internet Cloud Router -> Router B -> Receiver PC -->
+            <div class="relative py-4 px-2">
+              <!-- Connecting Line -->
+              <div class="absolute top-1/2 left-8 right-8 h-1.5 bg-slate-700 -translate-y-1/2 rounded-full overflow-hidden">
+                <div id="networkProgressBar" class="h-full bg-gradient-to-r from-sky-400 via-emerald-400 to-indigo-400 transition-all duration-500" style="width: 0%;"></div>
+              </div>
+
+              <!-- Moving Packet Token -->
+              <div id="movingPacketToken" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 transition-all duration-500 pointer-events-none" style="left: 8%;">
+                <div class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-1 rounded-lg shadow-lg border-2 border-white flex items-center gap-1 whitespace-nowrap">
+                  <span>📦</span>
+                  <span id="tokenLabel">データ</span>
+                </div>
+              </div>
+
+              <!-- 5 Nodes -->
+              <div class="relative z-10 flex items-center justify-between">
+                <div id="node-1" class="flex flex-col items-center gap-1">
+                  <div class="w-10 h-10 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-lg shadow">💻</div>
+                  <span class="text-[10px] font-bold text-slate-300">送信PC</span>
+                </div>
+
+                <div id="node-2" class="flex flex-col items-center gap-1">
+                  <div class="w-10 h-10 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-lg shadow">🛜</div>
+                  <span class="text-[10px] font-bold text-slate-300">家のルーター</span>
+                </div>
+
+                <div id="node-3" class="flex flex-col items-center gap-1">
+                  <div class="w-11 h-11 rounded-2xl bg-indigo-950 border-2 border-indigo-400 flex items-center justify-center text-xl shadow-lg">🌍</div>
+                  <span class="text-[10px] font-extrabold text-indigo-300">中継ルーター群</span>
+                </div>
+
+                <div id="node-4" class="flex flex-col items-center gap-1">
+                  <div class="w-10 h-10 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-lg shadow">🛜</div>
+                  <span class="text-[10px] font-bold text-slate-300">相手ルーター</span>
+                </div>
+
+                <div id="node-5" class="flex flex-col items-center gap-1">
+                  <div class="w-10 h-10 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-lg shadow">📱</div>
+                  <span class="text-[10px] font-bold text-slate-300">受信スマホ</span>
+                </div>
+              </div>
+            </div>
+
+            <p id="networkSubtext" class="text-[11px] text-slate-300 text-center mt-1">
+              ルーターは第2層の<strong class="text-emerald-300">「IPアドレス（宛先の住所）」</strong>だけを読み取って、次に渡すルートを案内します。
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Right Column: RECEIVER (受信側コンピュータ) -->
+        <div class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-2xl">📱</span>
+                <div>
+                  <h3 class="text-sm font-black text-slate-800">受信側コンピュータ</h3>
+                  <p class="text-[11px] font-semibold text-slate-500">IP: <span class="font-mono text-indigo-600">203.0.113.5</span></p>
+                </div>
+              </div>
+              <span class="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2 py-0.5 rounded-md">下から上へ ↑</span>
+            </div>
+
+            <!-- Receiver 4 Layers Stack -->
+            <div class="space-y-2.5" id="receiverLayers">
+              <!-- Layer 4: Application -->
+              <div id="receiver-L4" data-step="9" class="layer-box cursor-pointer rounded-xl border-2 border-rose-200 bg-rose-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-rose-700 bg-rose-200/80 px-2 py-0.5 rounded">第4層</span>
+                  <span class="text-[11px] font-bold text-rose-600">🎉 到着・表示！</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>アプリケーション層</span>
+                  <span class="text-base">💬</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">画面にメッセージやWebを表示</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  🎉 プレゼントを開封！
+                </div>
+              </div>
+
+              <div class="flex justify-center text-slate-400 text-xs font-bold leading-none">▲ 非カプセル化（開封）</div>
+
+              <!-- Layer 3: Transport -->
+              <div id="receiver-L3" data-step="8" class="layer-box cursor-pointer rounded-xl border-2 border-amber-200 bg-amber-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded">第3層</span>
+                  <span class="text-[11px] font-mono font-bold text-amber-700">TCPヘッダを外す</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>トランスポート層</span>
+                  <span class="text-base">🧩</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">番号順に組み立て・アプリへ振分け</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  🧩 箱を開け番号順に並べる
+                </div>
+              </div>
+
+              <div class="flex justify-center text-slate-400 text-xs font-bold leading-none">▲ 非カプセル化（開封）</div>
+
+              <!-- Layer 2: Internet -->
+              <div id="receiver-L2" data-step="7" class="layer-box cursor-pointer rounded-xl border-2 border-emerald-200 bg-emerald-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-emerald-800 bg-emerald-200/80 px-2 py-0.5 rounded">第2層</span>
+                  <span class="text-[11px] font-mono font-bold text-emerald-700">IPヘッダを外す</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>インターネット層</span>
+                  <span class="text-base">📬</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">自分宛てのIPアドレスか確認</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  📬 住所を確認しラベルを剥がす
+                </div>
+              </div>
+
+              <div class="flex justify-center text-slate-400 text-xs font-bold leading-none">▲ 非カプセル化（開封）</div>
+
+              <!-- Layer 1: Network Interface -->
+              <div id="receiver-L1" data-step="6" class="layer-box cursor-pointer rounded-xl border-2 border-sky-200 bg-sky-50/70 p-2.5 relative">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-sky-800 bg-sky-200/80 px-2 py-0.5 rounded">第1層</span>
+                  <span class="text-[11px] font-mono font-bold text-sky-700">MACヘッダを外す</span>
+                </div>
+                <div class="font-extrabold text-sm text-slate-800 mt-1 flex items-center justify-between">
+                  <span>ネットワークIF層</span>
+                  <span class="text-base">📥</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-0.5">0と1の信号をデータに戻す</p>
+                <div class="analogy-tag mt-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded inline-block">
+                  🏠 トラックから荷物を下ろす
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-100 text-center">
+            <span class="text-[11px] text-slate-400 font-semibold">💡 受信側は「下から上へ」順番に封筒を開けます</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: 4 LAYERS GUIDE & TCP/UDP LAB ==================== -->
+    <section id="viewCompare" class="hidden space-y-6">
+
+      <!-- 4 Layers Summary Table Card -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <span class="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">授業の板書・まとめ用</span>
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 mt-1">TCP/IP 4階層モデルの役割まとめ表</h2>
+          </div>
+          <p class="text-xs text-slate-500">それぞれの層が「自分の役割だけ」を担当することで、世界中のどんな機器同士でも通信できます。</p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 border-b-2 border-slate-200">
+                <th class="p-3 font-extrabold">階層</th>
+                <th class="p-3 font-extrabold">何をする層？（役割）</th>
+                <th class="p-3 font-extrabold">付加する情報（ヘッダ）</th>
+                <th class="p-3 font-extrabold">代表的なプロトコル（約束事）</th>
+                <th class="p-3 font-extrabold bg-amber-50 text-amber-900">📦 宅配便でのたとえ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr class="hover:bg-rose-50/40">
+                <td class="p-3 font-black text-rose-700 whitespace-nowrap">
+                  <span class="bg-rose-100 px-2 py-0.5 rounded mr-1">第4層</span>アプリケーション層
+                </td>
+                <td class="p-3 text-slate-700">Web閲覧・メール・チャットなど、<strong>人間が使うサービスの内容</strong>を作る・表示する</td>
+                <td class="p-3 font-mono text-xs text-rose-700 font-bold">データ本体 ＋ アプリ情報</td>
+                <td class="p-3 font-mono text-xs">
+                  <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold">HTTP/HTTPS</span> (Web)<br>
+                  <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">SMTP/POP</span> (メール)
+                </td>
+                <td class="p-3 bg-amber-50/50 font-bold text-amber-900">🎁 送りたいプレゼントや手紙を用意する</td>
+              </tr>
+              <tr class="hover:bg-amber-50/40">
+                <td class="p-3 font-black text-amber-700 whitespace-nowrap">
+                  <span class="bg-amber-100 px-2 py-0.5 rounded mr-1">第3層</span>トランスポート層
+                </td>
+                <td class="p-3 text-slate-700">データを小さく<strong>分割（パケット化）</strong>し、通し番号と<strong>どのアプリ宛か（ポート番号）</strong>を記録する</td>
+                <td class="p-3 font-mono text-xs text-amber-700 font-bold">TCP/UDPヘッダ<br>(ポート番号・通し番号)</td>
+                <td class="p-3 font-mono text-xs">
+                  <span class="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-bold">TCP</span> (確実・確認あり)<br>
+                  <span class="bg-sky-100 text-sky-900 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">UDP</span> (高速・確認なし)
+                </td>
+                <td class="p-3 bg-amber-50/50 font-bold text-amber-900">📦 箱に小分けして「1/2」「2/2」と部屋番号を書く</td>
+              </tr>
+              <tr class="hover:bg-emerald-50/40">
+                <td class="p-3 font-black text-emerald-700 whitespace-nowrap">
+                  <span class="bg-emerald-100 px-2 py-0.5 rounded mr-1">第2層</span>インターネット層
+                </td>
+                <td class="p-3 text-slate-700">インターネット上の住所である<strong>IPアドレス</strong>をつけ、相手までの道順（ルーティング）を決める</td>
+                <td class="p-3 font-mono text-xs text-emerald-700 font-bold">IPヘッダ<br>(送信元IP・宛先IP)</td>
+                <td class="p-3 font-mono text-xs">
+                  <span class="bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-bold">IP</span> (IPv4 / IPv6)
+                </td>
+                <td class="p-3 bg-amber-50/50 font-bold text-amber-900">🏷️ 送り主と届け先の「住所ラベル」を貼る</td>
+              </tr>
+              <tr class="hover:bg-sky-50/40">
+                <td class="p-3 font-black text-sky-700 whitespace-nowrap">
+                  <span class="bg-sky-100 px-2 py-0.5 rounded mr-1">第1層</span>ネットワークIF層
+                </td>
+                <td class="p-3 text-slate-700">隣の機器（ルーター等）の<strong>MACアドレス</strong>をつけ、データを<strong>電気・光・電波（0と1）</strong>に変換して送る</td>
+                <td class="p-3 font-mono text-xs text-sky-700 font-bold">MACヘッダ・トレーラ<br>(機器の識別番号)</td>
+                <td class="p-3 font-mono text-xs">
+                  <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold">Ethernet</span> (有線LAN)<br>
+                  <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">Wi-Fi</span> (無線LAN)
+                </td>
+                <td class="p-3 bg-amber-50/50 font-bold text-amber-900">🚚 トラックに積み込んで道路（ケーブル・電波）を走る</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Interactive Mini-Lab: TCP vs UDP Simulation -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <span class="text-xs font-extrabold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">第3層（トランスポート層）の重要ポイント！</span>
+            <h3 class="text-lg font-black text-slate-800 mt-1">⚡ 実験してみよう！「TCP」と「UDP」はどう違う？</h3>
+            <p class="text-xs text-slate-600 mt-0.5">途中で「パケット2番」がトラブルで消えてしまったとき、TCPとUDPはどう動くか比べてみよう！</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnRunTcp" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-extrabold shadow transition">
+              🛡️ TCPで送ってみる（確実重視）
+            </button>
+            <button id="btnRunUdp" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs sm:text-sm font-extrabold shadow transition">
+              🚀 UDPで送ってみる（スピード重視）
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- TCP Card -->
+          <div class="rounded-xl border-2 border-amber-200 bg-amber-50/40 p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-amber-900 text-base">🛡️ TCP（ティーシーピー）</span>
+              <span class="text-xs font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded">確実性トップ！</span>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              「届いたよ！」「2番が足りないからもう一回送って！」と確認しながら通信します。1つでも欠けると困る<strong>Webページ、メール、チャット、ファイル送信</strong>で使われます。
+            </p>
+            <div class="text-xs font-bold text-amber-800 bg-white p-2.5 rounded-lg border border-amber-200">
+              💬 たとえ：ハンコをもらう「書留（かきとめ）郵便」やキャッチボール
+            </div>
+          </div>
+
+          <!-- UDP Card -->
+          <div class="rounded-xl border-2 border-sky-200 bg-sky-50/40 p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-sky-900 text-base">🚀 UDP（ユーディーピー）</span>
+              <span class="text-xs font-bold bg-sky-200 text-sky-900 px-2 py-0.5 rounded">スピードトップ！</span>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              確認を待たずに次々とデータを送り続けます。途中で少しデータが欠けても、止まらずにリアルタイムで届けたい<strong>ビデオ通話、生配信、オンラインゲーム</strong>で使われます。
+            </p>
+            <div class="text-xs font-bold text-sky-800 bg-white p-2.5 rounded-lg border border-sky-200">
+              ⚾ たとえ：どんどん球が出てくる「ピッチングマシン」や生放送
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Stage -->
+        <div class="mt-4 bg-slate-900 text-white rounded-xl p-4">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-3">
+            <span id="simModeTitle" class="text-xs sm:text-sm font-extrabold text-amber-300">上のボタンを押してシミュレーションを開始しよう！</span>
+            <span id="simResultBadge" class="text-xs font-bold bg-slate-800 px-2.5 py-0.5 rounded text-slate-300">待機中</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 text-center my-2">
+            <div id="simPkt1" class="p-3 rounded-xl bg-slate-800 border border-slate-700 transition-all">
+              <div class="text-lg">📦 #1</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">パケット1</div>
+              <div id="simPkt1Status" class="text-[11px] text-slate-400 mt-1">未送信</div>
+            </div>
+            <div id="simPkt2" class="p-3 rounded-xl bg-slate-800 border border-slate-700 transition-all">
+              <div class="text-lg">📦 #2</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">パケット2 (途中で消失!)</div>
+              <div id="simPkt2Status" class="text-[11px] text-slate-400 mt-1">未送信</div>
+            </div>
+            <div id="simPkt3" class="p-3 rounded-xl bg-slate-800 border border-slate-700 transition-all">
+              <div class="text-lg">📦 #3</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">パケット3</div>
+              <div id="simPkt3Status" class="text-[11px] text-slate-400 mt-1">未送信</div>
+            </div>
+          </div>
+
+          <p id="simLogText" class="text-xs text-center text-sky-200 font-bold mt-3 min-h-[20px]">
+            「TCPで送ってみる」または「UDPで送ってみる」をクリックしてください。
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: CLASSROOM QUIZ ==================== -->
+    <section id="viewQuiz" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
+          <div>
+            <span class="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">授業の振り返りチェック</span>
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 mt-1">🎯 TCP/IP 4階層モデル 確認クイズ（全5問）</h2>
+            <p class="text-xs text-slate-500">みんなで相談して選択肢をクリックしてみよう！</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="bg-indigo-50 border border-indigo-200 px-4 py-2 rounded-xl text-center">
+              <span class="text-[11px] font-bold text-indigo-600 block">現在の正解数</span>
+              <span class="text-lg font-black text-indigo-800"><span id="quizScoreNum">0</span> / 5 問</span>
+            </div>
+            <button id="btnResetQuiz" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+              🔄 やり直す
+            </button>
+          </div>
+        </div>
+
+        <div id="quizListContainer" class="space-y-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // Web Audio API Sound Effects (Clean Classroom Sounds)
+    // =========================================================================
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq = 520, type = 'sine', duration = 0.12, secondFreq = null) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        if (secondFreq) {
+          osc.frequency.exponentialRampToValueAtTime(secondFreq, audioCtx.currentTime + duration);
+        }
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // Ignore audio errors if blocked
+      }
+    }
+
+    // =========================================================================
+    // Scenarios & 9-Step Data Definition
+    // =========================================================================
+    const scenarios = {
+      chat: {
+        icon: '💬',
+        defaultText: '明日ひま？遊ぼう！',
+        portLabel: '443 (HTTPSチャット)',
+        appProto: 'HTTPS / メッセージ'
+      },
+      web: {
+        icon: '🌍',
+        defaultText: '学校HPを見せて！',
+        portLabel: '80 / 443 (Web閲覧)',
+        appProto: 'HTTP / HTTPS'
+      },
+      photo: {
+        icon: '📸',
+        defaultText: '体育祭の写真.jpg',
+        portLabel: '443 (写真送信)',
+        appProto: 'HTTPS / データ転送'
+      }
+    };
+
+    let currentScenarioKey = 'chat';
+    let currentStep = 1; // 1 to 9
+    let showAnalogy = true;
+    let autoPlayTimer = null;
+
+    const stepsData = [
+      {
+        step: 1,
+        shortLabel: '①送信:第4層',
+        phaseBadge: '送信側・カプセル化',
+        phaseColor: 'bg-rose-400 text-slate-950',
+        layerBadge: '第4層：アプリケーション層',
+        title: 'STEP 1: 【アプリケーション層】送りたいデータを作る',
+        desc: '人間が使うアプリ（チャットやWebブラウザなど）が、文字や画像をコンピュータが理解できるデータ形式（HTTPなど）にまとめます。',
+        analogyEmoji: '🎁',
+        analogyText: '友達に送りたい「プレゼントや手紙の中身」を用意する段階です！',
+        capsuleTag: 'アプリデータを作成',
+        capsuleTagColor: 'bg-rose-100 text-rose-800',
+        showMac: false,
+        showIp: false,
+        showTcp: false,
+        showBinary: false,
+        activeSender: 'sender-L4',
+        activeReceiver: null,
+        netProgress: 8,
+        tokenPos: 8,
+        tokenText: 'データ',
+        routerStatus: '送信PC内で準備中',
+        activeNode: 'node-1',
+        sound: [440, 554]
+      },
+      {
+        step: 2,
+        shortLabel: '②送信:第3層',
+        phaseBadge: '送信側・カプセル化',
+        phaseColor: 'bg-amber-400 text-slate-950',
+        layerBadge: '第3層：トランスポート層 (TCP / UDP)',
+        title: 'STEP 2: 【トランスポート層】データを小分けにして番号をつける',
+        desc: '大きなデータを送りやすいサイズ（パケット）に分割し、外側に「TCPヘッダ（通し番号や、どのアプリ宛てかを示すポート番号）」をつけます。',
+        analogyEmoji: '📦',
+        analogyText: 'プレゼントを段ボール箱に小分けして、「1/2箱目」の番号と「受取人の部屋番号（ポート番号）」を書きます！',
+        capsuleTag: '+ TCPヘッダを付加（カプセル化①）',
+        capsuleTagColor: 'bg-amber-100 text-amber-900',
+        showMac: false,
+        showIp: false,
+        showTcp: true,
+        showBinary: false,
+        activeSender: 'sender-L3',
+        activeReceiver: null,
+        netProgress: 8,
+        tokenPos: 8,
+        tokenText: 'TCP+データ',
+        routerStatus: 'パケット分割・番号付与',
+        activeNode: 'node-1',
+        sound: [493, 622]
+      },
+      {
+        step: 3,
+        shortLabel: '③送信:第2層',
+        phaseBadge: '送信側・カプセル化',
+        phaseColor: 'bg-emerald-400 text-slate-950',
+        layerBadge: '第2層：インターネット層 (IP)',
+        title: 'STEP 3: 【インターネット層】インターネット上の住所（IPアドレス）をつける',
+        desc: '世界中のどこにいる相手か分かるように、さらに外側に「IPヘッダ（送信元IPアドレスと宛先IPアドレス）」を貼り付けます。',
+        analogyEmoji: '🏷️',
+        analogyText: '箱の外側に、送り主の住所と届け先の住所（IPアドレス）を書いた「配送伝票（送り状）」を貼ります！',
+        capsuleTag: '+ IPヘッダを付加（カプセル化②）',
+        capsuleTagColor: 'bg-emerald-100 text-emerald-900',
+        showMac: false,
+        showIp: true,
+        showTcp: true,
+        showBinary: false,
+        activeSender: 'sender-L2',
+        activeReceiver: null,
+        netProgress: 8,
+        tokenPos: 8,
+        tokenText: 'IP+TCP+データ',
+        routerStatus: '宛先IPアドレス設定完了',
+        activeNode: 'node-1',
+        sound: [554, 698]
+      },
+      {
+        step: 4,
+        shortLabel: '④送信:第1層',
+        phaseBadge: '送信側・カプセル化完了',
+        phaseColor: 'bg-sky-400 text-slate-950',
+        layerBadge: '第1層：ネットワークインターフェース層',
+        title: 'STEP 4: 【ネットワークIF層】0と1の信号に変えてケーブル・電波へ出発！',
+        desc: 'すぐ隣のルーターへ届けるための「MACヘッダ」とエラー確認用の「トレーラ」をつけ、0と1の電気信号・光・電波に変換して送り出します。',
+        analogyEmoji: '🚚',
+        analogyText: '最寄りの集荷場行きの配達トラックに荷物を積み込み、道路（LANケーブルやWi-Fi）へ出発します！',
+        capsuleTag: '+ MACヘッダ付加＆0と1の信号へ変換！',
+        capsuleTagColor: 'bg-sky-100 text-sky-900',
+        showMac: true,
+        showIp: true,
+        showTcp: true,
+        showBinary: true,
+        activeSender: 'sender-L1',
+        activeReceiver: null,
+        netProgress: 28,
+        tokenPos: 28,
+        tokenText: '0101...パケット',
+        routerStatus: '家のルーターへ送信中！',
+        activeNode: 'node-2',
+        sound: [622, 784]
+      },
+      {
+        step: 5,
+        shortLabel: '⑤ネット中継',
+        phaseBadge: 'インターネット中継（ルーティング）',
+        phaseColor: 'bg-indigo-400 text-slate-950',
+        layerBadge: '世界中のルーターがバケツリレー！',
+        title: 'STEP 5: 【インターネットの旅】ルーターがIPアドレスを見て道案内！',
+        desc: 'インターネット上のたくさんの「ルーター」が、第2層の「宛先IPアドレス」だけを見て、相手のコンピュータまで一番良いルートでバケツリレー中継します。',
+        analogyEmoji: '🏢',
+        analogyText: '各地の中継センター（ルーター）で住所ラベル（IPアドレス）を確認し、トラックを乗り継ぎながら相手の街へ運びます！',
+        capsuleTag: 'ルーターがIPアドレスを見て中継中',
+        capsuleTagColor: 'bg-indigo-100 text-indigo-900',
+        showMac: true,
+        showIp: true,
+        showTcp: true,
+        showBinary: true,
+        activeSender: null,
+        activeReceiver: null,
+        netProgress: 55,
+        tokenPos: 55,
+        tokenText: '🌐 バケツリレー中',
+        routerStatus: 'ルーターが最適ルートを選択中',
+        activeNode: 'node-3',
+        sound: [523, 659]
+      },
+      {
+        step: 6,
+        shortLabel: '⑥受信:第1層',
+        phaseBadge: '受信側・非カプセル化（開封）',
+        phaseColor: 'bg-sky-400 text-slate-950',
+        layerBadge: '第1層：ネットワークインターフェース層',
+        title: 'STEP 6: 【ネットワークIF層】相手の機器に到着！信号をデータに戻す',
+        desc: '相手のスマホ・PCに届いた「0と1の信号」をデータに戻し、エラーがないか確認して一番外側の「MACヘッダ」と「トレーラ」を外します。',
+        analogyEmoji: '🏠',
+        analogyText: '配達トラックが相手の家に到着！トラックから荷物を下ろして玄関へ渡します。',
+        capsuleTag: 'MACヘッダを外す（非カプセル化①）',
+        capsuleTagColor: 'bg-sky-100 text-sky-900',
+        showMac: false,
+        showIp: true,
+        showTcp: true,
+        showBinary: false,
+        activeSender: null,
+        activeReceiver: 'receiver-L1',
+        netProgress: 92,
+        tokenPos: 92,
+        tokenText: '受信スマホ到着！',
+        routerStatus: '受信機器に到着！',
+        activeNode: 'node-5',
+        sound: [784, 659]
+      },
+      {
+        step: 7,
+        shortLabel: '⑦受信:第2層',
+        phaseBadge: '受信側・非カプセル化（開封）',
+        phaseColor: 'bg-emerald-400 text-slate-950',
+        layerBadge: '第2層：インターネット層 (IP)',
+        title: 'STEP 7: 【インターネット層】自分宛てのIPアドレスか確認してラベルを外す',
+        desc: 'IPヘッダに書かれた「宛先IPアドレス（203.0.113.5）」が本当に自分のIPアドレスと一致するか確認し、OKなら「IPヘッダ」を外して上の層へ渡します。',
+        analogyEmoji: '📬',
+        analogyText: '箱に貼られた住所ラベル（IPアドレス）が間違いなく自分の家宛てか確認して、ラベルを剥がします！',
+        capsuleTag: 'IPヘッダを外す（非カプセル化②）',
+        capsuleTagColor: 'bg-emerald-100 text-emerald-900',
+        showMac: false,
+        showIp: false,
+        showTcp: true,
+        showBinary: false,
+        activeSender: null,
+        activeReceiver: 'receiver-L2',
+        netProgress: 100,
+        tokenPos: 92,
+        tokenText: 'IP確認OK',
+        routerStatus: '宛先IPアドレス一致！',
+        activeNode: 'node-5',
+        sound: [698, 587]
+      },
+      {
+        step: 8,
+        shortLabel: '⑧受信:第3層',
+        phaseBadge: '受信側・非カプセル化（開封）',
+        phaseColor: 'bg-amber-400 text-slate-950',
+        layerBadge: '第3層：トランスポート層 (TCP / UDP)',
+        title: 'STEP 8: 【トランスポート層】番号順にデータを組み立て、目的のアプリへ！',
+        desc: '小分けにされていたパケットを通し番号順（1/2、2/2…）に正しく組み立て直します。その後「TCPヘッダ」を外し、ポート番号で指定されたアプリへ渡します。',
+        analogyEmoji: '🧩',
+        analogyText: '段ボール箱を開けて中身を番号順に組み立て、書かれていた部屋番号（目的のアプリ）へ届けます！',
+        capsuleTag: 'TCPヘッダを外しデータを復元（非カプセル化③）',
+        capsuleTagColor: 'bg-amber-100 text-amber-900',
+        showMac: false,
+        showIp: false,
+        showTcp: false,
+        showBinary: false,
+        activeSender: null,
+        activeReceiver: 'receiver-L3',
+        netProgress: 100,
+        tokenPos: 92,
+        tokenText: 'データ復元完了',
+        routerStatus: 'パケット組み立て完了！',
+        activeNode: 'node-5',
+        sound: [659, 523]
+      },
+      {
+        step: 9,
+        shortLabel: '⑨到着:第4層',
+        phaseBadge: '通信完了！🎉',
+        phaseColor: 'bg-emerald-400 text-slate-950',
+        layerBadge: '第4層：アプリケーション層',
+        title: 'STEP 9: 【アプリケーション層】画面にデータが表示されて通信成功！',
+        desc: 'アプリケーション層が受け取ったデータを画面に表示します。こうして送信側で作ったメッセージやWebページが、そっくりそのまま相手の画面に届きました！',
+        analogyEmoji: '🎉',
+        analogyText: 'プレゼントを開封！友達からのメッセージや写真がそのまま届いて大成功です！',
+        capsuleTag: '🎉 受信完了！画面に表示されました',
+        capsuleTagColor: 'bg-emerald-100 text-emerald-900',
+        showMac: false,
+        showIp: false,
+        showTcp: false,
+        showBinary: false,
+        activeSender: null,
+        activeReceiver: 'receiver-L4',
+        netProgress: 100,
+        tokenPos: 92,
+        tokenText: '🎉 通信完了！',
+        routerStatus: '通信完了！',
+        activeNode: 'node-5',
+        sound: [523, 784]
+      }
+    ];
+
+    // =========================================================================
+    // Initialize Step Dots & Render State
+    // =========================================================================
+    const stepDotsContainer = document.getElementById('stepDotsContainer');
+
+    function buildStepDots() {
+      stepDotsContainer.innerHTML = '';
+      stepsData.forEach((st) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'step-dot flex flex-col items-center p-1.5 rounded-xl border text-center transition cursor-pointer';
+        btn.dataset.step = st.step;
+        btn.innerHTML = `
+          <span class="text-[10px] sm:text-xs font-extrabold leading-tight">${st.shortLabel}</span>
+        `;
+        btn.addEventListener('click', () => {
+          stopAutoPlay();
+          goToStep(st.step);
+        });
+        stepDotsContainer.appendChild(btn);
+      });
+    }
+
+    function updatePayloadDisplay() {
+      const sc = scenarios[currentScenarioKey];
+      const msgVal = document.getElementById('customMsgInput').value.trim() || sc.defaultText;
+      document.getElementById('cap-payload-text').textContent = `${sc.icon}「${msgVal}」`;
+      document.getElementById('metaPortText').textContent = sc.portLabel;
+    }
+
+    function goToStep(stepNum, playAudio = true) {
+      currentStep = Math.max(1, Math.min(9, stepNum));
+      const data = stepsData[currentStep - 1];
+
+      if (playAudio && data.sound) {
+        playTone(data.sound[0], 'sine', 0.14, data.sound[1]);
+      }
+
+      // Update Step counter & Banner
+      document.getElementById('stepNumDisplay').textContent = currentStep;
+      const phaseBadge = document.getElementById('stepPhaseBadge');
+      phaseBadge.textContent = data.phaseBadge;
+      phaseBadge.className = `px-2.5 py-0.5 rounded-full text-xs font-black ${data.phaseColor}`;
+
+      document.getElementById('stepLayerBadge').textContent = data.layerBadge;
+      document.getElementById('stepTitle').textContent = data.title;
+      document.getElementById('stepDesc').textContent = data.desc;
+      document.getElementById('analogyEmoji').textContent = data.analogyEmoji;
+      document.getElementById('analogyText').textContent = data.analogyText;
+
+      // Update Step Dots
+      Array.from(stepDotsContainer.children).forEach((dot, idx) => {
+        const s = idx + 1;
+        if (s === currentStep) {
+          dot.className = 'step-dot flex flex-col items-center p-1.5 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white shadow-sm transform scale-105';
+        } else if (s < currentStep) {
+          dot.className = 'step-dot flex flex-col items-center p-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100';
+        } else {
+          dot.className = 'step-dot flex flex-col items-center p-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100';
+        }
+      });
+
+      // Highlight Active Layer Box on Sender / Receiver
+      document.querySelectorAll('#senderLayers .layer-box, #receiverLayers .layer-box').forEach((box) => {
+        box.classList.remove('layer-active', 'ring-4', 'ring-indigo-500');
+        box.style.opacity = '0.75';
+      });
+
+      if (data.activeSender) {
+        const el = document.getElementById(data.activeSender);
+        if (el) {
+          el.classList.add('layer-active', 'ring-4', 'ring-indigo-500');
+          el.style.opacity = '1';
+        }
+      }
+      if (data.activeReceiver) {
+        const el = document.getElementById(data.activeReceiver);
+        if (el) {
+          el.classList.add('layer-active', 'ring-4', 'ring-indigo-500');
+          el.style.opacity = '1';
+        }
+      }
+
+      // Update Capsule Parts
+      const capStatus = document.getElementById('capsuleStatusTag');
+      capStatus.textContent = data.capsuleTag;
+      capStatus.className = `px-2.5 py-1 rounded-full text-xs font-extrabold ${data.capsuleTagColor}`;
+
+      toggleCapsulePart('cap-tcp', data.showTcp);
+      toggleCapsulePart('cap-ip', data.showIp);
+      toggleCapsulePart('cap-mac', data.showMac);
+      toggleCapsulePart('cap-fcs', data.showMac);
+
+      const binBar = document.getElementById('binarySignalBar');
+      if (data.showBinary) {
+        binBar.classList.remove('hidden');
+      } else {
+        binBar.classList.add('hidden');
+      }
+
+      // Update Network Routing Stage
+      document.getElementById('networkProgressBar').style.width = `${data.netProgress}%`;
+      document.getElementById('movingPacketToken').style.left = `${data.tokenPos}%`;
+      document.getElementById('tokenLabel').textContent = data.tokenText;
+      document.getElementById('routerStatusBadge').textContent = data.routerStatus;
+
+      ['node-1', 'node-2', 'node-3', 'node-4', 'node-5'].forEach((nId) => {
+        const nEl = document.getElementById(nId);
+        if (!nEl) return;
+        const iconBox = nEl.firstElementChild;
+        if (nId === data.activeNode) {
+          iconBox.classList.add('ring-4', 'ring-amber-400', 'scale-110');
+        } else {
+          iconBox.classList.remove('ring-4', 'ring-amber-400', 'scale-110');
+        }
+      });
+
+      // Prev / Next button states
+      document.getElementById('btnPrev').disabled = currentStep === 1;
+      document.getElementById('btnPrev').classList.toggle('opacity-40', currentStep === 1);
+    }
+
+    function toggleCapsulePart(id, show) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (show) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      } else {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    }
+
+    // =========================================================================
+    // Auto-Play Controls
+    // =========================================================================
+    function startAutoPlay() {
+      if (autoPlayTimer) clearInterval(autoPlayTimer);
+      if (currentStep === 9) {
+        goToStep(1, true);
+      }
+      const speed = parseInt(document.getElementById('speedSelect').value, 10) || 2800;
+      document.getElementById('playIcon').textContent = '⏸';
+      document.getElementById('playText').textContent = '一時停止';
+
+      autoPlayTimer = setInterval(() => {
+        if (currentStep < 9) {
+          goToStep(currentStep + 1, true);
+        } else {
+          stopAutoPlay();
+        }
+      }, speed);
+    }
+
+    function stopAutoPlay() {
+      if (autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+      }
+      document.getElementById('playIcon').textContent = '▶';
+      document.getElementById('playText').textContent = '自動再生';
+    }
+
+    document.getElementById('btnPlayPause').addEventListener('click', () => {
+      if (autoPlayTimer) {
+        stopAutoPlay();
+      } else {
+        startAutoPlay();
+      }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      stopAutoPlay();
+      if (currentStep < 9) {
+        goToStep(currentStep + 1, true);
+      } else {
+        goToStep(1, true);
+      }
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      stopAutoPlay();
+      if (currentStep > 1) {
+        goToStep(currentStep - 1, true);
+      }
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      stopAutoPlay();
+      goToStep(1, true);
+    });
+
+    document.getElementById('speedSelect').addEventListener('change', () => {
+      if (autoPlayTimer) {
+        startAutoPlay();
+      }
+    });
+
+    // Click on any Layer Box to jump directly to that step
+    document.querySelectorAll('#senderLayers .layer-box, #receiverLayers .layer-box').forEach((box) => {
+      box.addEventListener('click', () => {
+        const targetStep = parseInt(box.dataset.step, 10);
+        if (targetStep) {
+          stopAutoPlay();
+          goToStep(targetStep, true);
+        }
+      });
+    });
+
+    // Scenario Selection & Custom Input
+    document.querySelectorAll('.scenario-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentScenarioKey = btn.dataset.scenario;
+        document.querySelectorAll('.scenario-btn').forEach((b) => {
+          b.className = 'scenario-btn px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition';
+        });
+        btn.className = 'scenario-btn px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-indigo-600 bg-indigo-50 text-indigo-700 transition';
+        document.getElementById('customMsgInput').value = scenarios[currentScenarioKey].defaultText;
+        updatePayloadDisplay();
+        playTone(600, 'sine', 0.08);
+      });
+    });
+
+    document.getElementById('customMsgInput').addEventListener('input', updatePayloadDisplay);
+
+    // Analogy Toggle
+    document.getElementById('analogyToggleBtn').addEventListener('click', () => {
+      showAnalogy = !showAnalogy;
+      const btn = document.getElementById('analogyToggleBtn');
+      const analogyBox = document.getElementById('analogyBox');
+      const tags = document.querySelectorAll('.analogy-tag');
+
+      if (showAnalogy) {
+        btn.textContent = 'ON';
+        btn.className = 'px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-amber-500 text-white shadow-sm transition';
+        analogyBox.classList.remove('hidden');
+        tags.forEach((t) => t.classList.remove('hidden'));
+      } else {
+        btn.textContent = 'OFF';
+        btn.className = 'px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-slate-300 text-slate-700 transition';
+        analogyBox.classList.add('hidden');
+        tags.forEach((t) => t.classList.add('hidden'));
+      }
+    });
+
+    // Sound Toggle
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundIcon').textContent = soundEnabled ? '🔊' : '🔇';
+      document.getElementById('soundLabel').textContent = soundEnabled ? '音ON' : '音OFF';
+      if (soundEnabled) playTone(660, 'sine', 0.1);
+    });
+
+    // =========================================================================
+    // Tab Switching
+    // =========================================================================
+    const tabs = [
+      { btnId: 'tabBtnAnim', viewId: 'viewAnim' },
+      { btnId: 'tabBtnCompare', viewId: 'viewCompare' },
+      { btnId: 'tabBtnQuiz', viewId: 'viewQuiz' }
+    ];
+
+    tabs.forEach((t) => {
+      document.getElementById(t.btnId).addEventListener('click', () => {
+        stopAutoPlay();
+        tabs.forEach((other) => {
+          const b = document.getElementById(other.btnId);
+          const v = document.getElementById(other.viewId);
+          if (other.btnId === t.btnId) {
+            b.className = 'px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition bg-white text-indigo-700 shadow';
+            v.classList.remove('hidden');
+          } else {
+            b.className = 'px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold transition text-white hover:bg-white/10';
+            v.classList.add('hidden');
+          }
+        });
+        playTone(520, 'sine', 0.08);
+      });
+    });
+
+    // =========================================================================
+    // Tab 2: TCP vs UDP Mini Simulation
+    // =========================================================================
+    let simTimeouts = [];
+
+    function clearSimTimeouts() {
+      simTimeouts.forEach((id) => clearTimeout(id));
+      simTimeouts = [];
+    }
+
+    function resetSimBoxes() {
+      ['simPkt1', 'simPkt2', 'simPkt3'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.className = 'p-3 rounded-xl bg-slate-800 border border-slate-700 transition-all';
+      });
+      document.getElementById('simPkt1Status').textContent = '送信準備中';
+      document.getElementById('simPkt2Status').textContent = '送信準備中';
+      document.getElementById('simPkt3Status').textContent = '送信準備中';
+    }
+
+    document.getElementById('btnRunTcp').addEventListener('click', () => {
+      clearSimTimeouts();
+      resetSimBoxes();
+      document.getElementById('simModeTitle').textContent = '🛡️ TCPモード実験中：確実性を重視して通信します';
+      document.getElementById('simResultBadge').textContent = '通信中...';
+      document.getElementById('simResultBadge').className = 'text-xs font-bold bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded';
+      document.getElementById('simLogText').textContent = 'パケット1〜3を順番に送信します...';
+      playTone(500, 'sine', 0.1);
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt1').className = 'p-3 rounded-xl bg-emerald-900/70 border-2 border-emerald-400 transition-all';
+        document.getElementById('simPkt1Status').textContent = '✅ 到着！(確認OK)';
+        document.getElementById('simLogText').textContent = 'パケット1が到着！「1番届いたよ」と返事（ACK）をします。';
+        playTone(660, 'sine', 0.1);
+      }, 600));
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt2').className = 'p-3 rounded-xl bg-rose-900/70 border-2 border-rose-400 transition-all';
+        document.getElementById('simPkt2Status').textContent = '❌ 通信エラーで消失！';
+        document.getElementById('simLogText').textContent = 'あっ！パケット2が途中で消えてしまいました！';
+        playTone(240, 'sawtooth', 0.18);
+      }, 1400));
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt2').className = 'p-3 rounded-xl bg-amber-900/70 border-2 border-amber-400 transition-all';
+        document.getElementById('simPkt2Status').textContent = '🔄 再送リクエスト中...';
+        document.getElementById('simLogText').textContent = '【TCPの力】「2番が届いてないよ！もう一度送って！」と自動で再送をお願いします。';
+        playTone(520, 'triangle', 0.14);
+      }, 2400));
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt2').className = 'p-3 rounded-xl bg-emerald-900/70 border-2 border-emerald-400 transition-all';
+        document.getElementById('simPkt2Status').textContent = '✅ 再送で到着！';
+        document.getElementById('simPkt3').className = 'p-3 rounded-xl bg-emerald-900/70 border-2 border-emerald-400 transition-all';
+        document.getElementById('simPkt3Status').textContent = '✅ 到着！(確認OK)';
+        document.getElementById('simResultBadge').textContent = '🎉 全データ100%復元！';
+        document.getElementById('simResultBadge').className = 'text-xs font-bold bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded';
+        document.getElementById('simLogText').textContent = '結果：少し時間はかかりましたが、1・2・3すべて完璧に揃いました！（Webやメールに最適）';
+        playTone(587, 'sine', 0.15, 880);
+      }, 3500));
+    });
+
+    document.getElementById('btnRunUdp').addEventListener('click', () => {
+      clearSimTimeouts();
+      resetSimBoxes();
+      document.getElementById('simModeTitle').textContent = '🚀 UDPモード実験中：スピード最優先で通信します';
+      document.getElementById('simResultBadge').textContent = '高速送信中...';
+      document.getElementById('simResultBadge').className = 'text-xs font-bold bg-sky-400 text-slate-950 px-2.5 py-0.5 rounded';
+      document.getElementById('simLogText').textContent = '確認を待たずに一気にパケット1〜3を送り出します！';
+      playTone(700, 'sine', 0.08);
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt1').className = 'p-3 rounded-xl bg-emerald-900/70 border-2 border-emerald-400 transition-all';
+        document.getElementById('simPkt1Status').textContent = '⚡ 高速到着！';
+        playTone(740, 'sine', 0.08);
+      }, 350));
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt2').className = 'p-3 rounded-xl bg-rose-900/70 border-2 border-rose-400 transition-all';
+        document.getElementById('simPkt2Status').textContent = '💨 消失（そのままスキップ）';
+        playTone(300, 'sine', 0.08);
+      }, 700));
+
+      simTimeouts.push(setTimeout(() => {
+        document.getElementById('simPkt3').className = 'p-3 rounded-xl bg-emerald-900/70 border-2 border-emerald-400 transition-all';
+        document.getElementById('simPkt3Status').textContent = '⚡ 止まらず到着！';
+        document.getElementById('simResultBadge').textContent = '⚡ 超高速で完了（リアルタイム）';
+        document.getElementById('simResultBadge').className = 'text-xs font-bold bg-sky-400 text-slate-950 px-2.5 py-0.5 rounded';
+        document.getElementById('simLogText').textContent = '結果：2番の再送を待たずに3番をすぐ表示！映像が一瞬乱れても会話が止まらない「ビデオ通話・ゲーム」に最適！';
+        playTone(659, 'sine', 0.12, 987);
+      }, 1050));
+    });
+
+    // =========================================================================
+    // Tab 3: Interactive 5-Question Quiz
+    // =========================================================================
+    const quizQuestions = [
+      {
+        q: '第1問：送信側で上の層から下の層へデータが渡るとき、各層の「ヘッダ（案内情報）」を次々と外側につけていくことを何と呼ぶ？',
+        options: ['カプセル化', 'リサイクル化', 'シャッフル化'],
+        answerIndex: 0,
+        explanation: 'データの外側に各層のヘッダ（封筒やラベル）を順番に包んでいくので「カプセル化」と呼びます！受信側で外すことは「非カプセル化」と言います。'
+      },
+      {
+        q: '第2問：インターネット上の「住所」にあたる「IPアドレス」をつけて、相手までの道順を決めるのはどの層？',
+        options: ['アプリケーション層（第4層）', 'インターネット層（第2層）', 'ネットワークインターフェース層（第1層）'],
+        answerIndex: 1,
+        explanation: '大正解！インターネット層（第2層）がIPアドレス（192.168...などの住所）を担当します。'
+      },
+      {
+        q: '第3問：Webブラウザやメール、チャットなど、人間が直接使うサービスの形式にデータを作ったり画面に表示したりする層は？',
+        options: ['トランスポート層（第3層）', 'インターネット層（第2層）', 'アプリケーション層（第4層）'],
+        answerIndex: 2,
+        explanation: '正解！私たちが普段スマホやPCで触れているアプリに一番近いのが「アプリケーション層（第4層）」です。'
+      },
+      {
+        q: '第4問：トランスポート層（第3層）のプロトコルで、途中でデータが消えても「もう一度送って！」と確認して確実に届けるのはどっち？',
+        options: ['TCP（ティーシーピー）', 'UDP（ユーディーピー）', 'Wi-Fi（ワイファイ）'],
+        answerIndex: 0,
+        explanation: '正解！TCPは確認と再送を行うため、文字や画像が欠けると困るWebページ閲覧やチャット・メールに使われます。'
+      },
+      {
+        q: '第5問：最後にデータを「0と1」の電気信号・光・電波に変換して、LANケーブルやWi-Fiへ送り出す一番下の層（第1層）は？',
+        options: ['アプリケーション層', 'トランスポート層', 'ネットワークインターフェース層'],
+        answerIndex: 2,
+        explanation: 'バッチリ！ネットワークインターフェース層（第1層）が、データを実際の電気・光・電波の信号に変えて送り出します。'
+      }
+    ];
+
+    let quizState = {};
+
+    function renderQuiz() {
+      const container = document.getElementById('quizListContainer');
+      container.innerHTML = '';
+      quizState = {};
+      updateQuizScore();
+
+      quizQuestions.forEach((item, qIdx) => {
+        const card = document.createElement('div');
+        card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3';
+
+        const title = document.createElement('h3');
+        title.className = 'text-sm sm:text-base font-extrabold text-slate-800';
+        title.textContent = item.q;
+        card.appendChild(title);
+
+        const btnGrid = document.createElement('div');
+        btnGrid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2';
+
+        const feedbackBox = document.createElement('div');
+        feedbackBox.className = 'hidden p-3 rounded-xl text-xs sm:text-sm font-bold';
+
+        item.options.forEach((optText, oIdx) => {
+          const optBtn = document.createElement('button');
+          optBtn.type = 'button';
+          optBtn.className = 'px-3 py-2.5 rounded-xl border-2 border-slate-200 bg-white hover:border-indigo-400 text-xs sm:text-sm font-bold text-slate-700 text-left transition';
+          optBtn.textContent = `${['A', 'B', 'C'][oIdx]}. ${optText}`;
+
+          optBtn.addEventListener('click', () => {
+            if (quizState[qIdx] !== undefined) return; // Already answered
+            const isCorrect = oIdx === item.answerIndex;
+            quizState[qIdx] = isCorrect ? 1 : 0;
+            updateQuizScore();
+
+            Array.from(btnGrid.children).forEach((b, idx) => {
+              if (idx === item.answerIndex) {
+                b.className = 'px-3 py-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-xs sm:text-sm font-black text-emerald-900 text-left';
+              } else if (idx === oIdx && !isCorrect) {
+                b.className = 'px-3 py-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-xs sm:text-sm font-bold text-rose-800 text-left';
+              } else {
+                b.className = 'px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs sm:text-sm text-slate-400 text-left opacity-60';
+              }
+            });
+
+            feedbackBox.classList.remove('hidden');
+            if (isCorrect) {
+              feedbackBox.className = 'p-3 rounded-xl text-xs sm:text-sm font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+              feedbackBox.textContent = `⭕ 大正解！ ${item.explanation}`;
+              playTone(587, 'sine', 0.14, 880);
+            } else {
+              feedbackBox.className = 'p-3 rounded-xl text-xs sm:text-sm font-bold bg-rose-100 text-rose-900 border border-rose-300';
+              feedbackBox.textContent = `💡 惜しい！正解は「${item.options[item.answerIndex]}」です。${item.explanation}`;
+              playTone(280, 'triangle', 0.18);
+            }
+          });
+
+          btnGrid.appendChild(optBtn);
+        });
+
+        card.appendChild(btnGrid);
+        card.appendChild(feedbackBox);
+        container.appendChild(card);
+      });
+    }
+
+    function updateQuizScore() {
+      const score = Object.values(quizState).reduce((acc, v) => acc + v, 0);
+      document.getElementById('quizScoreNum').textContent = score;
+    }
+
+    document.getElementById('btnResetQuiz').addEventListener('click', () => {
+      renderQuiz();
+      playTone(520, 'sine', 0.08);
+    });
+
+    // =========================================================================
+    // Initial Boot
+    // =========================================================================
+    buildStepDots();
+    updatePayloadDisplay();
+    goToStep(1, false);
+    renderQuiz();
+  </script>
+</body>
+</html>

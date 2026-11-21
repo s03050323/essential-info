@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>情報I：楽しくわかる！データの分析とテキストマイニング</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0f9ff;
+            color: #1e293b;
+        }
+        /* カスタムアニメーション */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); }
+            50% { box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); }
+        }
+        .animate-pop {
+            animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        .glow-btn {
+            animation: pulseGlow 2s infinite;
+        }
+        /* 積み上げ棒グラフのトランジション */
+        .bar-segment {
+            transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+        }
+        .bar-dimmed {
+            opacity: 0.2 !important;
+            filter: grayscale(60%);
+        }
+        .bar-highlighted {
+            filter: brightness(1.1) drop-shadow(0 0 8px rgba(255,255,255,0.8));
+            z-index: 10;
+        }
+        /* フリップカード */
+        .flip-card {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            backface-visibility: hidden;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+        /* ワードクラウドのバブル */
+        .word-bubble {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            user-select: none;
+        }
+        .word-bubble:hover {
+            transform: scale(1.12) !important;
+            filter: brightness(1.1);
+            z-index: 30;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-white text-indigo-600 p-2 rounded-2xl shadow-md">
+                    <i class="fa-solid fa-chart-pie text-2xl"></i>
+                </div>
+                <div>
+                    <span class="text-xs bg-yellow-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">高校「情報I」完全マスター</span>
+                    <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">直感でわかる！データの分析＆テキストマイニング</h1>
+                </div>
+            </div>
+            <!-- 進捗インジケーター -->
+            <div class="flex items-center gap-2 bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold backdrop-blur-sm">
+                <i class="fa-solid fa-star text-yellow-300"></i>
+                <span>体験クリア数: <span id="clear-count" class="text-yellow-300 text-lg">0</span> / 4</span>
+            </div>
+        </div>
+
+        <!-- タブナビゲーション -->
+        <nav class="max-w-6xl mx-auto px-2 pt-2 flex overflow-x-auto no-scrollbar gap-1 md:gap-2">
+            <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-t-2xl font-extrabold text-sm md:text-base transition-all bg-white text-indigo-600 shadow-sm flex items-center justify-center gap-2">
+                <span class="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">①</span>
+                データの可視化
+            </button>
+            <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-t-2xl font-extrabold text-sm md:text-base transition-all bg-indigo-700/50 text-white/90 hover:bg-indigo-700/80 flex items-center justify-center gap-2">
+                <span class="bg-white/20 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">②</span>
+                テキスト分析
+            </button>
+            <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-t-2xl font-extrabold text-sm md:text-base transition-all bg-indigo-700/50 text-white/90 hover:bg-indigo-700/80 flex items-center justify-center gap-2">
+                <span class="bg-white/20 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">③</span>
+                マイニングの方法
+            </button>
+            <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-t-2xl font-extrabold text-sm md:text-base transition-all bg-indigo-700/50 text-white/90 hover:bg-indigo-700/80 flex items-center justify-center gap-2">
+                <span class="bg-white/20 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">④</span>
+                問題＆名探偵コラム
+            </button>
+        </nav>
+    </header>
+
+    <!-- メインコンテンツ領域 -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ==========================================
+             セクション1：① データの可視化
+        =========================================== -->
+        <section id="section-1" class="tab-content space-y-6">
+            <!-- 導入：先生と生徒の掛け合い -->
+            <div class="bg-white rounded-3xl p-5 shadow-md border-2 border-indigo-100">
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <!-- 生徒 -->
+                    <div class="flex items-start gap-3 flex-1 bg-rose-50 p-4 rounded-2xl border border-rose-200">
+                        <div class="w-14 h-14 rounded-full bg-rose-200 flex items-center justify-center text-3xl shrink-0 shadow-inner">😵</div>
+                        <div>
+                            <div class="text-xs font-bold text-rose-600 mb-1">情報が苦手なマナビくん</div>
+                            <p class="text-sm md:text-base font-bold text-slate-700">
+                                「先生！高校生160人に『好きな学校行事アンケート』をとったんですけど、数字がごちゃごちゃ並んでいるだけで、結局どれが人気なのか全然わかりません…！」
+                            </p>
+                        </div>
+                    </div>
+                    <!-- 先生 -->
+                    <div class="flex items-start gap-3 flex-1 bg-sky-50 p-4 rounded-2xl border border-sky-200">
+                        <div class="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-3xl shrink-0 shadow-inner">👩‍🏫</div>
+                        <div>
+                            <div class="text-xs font-bold text-sky-700 mb-1">データ先生</div>
+                            <p class="text-sm md:text-base font-bold text-slate-700">
+                                「集めただけのデータはただの『数字のカタマリ』よ！これをグラフに変身させる<span class="text-indigo-600 underline decoration-wavy decoration-orange-400">『データの可視化』</span>をやってみましょう！」
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ1：表とグラフの比較実験 -->
+            <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-slate-200">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                        <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">実験 1</span>
+                        <h2 class="text-xl font-extrabold mt-1">数字の表から「積み上げ棒グラフ」に変身させよう！</h2>
+                    </div>
+                    <button id="btn-visualize" onclick="triggerVisualization()" class="glow-btn bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-extrabold py-3 px-6 rounded-2xl shadow-lg transform active:scale-95 transition flex items-center gap-2 text-base cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>グラフに変身させる！（可視化）</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <!-- 左側：味気ない数字の表 (Before) -->
+                    <div id="raw-table-box" class="lg:col-span-5 bg-slate-50 p-4 rounded-2xl border border-slate-200 transition-all duration-500">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-sm text-slate-600"><i class="fa-solid fa-table mr-1"></i> 集計しただけの表（単位：人）</span>
+                            <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded">合計160人</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs md:text-sm text-center border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-200 text-slate-700">
+                                        <th class="p-1.5 border border-slate-300">順位</th>
+                                        <th class="p-1.5 border border-slate-300">体育祭</th>
+                                        <th class="p-1.5 border border-slate-300">文化祭</th>
+                                        <th class="p-1.5 border border-slate-300">修学旅行</th>
+                                        <th class="p-1.5 border border-slate-300">球技大会</th>
+                                        <th class="p-1.5 border border-slate-300">芸術鑑賞</th>
+                                        <th class="p-1.5 border border-slate-300">マラソン</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="font-mono text-slate-600">
+                                    <tr><td class="p-1.5 border font-bold bg-emerald-50">6位</td><td class="p-1.5 border">18</td><td class="p-1.5 border">4</td><td class="p-1.5 border">6</td><td class="p-1.5 border">16</td><td class="p-1.5 border">20</td><td class="p-1.5 border">96</td></tr>
+                                    <tr><td class="p-1.5 border font-bold bg-orange-50">5位</td><td class="p-1.5 border">10</td><td class="p-1.5 border">10</td><td class="p-1.5 border">16</td><td class="p-1.5 border">38</td><td class="p-1.5 border">48</td><td class="p-1.5 border">38</td></tr>
+                                    <tr><td class="p-1.5 border font-bold bg-amber-50">4位</td><td class="p-1.5 border">22</td><td class="p-1.5 border">14</td><td class="p-1.5 border">22</td><td class="p-1.5 border">40</td><td class="p-1.5 border">52</td><td class="p-1.5 border">10</td></tr>
+                                    <tr><td class="p-1.5 border font-bold bg-purple-50">3位</td><td class="p-1.5 border">32</td><td class="p-1.5 border">32</td><td class="p-1.5 border">40</td><td class="p-1.5 border">32</td><td class="p-1.5 border">18</td><td class="p-1.5 border">6</td></tr>
+                                    <tr><td class="p-1.5 border font-bold bg-blue-50">2位</td><td class="p-1.5 border">35</td><td class="p-1.5 border">42</td><td class="p-1.5 border">48</td><td class="p-1.5 border">18</td><td class="p-1.5 border">10</td><td class="p-1.5 border">7</td></tr>
+                                    <tr><td class="p-1.5 border font-bold bg-cyan-50">1位</td><td class="p-1.5 border">43</td><td class="p-1.5 border">58</td><td class="p-1.5 border">28</td><td class="p-1.5 border">16</td><td class="p-1.5 border">12</td><td class="p-1.5 border">3</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-rose-500 font-bold mt-2 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> 数字の羅列だけだと、全体の傾向が頭に入ってこない…
+                        </p>
+                    </div>
+
+                    <!-- 右側：教科書の図1 積み上げ棒グラフ (After) -->
+                    <div class="lg:col-span-7 bg-slate-900 text-white p-5 rounded-3xl shadow-inner relative overflow-hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-cyan-500 text-slate-950 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 図1</span>
+                                <h3 id="chart-title" class="font-extrabold text-base md:text-lg">好きな学校行事（積み上げ棒グラフ）</h3>
+                            </div>
+                            <!-- 順位の凡例 -->
+                            <div class="flex flex-wrap gap-1.5 text-xs font-bold">
+                                <span class="px-2 py-0.5 rounded bg-[#22b8cf] text-slate-950">1位</span>
+                                <span class="px-2 py-0.5 rounded bg-[#0b7285] text-white">2位</span>
+                                <span class="px-2 py-0.5 rounded bg-[#ae6ec4] text-white">3位</span>
+                                <span class="px-2 py-0.5 rounded bg-[#ffd43b] text-slate-950">4位</span>
+                                <span class="px-2 py-0.5 rounded bg-[#f76707] text-white">5位</span>
+                                <span class="px-2 py-0.5 rounded bg-[#12b886] text-white">6位</span>
+                            </div>
+                        </div>
+
+                        <!-- グラフ描画エリア -->
+                        <div class="relative h-64 md:h-72 pt-4 pb-8 pl-10 pr-2 select-none">
+                            <!-- Y軸目盛り線 -->
+                            <div class="absolute inset-0 left-10 right-2 top-4 bottom-8 flex flex-col justify-between pointer-events-none">
+                                <div class="border-b border-dashed border-slate-700 relative"><span class="absolute -left-9 -top-2.5 text-xs text-slate-400">160人</span></div>
+                                <div class="border-b border-dashed border-slate-700 relative"><span class="absolute -left-9 -top-2.5 text-xs text-slate-400">120</span></div>
+                                <div class="border-b border-dashed border-slate-700 relative"><span class="absolute -left-9 -top-2.5 text-xs text-slate-400">80</span></div>
+                                <div class="border-b border-dashed border-slate-700 relative"><span class="absolute -left-9 -top-2.5 text-xs text-slate-400">40</span></div>
+                                <div class="border-b-2 border-slate-500 relative"><span class="absolute -left-9 -top-2.5 text-xs text-slate-400">0</span></div>
+                            </div>
+
+                            <!-- 棒グラフコンテナ -->
+                            <div id="bars-container" class="relative z-10 h-full grid grid-cols-6 gap-2 md:gap-4 items-end">
+                                <!-- JSで動的に生成 -->
+                            </div>
+
+                            <!-- 未表示時のオーバーレイ -->
+                            <div id="chart-overlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-center p-4 rounded-2xl">
+                                <i class="fa-solid fa-chart-column text-5xl text-cyan-400 mb-3 animate-bounce"></i>
+                                <p class="font-extrabold text-lg mb-1">上の「グラフに変身させる！」ボタンを押してみよう！</p>
+                                <p class="text-xs text-slate-300">160人分のデータが、一瞬でわかりやすい図に変わります</p>
+                            </div>
+                        </div>
+
+                        <!-- フィルター＆注目ボタン -->
+                        <div id="chart-controls" class="hidden mt-3 pt-3 border-t border-slate-700 flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-xs text-slate-300 font-bold"><i class="fa-solid fa-eye text-yellow-400 mr-1"></i>注目してみよう：</span>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="highlightRank('top')" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl transition cursor-pointer">
+                                    👑 1位・2位（大人気！）を強調
+                                </button>
+                                <button onclick="highlightRank('bottom')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl transition cursor-pointer">
+                                    💦 6位（不人気…）を強調
+                                </button>
+                                <button onclick="highlightRank('all')" class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition cursor-pointer">
+                                    リセット
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 気づきコメント表示枠 -->
+                        <div id="chart-insight" class="hidden mt-3 bg-indigo-950/90 border border-indigo-400/40 rounded-xl p-3 text-xs md:text-sm text-cyan-100 font-bold">
+                            💡 グラフにすると、「文化祭・修学旅行は1位・2位（水色・青）が多い」「マラソン大会は6位（緑）が圧倒的に多い」ことが一目でわかりますね！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ2：クロス集計ミニ体験 -->
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-6 shadow-md border-2 border-indigo-200">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <span class="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">重要キーワード：クロス集計</span>
+                        <h3 class="text-xl font-extrabold mt-1 text-indigo-950">2つの質問を掛け合わせる「クロス集計」を体験しよう！</h3>
+                        <p class="text-sm text-slate-600 mt-1">
+                            「何年生ですか？」という質問と「1番好きな行事は？」という<strong>2つの設問の関係</strong>を調べると、学年ごとの違いが見えてきます！
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 学年切り替えボタン -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button onclick="switchCrossTab('all')" id="cross-btn-all" class="cross-btn bg-indigo-600 text-white font-extrabold px-4 py-2 rounded-xl text-sm shadow transition cursor-pointer">
+                        📊 全学年まとめ（普通の集計）
+                    </button>
+                    <button onclick="switchCrossTab('grade1')" id="cross-btn-grade1" class="cross-btn bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-extrabold px-4 py-2 rounded-xl text-sm transition cursor-pointer">
+                        🌱 1年生だけ見る（クロス集計）
+                    </button>
+                    <button onclick="switchCrossTab('grade2')" id="cross-btn-grade2" class="cross-btn bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-extrabold px-4 py-2 rounded-xl text-sm transition cursor-pointer">
+                        ✈️ 2年生だけ見る（クロス集計）
+                    </button>
+                    <button onclick="switchCrossTab('grade3')" id="cross-btn-grade3" class="cross-btn bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-extrabold px-4 py-2 rounded-xl text-sm transition cursor-pointer">
+                        🎓 3年生だけ見る（クロス集計）
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 border border-indigo-100 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    <div class="md:col-span-2 space-y-3" id="cross-bars">
+                        <!-- JSで横棒グラフを描画 -->
+                    </div>
+                    <div id="cross-comment" class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-sm font-bold text-slate-700">
+                        上の「1年生」「2年生」「3年生」ボタンを押して、学年によって人気の行事がどう変わるか比べてみよう！
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button onclick="switchTab(2)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 px-8 rounded-2xl shadow-lg transition inline-flex items-center gap-2 cursor-pointer">
+                    <span>次は「② テキストデータの分析」へ進む</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             セクション2：② テキストデータの分析
+        =========================================== -->
+        <section id="section-2" class="tab-content hidden space-y-6">
+            <!-- 導入：先生と生徒の掛け合い -->
+            <div class="bg-white rounded-3xl p-5 shadow-md border-2 border-indigo-100">
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <div class="flex items-start gap-3 flex-1 bg-rose-50 p-4 rounded-2xl border border-rose-200">
+                        <div class="w-14 h-14 rounded-full bg-rose-200 flex items-center justify-center text-3xl shrink-0">😵</div>
+                        <div>
+                            <div class="text-xs font-bold text-rose-600 mb-1">マナビくん</div>
+                            <p class="text-sm md:text-base font-bold text-slate-700">
+                                「数字のグラフはわかりました！でも、アンケートの『自由記述（感想文）』やSNSの書き込みって、全部『文字』ですよね？何千件もあったら読むだけで徹夜になっちゃいます！」
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 flex-1 bg-sky-50 p-4 rounded-2xl border border-sky-200">
+                        <div class="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-3xl shrink-0">👩‍🏫</div>
+                        <div>
+                            <div class="text-xs font-bold text-sky-700 mb-1">データ先生</div>
+                            <p class="text-sm md:text-base font-bold text-slate-700">
+                                「そこで登場するのが<span class="text-indigo-600 underline decoration-wavy decoration-orange-400">『テキストマイニング』</span>よ！マイニング（Mining）は『鉱山から宝を掘り出す』という意味。大量の文章から言葉のお宝を掘り出すの！」
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用語解説カード：データマイニング vs テキストマイニング -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-3xl shadow-md border-2 border-amber-200 flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl shrink-0">
+                        ⛏️
+                    </div>
+                    <div>
+                        <span class="text-xs font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">広い意味</span>
+                        <h3 class="text-lg font-extrabold text-slate-800 mt-0.5">データマイニング (Data Mining)</h3>
+                        <p class="text-xs md:text-sm text-slate-600 mt-1">
+                            大量のデータ（売上・気温・行動履歴など）の山から、<strong>隠れた法則やパターン（お宝）</strong>を掘り出す技術のこと。
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl shadow-md border-2 border-emerald-200 flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl shrink-0">
+                        💬
+                    </div>
+                    <div>
+                        <span class="text-xs font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">文字に特化！</span>
+                        <h3 class="text-lg font-extrabold text-slate-800 mt-0.5">テキストマイニング (Text Mining)</h3>
+                        <p class="text-xs md:text-sm text-slate-600 mt-1">
+                            データマイニングの中でも、特に<strong>「文章（SNSや自由記述アンケート）」</strong>から単語の出現回数や傾向を掘り出す方法！
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 実験2：文化祭SNS・アンケート分析シミュレーター -->
+            <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-slate-200">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                        <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">実験 2</span>
+                        <h2 class="text-xl font-extrabold mt-1">文化祭の感想アンケート（大量の文字）から宝探し！</h2>
+                        <p class="text-xs md:text-sm text-slate-500">バラバラに書かれた生徒の感想から、よく出る単語と「どんな単語がセットで使われているか（相関）」を掘り出そう！</p>
+                    </div>
+                    <button onclick="runSnsMining()" id="btn-sns-mine" class="glow-btn bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold py-3 px-6 rounded-2xl shadow-lg transform active:scale-95 transition flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-gem"></i>
+                        <span>テキストマイニング実行！</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- 左：バラバラの感想吹き出し -->
+                    <div class="lg:col-span-6 bg-slate-100 p-4 rounded-2xl border border-slate-200">
+                        <div class="text-xs font-extrabold text-slate-500 mb-3 flex items-center justify-between">
+                            <span><i class="fa-regular fa-comments mr-1"></i> 集まった自由記述アンケート（抜粋）</span>
+                            <span class="bg-slate-200 px-2 py-0.5 rounded">文字データ</span>
+                        </div>
+                        <div id="sns-posts-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs md:text-sm">
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「3年A組の<span class="kw-tapioca font-bold">タピオカ</span>がめっちゃ<span class="kw-good font-bold">美味しい</span>！最高！」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「お化け屋敷が<span class="kw-ghost font-bold">怖い</span>けど超<span class="kw-fun font-bold">楽しい</span>思い出になった！」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「昼に行ったら<span class="kw-tapioca font-bold">タピオカ</span>が<span class="kw-soldout font-bold">売り切れ</span>で買えなくて残念…」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「軽音部の<span class="kw-band font-bold">バンド</span>演奏がカッコよくて<span class="kw-fun font-bold">楽しい</span>！」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「やっぱり<span class="kw-tapioca font-bold">タピオカ</span>大人気！すぐ<span class="kw-soldout font-bold">売り切れ</span>てた」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「体育館の<span class="kw-band font-bold">バンド</span>が盛り上がった！来年も楽しみ！」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「2年生の<span class="kw-ghost font-bold">お化け屋敷</span>、本格的で本当に<span class="kw-ghost font-bold">怖い</span>！」</div>
+                            <div class="sns-post bg-white p-3 rounded-xl shadow-sm border border-slate-200">「<span class="kw-tapioca font-bold">タピオカ</span>もっとたくさん仕入れてほしかった（<span class="kw-soldout font-bold">売り切れ</span>）」</div>
+                        </div>
+                    </div>
+
+                    <!-- 右：マイニング結果表示 -->
+                    <div class="lg:col-span-6 bg-slate-900 text-white p-5 rounded-2xl relative min-h-[260px] flex flex-col justify-center">
+                        <div id="sns-mining-placeholder" class="text-center p-6">
+                            <i class="fa-solid fa-magnifying-glass-chart text-5xl text-emerald-400 mb-3"></i>
+                            <p class="font-extrabold text-base">「テキストマイニング実行！」を押すと、</p>
+                            <p class="text-xs text-slate-400 mt-1">大量の感想文から「話題の中心」と「隠れた課題」を自動抽出します！</p>
+                        </div>
+
+                        <div id="sns-mining-result" class="hidden space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                                <span class="text-emerald-400 font-extrabold text-sm"><i class="fa-solid fa-sparkles mr-1"></i>マイニング分析結果</span>
+                                <span class="text-xs bg-emerald-900 text-emerald-200 px-2 py-0.5 rounded">出現回数＆相関</span>
+                            </div>
+
+                            <!-- 抽出されたキーワードランキング -->
+                            <div class="space-y-2 text-xs md:text-sm">
+                                <div>
+                                    <div class="flex justify-between mb-1 font-bold">
+                                        <span>🧋 タピオカ（4回） <span class="text-rose-400 ml-2">🔗 よく一緒に出る言葉：「売り切れ」「美味しい」</span></span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-3"><div class="bg-pink-500 h-3 rounded-full" style="width: 100%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1 font-bold">
+                                        <span>👻 お化け屋敷・怖い（3回） <span class="text-cyan-400 ml-2">🔗 一緒に出る言葉：「楽しい」</span></span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-3"><div class="bg-cyan-400 h-3 rounded-full" style="width: 75%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1 font-bold">
+                                        <span>🎸 バンド（2回） <span class="text-amber-300 ml-2">🔗 一緒に出る言葉：「盛り上がる」「楽しい」</span></span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-3"><div class="bg-amber-400 h-3 rounded-full" style="width: 50%"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-emerald-950/90 border border-emerald-500/40 p-3 rounded-xl text-xs md:text-sm text-emerald-100 font-bold">
+                                💡 <strong>分析からわかった有益な情報：</strong><br>
+                                ただ「タピオカが人気」なだけでなく、<strong>「タピオカ × 売り切れ」</strong>がセットで多く出現しています！来年は「タピオカの仕入れ量を2倍にする」という改善策が立てられますね！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button onclick="switchTab(3)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 px-8 rounded-2xl shadow-lg transition inline-flex items-center gap-2 cursor-pointer">
+                    <span>次は「③ テキストマイニングの方法」へ進む</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             セクション3：③ テキストマイニングの方法
+        =========================================== -->
+        <section id="section-3" class="tab-content hidden space-y-6">
+            <!-- 導入：先生と生徒の掛け合い -->
+            <div class="bg-white rounded-3xl p-5 shadow-md border-2 border-indigo-100">
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <div class="flex items-start gap-3 flex-1 bg-rose-50 p-4 rounded-2xl border border-rose-200">
+                        <div class="w-14 h-14 rounded-full bg-rose-200 flex items-center justify-center text-3xl shrink-0">🤔</div>
+                        <div>
+                            <div class="text-xs font-bold text-rose-600 mb-1">マナビくん</div>
+                            <p class="text-sm md:text-base font-bold text-slate-700">
+                                「コンピュータはどうやって文章から単語を拾っているんですか？英語なら『I love music』みたいに単語の間にスペースがあるけど、日本語は全部くっついていますよね？」
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 flex-1 bg-sky-50 p-4 rounded-2xl border border-sky-200">
+                        <div class="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-3xl shrink-0">👩‍🏫</div>
+                        <div>
+                            <div class="text-xs font-bold text-sky-700 mb-1">データ先生</div>
+                            <p class="text-sm md:text-base font-bold text-slate-700">
+                                「鋭い質問ね！日本語はまず文章を単語ごとに区切って、名詞・動詞・形容詞などの<strong>『品詞』に分解する</strong>ところから始めるの。でも、切り方を間違えると大変なことになるのよ！」
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ1：教科書の例「農産物価格安定法」分解実験 -->
+            <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-slate-200">
+                <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">実験 3-1：単語の区切り方の罠</span>
+                <h2 class="text-xl font-extrabold mt-1">日本語は区切りが難しい！「農産物価格安定法」を分解せよ</h2>
+                <p class="text-xs md:text-sm text-slate-600 mt-1">
+                    教科書127ページの例題です。下の2つのボタンを押して、機械の区切り方の違いを比べてみましょう！
+                </p>
+
+                <div class="my-5 bg-slate-100 p-6 rounded-2xl text-center">
+                    <div class="text-xs font-bold text-slate-500 mb-2">元の文字列（9文字）</div>
+                    <div id="word-split-display" class="flex flex-wrap items-center justify-center gap-1 text-2xl md:text-4xl font-extrabold tracking-wider min-h-[64px]">
+                        <span class="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-300">農産物価格安定法</span>
+                    </div>
+                    <div id="word-split-message" class="mt-3 text-sm font-bold text-slate-600">
+                        👆 下のボタンで単語を区切ってみよう！
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button onclick="splitWordExample('wrong')" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold py-3 px-6 rounded-2xl shadow transition flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>① うっかりミスな機械で区切る</span>
+                    </button>
+                    <button onclick="splitWordExample('correct')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-6 rounded-2xl shadow transition flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>② AI（人工知能）で正しく区切る</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ステップ2：教科書 図2『走れメロス』テキストマイニング実験室 -->
+            <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-slate-200">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                        <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">実験 3-2：教科書 図2を体験！</span>
+                        <h2 class="text-xl font-extrabold mt-1">太宰治『走れメロス』をテキストマイニングしてみよう！</h2>
+                        <p class="text-xs md:text-sm text-slate-600">
+                            品詞分解して、<span class="px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-xs">緑＝名詞</span> <span class="px-1.5 py-0.5 rounded bg-teal-600 text-white font-bold text-xs">青緑＝動詞</span> <span class="px-1.5 py-0.5 rounded bg-orange-500 text-white font-bold text-xs">オレンジ＝形容詞</span> に色分けし、出現回数を大きさで表す<strong>ワードクラウド</strong>を作ります。
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="highlightMelosPos()" id="btn-melos-pos" class="bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm cursor-pointer">
+                            ① 本文を品詞で色分け
+                        </button>
+                        <button onclick="generateMelosCloud()" id="btn-melos-cloud" class="glow-btn bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white font-extrabold py-2.5 px-5 rounded-xl shadow-lg transition text-sm cursor-pointer">
+                            ② ワードクラウド＆出現回数グラフ生成！
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    <!-- 左：走れメロス本文 -->
+                    <div class="lg:col-span-4 bg-amber-50/70 border-2 border-amber-200 rounded-2xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between border-b border-amber-200 pb-2 mb-3">
+                                <span class="font-extrabold text-sm text-amber-900"><i class="fa-solid fa-book-open mr-1"></i>『走れメロス』太宰治（抜粋）</span>
+                                <span class="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold">青空文庫</span>
+                            </div>
+                            <p id="melos-text" class="text-sm leading-relaxed text-slate-800 font-medium">
+                                <span class="pos-noun">メロス</span>は<span class="pos-noun">激怒</span><span class="pos-verb">した</span>。かならず、かの<span class="pos-noun">邪智暴虐</span>の<span class="pos-noun">王</span>を<span class="pos-verb">除かなければ</span><span class="pos-verb">ならぬ</span>と<span class="pos-noun">決意</span><span class="pos-verb">した</span>。<span class="pos-noun">メロス</span>には<span class="pos-noun">政治</span>が<span class="pos-verb">わからぬ</span>。<span class="pos-noun">メロス</span>は、<span class="pos-noun">村</span>の<span class="pos-noun">牧人</span>である。<span class="pos-noun">笛</span>を<span class="pos-verb">吹き</span>、<span class="pos-noun">羊</span>と<span class="pos-verb">遊んで</span><span class="pos-verb">暮して</span><span class="pos-verb">来た</span>。けれども<span class="pos-noun">邪悪</span>に<span class="pos-verb">対して</span>は、<span class="pos-noun">人一倍</span>に<span class="pos-adj">敏感</span>であった。<span class="pos-noun">メロス</span>には<span class="pos-noun">父</span>も<span class="pos-adj">無い</span>、<span class="pos-noun">母</span>も<span class="pos-adj">無い</span>。<span class="pos-noun">女房</span>も<span class="pos-adj">無い</span>。十六の、内気な<span class="pos-noun">妹</span>と二人<span class="pos-noun">暮し</span>だ。竹馬の<span class="pos-noun">友</span>、<span class="pos-noun">セリヌンティウス</span>は<span class="pos-noun">メロス</span>を<span class="pos-verb">信じ</span>て<span class="pos-verb">待つ</span>。<span class="pos-noun">メロス</span>は<span class="pos-verb">走る</span>。
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-amber-200 flex flex-wrap gap-2 text-xs font-bold">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-[#1ca64c] inline-block"></span> 緑：名詞</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-[#0ca678] inline-block"></span> 青緑：動詞</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-[#f78318] inline-block"></span> オレンジ：形容詞</span>
+                        </div>
+                    </div>
+
+                    <!-- 中央：教科書 図2 ワードクラウド（バブル型） -->
+                    <div class="lg:col-span-5 bg-white border-2 border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center relative min-h-[340px]">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <span class="text-xs font-extrabold text-slate-600">特徴的な単語を大きさで表現（ワードクラウド）</span>
+                            <span class="text-[11px] text-indigo-600 font-bold">※丸をクリックすると詳細表示！</span>
+                        </div>
+
+                        <!-- ワードクラウド未生成時 -->
+                        <div id="cloud-placeholder" class="text-center p-6 my-auto">
+                            <i class="fa-solid fa-cloud text-5xl text-slate-300 mb-2"></i>
+                            <p class="text-sm font-bold text-slate-500">上の「② ワードクラウド生成！」ボタンを押してね</p>
+                        </div>
+
+                        <!-- ワードクラウドSVG/バブル領域 -->
+                        <div id="cloud-canvas" class="hidden relative w-[300px] h-[300px] mx-auto select-none">
+                            <!-- JSで教科書の図2そっくりのバブル配置を生成 -->
+                        </div>
+
+                        <!-- クリックした単語のポップアップ情報 -->
+                        <div id="word-info-bar" class="w-full mt-2 bg-slate-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 text-center">
+                            👆 気になる単語の丸をクリックしてみよう！
+                        </div>
+                    </div>
+
+                    <!-- 右：単語の出現回数（横棒グラフ） -->
+                    <div class="lg:col-span-3 bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex flex-col">
+                        <div class="bg-[#1ca64c] text-white text-xs font-extrabold py-1.5 px-3 rounded-lg text-center mb-3">
+                            単語の出現回数 TOP10
+                        </div>
+                        <div id="melos-bar-list" class="space-y-2 flex-1 flex flex-col justify-center text-xs">
+                            <p class="text-center text-slate-400 font-bold">ここに回数ランキングが表示されます</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button onclick="switchTab(4)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 px-8 rounded-2xl shadow-lg transition inline-flex items-center gap-2 cursor-pointer">
+                    <span>次は「④ 問題＆名探偵コラム」へ進む</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             セクション4：④ 問題＆名探偵コラム
+        =========================================== -->
+        <section id="section-4" class="tab-content hidden space-y-6">
+            <!-- パート1：教科書の「問題」ディスカッションボード -->
+            <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-indigo-200">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="bg-rose-500 text-white text-xs font-extrabold px-3 py-1 rounded-full">教科書 127ページ「問題」</span>
+                    <span class="text-xs font-bold text-slate-500">みんなで考えよう！</span>
+                </div>
+                <h2 class="text-lg md:text-xl font-extrabold text-slate-800 bg-indigo-50 p-4 rounded-2xl border-l-8 border-indigo-500">
+                    Q. 小説やアンケートのテキストデータをテキストマイニングで分析すると、どのようなことができるだろうか。
+                </h2>
+
+                <p class="text-sm font-bold text-slate-600 mt-4 mb-3">
+                    👇 まずは下の4枚のヒントカードをクリックしてめくってみよう！
+                </p>
+
+                <!-- めくれるヒントカード4枚 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- カード1 -->
+                    <div onclick="flipCard(this, 1)" class="flip-card h-44 cursor-pointer">
+                        <div class="flip-card-inner relative w-full h-full">
+                            <div class="flip-card-front absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-md">
+                                <i class="fa-solid fa-book text-3xl mb-2"></i>
+                                <span class="font-extrabold text-base">小説の分析アイデア ①</span>
+                                <span class="text-xs bg-white/20 px-3 py-1 rounded-full mt-2">タップしてめくる 🔄</span>
+                            </div>
+                            <div class="flip-card-back absolute inset-0 bg-emerald-50 border-2 border-emerald-400 text-slate-800 rounded-2xl p-4 flex flex-col justify-center shadow-md">
+                                <span class="text-xs font-extrabold text-emerald-700 mb-1">💡 物語の全体像・テーマ把握</span>
+                                <p class="text-xs md:text-sm font-bold">
+                                    長い小説を全部読む前でも、よく出る単語から「どんな主人公が、何をする話なのか（全体像）」がパッとわかる！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- カード2 -->
+                    <div onclick="flipCard(this, 2)" class="flip-card h-44 cursor-pointer">
+                        <div class="flip-card-inner relative w-full h-full">
+                            <div class="flip-card-front absolute inset-0 bg-gradient-to-br from-sky-500 to-indigo-600 text-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-md">
+                                <i class="fa-solid fa-feather-pointed text-3xl mb-2"></i>
+                                <span class="font-extrabold text-base">小説の分析アイデア ②</span>
+                                <span class="text-xs bg-white/20 px-3 py-1 rounded-full mt-2">タップしてめくる 🔄</span>
+                            </div>
+                            <div class="flip-card-back absolute inset-0 bg-sky-50 border-2 border-sky-400 text-slate-800 rounded-2xl p-4 flex flex-col justify-center shadow-md">
+                                <span class="text-xs font-extrabold text-sky-700 mb-1">💡 作者のクセ・文体の発見</span>
+                                <p class="text-xs md:text-sm font-bold">
+                                    作家によって「よく使う言葉や形容詞のクセ」がわかる！誰が書いた文章か推測することもできる！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- カード3 -->
+                    <div onclick="flipCard(this, 3)" class="flip-card h-44 cursor-pointer">
+                        <div class="flip-card-inner relative w-full h-full">
+                            <div class="flip-card-front absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 text-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-md">
+                                <i class="fa-solid fa-clipboard-list text-3xl mb-2"></i>
+                                <span class="font-extrabold text-base">アンケートの分析 ①</span>
+                                <span class="text-xs bg-white/20 px-3 py-1 rounded-full mt-2">タップしてめくる 🔄</span>
+                            </div>
+                            <div class="flip-card-back absolute inset-0 bg-orange-50 border-2 border-orange-400 text-slate-800 rounded-2xl p-4 flex flex-col justify-center shadow-md">
+                                <span class="text-xs font-extrabold text-orange-700 mb-1">💡 本音や不満のスピード発見</span>
+                                <p class="text-xs md:text-sm font-bold">
+                                    何千件もの自由記述アンケートから、「みんなが何に満足し、何に不満を持っているか」が一瞬で整理できる！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- カード4 -->
+                    <div onclick="flipCard(this, 4)" class="flip-card h-44 cursor-pointer">
+                        <div class="flip-card-inner relative w-full h-full">
+                            <div class="flip-card-front absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-md">
+                                <i class="fa-solid fa-hashtag text-3xl mb-2"></i>
+                                <span class="font-extrabold text-base">SNS・口コミの分析 ②</span>
+                                <span class="text-xs bg-white/20 px-3 py-1 rounded-full mt-2">タップしてめくる 🔄</span>
+                            </div>
+                            <div class="flip-card-back absolute inset-0 bg-purple-50 border-2 border-purple-400 text-slate-800 rounded-2xl p-4 flex flex-col justify-center shadow-md">
+                                <span class="text-xs font-extrabold text-purple-700 mb-1">💡 商品のイメージ調査・新商品開発</span>
+                                <p class="text-xs md:text-sm font-bold">
+                                    SNSの投稿から企業が「自社の商品がどう思われているか（イメージ）」を分析し、次の商品開発に活かせる！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自分のアイデア付箋ボード -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <label class="block text-sm font-extrabold text-slate-700 mb-2">
+                        ✏️ あなたが思いついた「こんな分析もできそう！」を付箋に書いて貼ってみよう（授業での発表用メモ）
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input id="idea-input" type="text" placeholder="例：J-POPの歌詞を分析して、時代ごとによく使われる言葉を調べる！" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="addIdeaNote()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-sm transition cursor-pointer shrink-0">
+                            📌 付箋を貼る
+                        </button>
+                    </div>
+                    <div id="idea-board" class="mt-3 flex flex-wrap gap-2">
+                        <div class="bg-yellow-100 border border-yellow-300 text-slate-800 px-3 py-2 rounded-xl text-xs font-bold shadow-sm">
+                            🎵 例：ヒット曲の歌詞をマイニングして、「桜」「夏」など季節ごとの人気ワードを調べる！
+                        </div>
+                        <div class="bg-pink-100 border border-pink-300 text-slate-800 px-3 py-2 rounded-xl text-xs font-bold shadow-sm">
+                            🎮 例：ゲームアプリのレビュー欄を分析して、「バグ」「楽しい」など改善点を見つける！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- パート2：教科書コラム「176年も謎のままだった事件を解決！」 -->
+            <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-xl border-2 border-amber-400/50">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div>
+                        <span class="bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-1 rounded-full">COLUMN：テキストマイニングで問題解決</span>
+                        <h2 class="text-xl md:text-2xl font-extrabold mt-1 text-amber-300">
+                            🕵️‍♂️ 176年間の歴史ミステリー『ザ・フェデラリスト』の著者を特定せよ！
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- 3ステップ紙芝居 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/15">
+                        <div class="text-amber-400 font-extrabold text-sm mb-1">① 1787年 ニューヨークの新聞</div>
+                        <p class="text-xs md:text-sm text-slate-200 leading-relaxed">
+                            アメリカの憲法を解説する85篇の論文『ザ・フェデラリスト』が発表された。著者は<strong>ハミルトン、ジェイ、マディソンの3人</strong>だが、全員同じペンネーム「パブリアス」を使ったため、<strong>「残りの12篇をハミルトンとマディソンのどっちが書いたか」が176年間も謎</strong>だった！
+                        </p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/15">
+                        <div class="text-cyan-400 font-extrabold text-sm mb-1">② 1963年 統計学者のひらめき</div>
+                        <p class="text-xs md:text-sm text-slate-200 leading-relaxed">
+                            「どんなに文体を似せても、<strong>無意識に使う単語（by, to, upon, whileなど）の出現頻度</strong>には個人のクセが出るはずだ！」と考え、2人が過去に書いた別の論文の単語の頻度を徹底分析！
+                        </p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/15">
+                        <div class="text-emerald-400 font-extrabold text-sm mb-1">③ ついに真犯人（著者）が判明！</div>
+                        <p class="text-xs md:text-sm text-slate-200 leading-relaxed">
+                            下の実験で、謎の論文の単語データを比べてみよう！統計学（テキストマイニングの元祖）の力で、176年間の謎が見事に解決したのです。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 体験：あなたも統計探偵！著者特定ミニゲーム -->
+                <div class="bg-slate-800/90 rounded-2xl p-5 border border-amber-400/30">
+                    <div class="text-sm font-extrabold text-amber-200 mb-3">
+                        🔍 【探偵体験】謎の論文Xを書いたのはどっち？単語の出現回数（1000語あたり）を比べて当ててみよう！
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm mb-4">
+                        <div class="bg-slate-900 p-3.5 rounded-xl border border-sky-500/40">
+                            <div class="font-extrabold text-sky-400 mb-2">👨‍💼 ハミルトンの普段のクセ</div>
+                            <ul class="space-y-1 text-slate-300">
+                                <li>・「upon」をよく使う：<strong class="text-white">約 3.0回</strong></li>
+                                <li>・「while」を使う（whilstは使わない）</li>
+                                <li>・「by」の使用頻度：約 7回</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-900 p-3.5 rounded-xl border border-emerald-500/40">
+                            <div class="font-extrabold text-emerald-400 mb-2">👨‍⚖️ マディソンの普段のクセ</div>
+                            <ul class="space-y-1 text-slate-300">
+                                <li>・「upon」はほぼ使わない：<strong class="text-white">約 0.2回</strong></li>
+                                <li>・「whilst」をよく使う</li>
+                                <li>・「by」の使用頻度：<strong class="text-white">約 12回</strong></li>
+                            </ul>
+                        </div>
+                        <div class="bg-amber-950/60 p-3.5 rounded-xl border-2 border-amber-400">
+                            <div class="font-extrabold text-amber-300 mb-2">📜 著者不明の「謎の論文X」</div>
+                            <ul class="space-y-1 text-amber-100">
+                                <li>・「upon」の出現回数：<strong>0.1回</strong></li>
+                                <li>・「whilst」が何度も出現！</li>
+                                <li>・「by」の出現回数：<strong>13回</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-center gap-4">
+                        <button onclick="answerDetective('hamilton')" class="bg-sky-600 hover:bg-sky-500 text-white font-extrabold px-6 py-2.5 rounded-xl transition cursor-pointer">
+                            犯人（著者）は「ハミルトン」だ！
+                        </button>
+                        <button onclick="answerDetective('madison')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-2.5 rounded-xl transition cursor-pointer">
+                            犯人（著者）は「マディソン」だ！
+                        </button>
+                    </div>
+                    <div id="detective-result" class="hidden mt-4 p-3 rounded-xl text-center font-extrabold text-sm"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-slate-800 text-slate-400 text-xs text-center py-4 mt-8">
+        高校「情報I」インタラクティブ教材 — ①データの可視化 / ②テキストデータの分析 / ③テキストマイニングの方法 / ④問題＆コラム
+    </footer>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // クリア状況管理
+        const clearedSteps = new Set();
+        function markCleared(stepNum) {
+            clearedSteps.add(stepNum);
+            document.getElementById('clear-count').textContent = clearedSteps.size;
+        }
+
+        // タブ切り替え
+        function switchTab(tabNum) {
+            for (let i = 1; i <= 4; i++) {
+                const section = document.getElementById(`section-${i}`);
+                const btn = document.getElementById(`tab-btn-${i}`);
+                if (i === tabNum) {
+                    section.classList.remove('hidden');
+                    btn.className = "tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-t-2xl font-extrabold text-sm md:text-base transition-all bg-white text-indigo-600 shadow-sm flex items-center justify-center gap-2";
+                } else {
+                    section.classList.add('hidden');
+                    btn.className = "tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-t-2xl font-extrabold text-sm md:text-base transition-all bg-indigo-700/50 text-white/90 hover:bg-indigo-700/80 flex items-center justify-center gap-2";
+                }
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ==========================================
+           セクション1：積み上げ棒グラフ＆クロス集計
+        =========================================== */
+        // 教科書 図1のデータ（160人満点：下から1位, 2位, 3位, 4位, 5位, 6位）
+        const schoolEventsData = [
+            { name: '体育祭',   ranks: [43, 35, 32, 22, 10, 18] },
+            { name: '文化祭',   ranks: [58, 42, 32, 14, 10, 4] },
+            { name: '修学旅行', ranks: [28, 48, 40, 22, 16, 6] },
+            { name: '球技大会', ranks: [16, 18, 32, 40, 38, 16] },
+            { name: '芸術鑑賞会', ranks: [12, 10, 18, 52, 48, 20] },
+            { name: 'マラソン大会', ranks: [3, 7, 6, 10, 38, 96] }
+        ];
+
+        // 教科書 図1に合わせたカラー（1位〜6位）
+        const rankColors = [
+            { rank: 1, color: '#22b8cf', label: '1位' }, // 水色
+            { rank: 2, color: '#0b7285', label: '2位' }, // 濃い青
+            { rank: 3, color: '#ae6ec4', label: '3位' }, // 紫
+            { rank: 4, color: '#ffd43b', label: '4位' }, // 黄色
+            { rank: 5, color: '#f76707', label: '5位' }, // オレンジ
+            { rank: 6, color: '#12b886', label: '6位' }  // 緑
+        ];
+
+        // 初期状態（高さ0）の棒グラフ枠を生成
+        function initStackedChart() {
+            const container = document.getElementById('bars-container');
+            container.innerHTML = '';
+
+            schoolEventsData.forEach((ev, idx) => {
+                const col = document.createElement('div');
+                col.className = 'h-full flex flex-col justify-end items-center relative group';
+
+                // 積み上げバー本体（上から6位→1位の順で積むために flex-col-reverse を使用）
+                const barStack = document.createElement('div');
+                barStack.className = 'w-full max-w-[54px] h-full flex flex-col-reverse justify-start rounded-t-lg overflow-hidden shadow-md';
+
+                ev.ranks.forEach((count, rIdx) => {
+                    const seg = document.createElement('div');
+                    seg.className = `bar-segment w-full flex items-center justify-center text-[10px] font-extrabold text-white overflow-hidden rank-seg-${rIdx + 1}`;
+                    seg.style.backgroundColor = rankColors[rIdx].color;
+                    seg.style.height = '0%'; // 最初は0%
+                    seg.dataset.targetHeight = `${(count / 160) * 100}%`;
+                    seg.title = `${ev.name} ${rIdx + 1}位: ${count}人`;
+                    if (count >= 18) {
+                        seg.textContent = count;
+                        if (rIdx === 0 || rIdx === 3) seg.classList.replace('text-white', 'text-slate-900');
+                    }
+                    barStack.appendChild(seg);
+                });
+
+                // X軸ラベル
+                const label = document.createElement('div');
+                label.className = 'absolute -bottom-7 text-[11px] md:text-xs font-extrabold text-slate-200 whitespace-nowrap';
+                label.textContent = ev.name;
+
+                col.appendChild(barStack);
+                col.appendChild(label);
+                container.appendChild(col);
+            });
+        }
+
+        // 「グラフに変身させる！」ボタン押下時
+        function triggerVisualization() {
+            document.getElementById('chart-overlay').classList.add('hidden');
+            document.getElementById('chart-controls').classList.remove('hidden');
+            document.getElementById('chart-insight').classList.remove('hidden');
+
+            const segments = document.querySelectorAll('.bar-segment');
+            segments.forEach((seg, idx) => {
+                setTimeout(() => {
+                    seg.style.height = seg.dataset.targetHeight;
+                }, (idx % 6) * 70);
+            });
+
+            markCleared(1);
+        }
+
+        // 特定の順位を強調するフィルター
+        function highlightRank(mode) {
+            const allSegs = document.querySelectorAll('.bar-segment');
+            const insight = document.getElementById('chart-insight');
+
+            allSegs.forEach(seg => {
+                seg.classList.remove('bar-dimmed', 'bar-highlighted');
+                if (mode === 'top') {
+                    if (seg.classList.contains('rank-seg-1') || seg.classList.contains('rank-seg-2')) {
+                        seg.classList.add('bar-highlighted');
+                    } else {
+                        seg.classList.add('bar-dimmed');
+                    }
+                } else if (mode === 'bottom') {
+                    if (seg.classList.contains('rank-seg-6')) {
+                        seg.classList.add('bar-highlighted');
+                    } else {
+                        seg.classList.add('bar-dimmed');
+                    }
+                }
+            });
+
+            if (mode === 'top') {
+                insight.innerHTML = '👑 <strong>1位・2位（水色・青）に注目！</strong>「文化祭（100人）」と「体育祭（78人）」「修学旅行（76人）」が上位を占めていて、みんなが楽しみにしていることが一目でわかります！';
+            } else if (mode === 'bottom') {
+                insight.innerHTML = '💦 <strong>6位（緑色）に注目！</strong>「マラソン大会」は160人中なんと<strong>96人</strong>が6位に選んでいます。数字の表よりも圧倒的にインパクトが伝わりますね！';
+            } else {
+                insight.innerHTML = '💡 グラフにすると、「文化祭・修学旅行は1位・2位が多い」「マラソン大会は6位が圧倒的に多い」ことが一目でわかりますね！';
+            }
+        }
+
+        // クロス集計データと描画
+        const crossData = {
+            all: {
+                bars: [
+                    { label: '文化祭', pct: 36, color: 'bg-pink-500' },
+                    { label: '体育祭', pct: 27, color: 'bg-sky-500' },
+                    { label: '修学旅行', pct: 18, color: 'bg-amber-500' }
+                ],
+                comment: '📊 <strong>全学年まとめ：</strong>全体で見ると「文化祭」が一番人気に見えますが、本当にどの学年も同じでしょうか？学年ボタンを押してみよう！'
+            },
+            grade1: {
+                bars: [
+                    { label: '文化祭', pct: 48, color: 'bg-pink-500' },
+                    { label: '体育祭', pct: 35, color: 'bg-sky-500' },
+                    { label: '修学旅行', pct: 5, color: 'bg-amber-500' }
+                ],
+                comment: '🌱 <strong>1年生の特徴：</strong>まだ修学旅行に行っていないので「修学旅行」は5%と低く、初めての「文化祭」や「体育祭」が大人気です！'
+            },
+            grade2: {
+                bars: [
+                    { label: '修学旅行', pct: 55, color: 'bg-amber-500' },
+                    { label: '文化祭', pct: 25, color: 'bg-pink-500' },
+                    { label: '体育祭', pct: 12, color: 'bg-sky-500' }
+                ],
+                comment: '✈️ <strong>2年生の特徴：</strong>クロス集計で新発見！2年生は修学旅行の学年なので、なんと<strong>「修学旅行」が55%でダントツ1位</strong>に逆転しました！'
+            },
+            grade3: {
+                bars: [
+                    { label: '文化祭', pct: 42, color: 'bg-pink-500' },
+                    { label: '体育祭', pct: 38, color: 'bg-sky-500' },
+                    { label: '修学旅行', pct: 10, color: 'bg-amber-500' }
+                ],
+                comment: '🎓 <strong>3年生の特徴：</strong>高校生活最後のイベントになる「文化祭（模擬店やステージ）」と「体育祭」が熱い支持を集めています！'
+            }
+        };
+
+        function switchCrossTab(key) {
+            ['all', 'grade1', 'grade2', 'grade3'].forEach(k => {
+                const btn = document.getElementById(`cross-btn-${k}`);
+                if (k === key) {
+                    btn.className = "cross-btn bg-indigo-600 text-white font-extrabold px-4 py-2 rounded-xl text-sm shadow transition cursor-pointer";
+                } else {
+                    btn.className = "cross-btn bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-extrabold px-4 py-2 rounded-xl text-sm transition cursor-pointer";
+                }
+            });
+
+            const target = crossData[key];
+            const barsBox = document.getElementById('cross-bars');
+            barsBox.innerHTML = target.bars.map(b => `
+                <div>
+                    <div class="flex justify-between text-xs md:text-sm font-extrabold mb-1">
+                        <span>${b.label}</span>
+                        <span>1位に選んだ割合：${b.pct}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-5 rounded-full overflow-hidden">
+                        <div class="${b.color} h-full rounded-full transition-all duration-500" style="width: ${b.pct}%"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('cross-comment').innerHTML = target.comment;
+        }
+
+
+        /* ==========================================
+           セクション2：SNS・アンケート分析
+        =========================================== */
+        function runSnsMining() {
+            // キーワードをハイライト
+            document.querySelectorAll('.kw-tapioca').forEach(el => el.className = 'bg-pink-200 text-pink-900 px-1 rounded font-extrabold');
+            document.querySelectorAll('.kw-soldout').forEach(el => el.className = 'bg-rose-500 text-white px-1 rounded font-extrabold');
+            document.querySelectorAll('.kw-ghost').forEach(el => el.className = 'bg-cyan-200 text-cyan-900 px-1 rounded font-extrabold');
+            document.querySelectorAll('.kw-band').forEach(el => el.className = 'bg-amber-200 text-amber-900 px-1 rounded font-extrabold');
+            document.querySelectorAll('.kw-fun, .kw-good').forEach(el => el.className = 'bg-emerald-200 text-emerald-900 px-1 rounded font-extrabold');
+
+            document.getElementById('sns-mining-placeholder').classList.add('hidden');
+            const res = document.getElementById('sns-mining-result');
+            res.classList.remove('hidden');
+            res.classList.add('animate-pop');
+
+            markCleared(2);
+        }
+
+
+        /* ==========================================
+           セクション3：形態素解析＆走れメロス
+        =========================================== */
+        function splitWordExample(mode) {
+            const display = document.getElementById('word-split-display');
+            const msg = document.getElementById('word-split-message');
+
+            if (mode === 'wrong') {
+                display.innerHTML = `
+                    <span class="animate-pop bg-rose-100 border-2 border-rose-400 text-rose-800 px-3 py-2 rounded-xl">農産</span>
+                    <span class="text-rose-400 font-bold">/</span>
+                    <span class="animate-pop bg-rose-100 border-2 border-rose-400 text-rose-800 px-3 py-2 rounded-xl">物価</span>
+                    <span class="text-rose-400 font-bold">/</span>
+                    <span class="animate-pop bg-rose-100 border-2 border-rose-400 text-rose-800 px-3 py-2 rounded-xl">格安</span>
+                    <span class="text-rose-400 font-bold">/</span>
+                    <span class="animate-pop bg-rose-100 border-2 border-rose-400 text-rose-800 px-3 py-2 rounded-xl">定法</span>
+                `;
+                msg.innerHTML = '<span class="text-rose-600">😱 ブッブー！「物価」が「格安」！？ 全然違う意味の言葉に分解されてしまいました！（教科書127ページの注意点）</span>';
+            } else {
+                display.innerHTML = `
+                    <span class="animate-pop bg-emerald-100 border-2 border-emerald-500 text-emerald-900 px-3 py-2 rounded-xl">農産物</span>
+                    <span class="text-emerald-500 font-bold">/</span>
+                    <span class="animate-pop bg-emerald-100 border-2 border-emerald-500 text-emerald-900 px-3 py-2 rounded-xl">価格</span>
+                    <span class="text-emerald-500 font-bold">/</span>
+                    <span class="animate-pop bg-emerald-100 border-2 border-emerald-500 text-emerald-900 px-3 py-2 rounded-xl">安定</span>
+                    <span class="text-emerald-500 font-bold">/</span>
+                    <span class="animate-pop bg-emerald-100 border-2 border-emerald-500 text-emerald-900 px-3 py-2 rounded-xl">法</span>
+                `;
+                msg.innerHTML = '<span class="text-emerald-700">🎉 大正解！AIの発展によって文脈を判断し、「農産物の価格を安定させる法律」と正しく品詞分解できるようになりました！</span>';
+            }
+        }
+
+        // 走れメロス本文の品詞ハイライト
+        function highlightMelosPos() {
+            document.querySelectorAll('.pos-noun').forEach(el => {
+                el.className = 'pos-noun bg-[#1ca64c] text-white px-1 py-0.5 rounded font-bold mx-0.5 transition-all';
+            });
+            document.querySelectorAll('.pos-verb').forEach(el => {
+                el.className = 'pos-verb bg-[#0ca678] text-white px-1 py-0.5 rounded font-bold mx-0.5 transition-all';
+            });
+            document.querySelectorAll('.pos-adj').forEach(el => {
+                el.className = 'pos-adj bg-[#f78318] text-white px-1 py-0.5 rounded font-bold mx-0.5 transition-all';
+            });
+        }
+
+        // 教科書 図2『走れメロス』のワードクラウドデータ
+        const melosWords = [
+            { word: 'メロス', count: 79, pos: '名詞（緑）', color: '#2b9e44', size: 118, x: 91, y: 91, fontSize: '26px' },
+            { word: '走る', count: 27, pos: '動詞（青緑）', color: '#0ca678', size: 64, x: 30, y: 185, fontSize: '15px' },
+            { word: '無い', count: 25, pos: '形容詞（オレンジ）', color: '#f78318', size: 62, x: 215, y: 65, fontSize: '15px' },
+            { word: 'くれる', count: 22, pos: '動詞（青緑）', color: '#0ca678', size: 56, x: 155, y: 15, fontSize: '13px' },
+            { word: '王', count: 20, pos: '名詞（緑）', color: '#2b9e44', size: 54, x: 12, y: 125, fontSize: '15px' },
+            { word: '殺す', count: 19, pos: '動詞（青緑）', color: '#0ca678', size: 52, x: 195, y: 200, fontSize: '13px' },
+            { word: 'セリヌンティウス', count: 16, pos: '名詞（緑）', color: '#2b9e44', size: 52, x: 205, y: 14, fontSize: '9px' },
+            { word: 'おまえ', count: 16, pos: '名詞（緑）', color: '#2b9e44', size: 50, x: 145, y: 225, fontSize: '12px' },
+            { word: '友', count: 16, pos: '名詞（緑）', color: '#2b9e44', size: 50, x: 40, y: 55, fontSize: '15px' },
+            { word: '妹', count: 13, pos: '名詞（緑）', color: '#2b9e44', size: 44, x: 100, y: 235, fontSize: '13px' },
+            { word: '言う', count: 13, pos: '動詞（青緑）', color: '#0ca678', size: 44, x: 18, y: 82, fontSize: '12px' },
+            { word: '行く', count: 12, pos: '動詞（青緑）', color: '#0ca678', size: 42, x: 228, y: 128, fontSize: '12px' },
+            { word: '信じる', count: 11, pos: '動詞（青緑）', color: '#0ca678', size: 42, x: 102, y: 40, fontSize: '11px' },
+            { word: 'よい', count: 10, pos: '形容詞（オレンジ）', color: '#f78318', size: 40, x: 235, y: 170, fontSize: '11px' },
+            { word: 'いい', count: 9, pos: '形容詞（オレンジ）', color: '#f78318', size: 38, x: 65, y: 230, fontSize: '11px' }
+        ];
+
+        function generateMelosCloud() {
+            highlightMelosPos();
+
+            document.getElementById('cloud-placeholder').classList.add('hidden');
+            const canvas = document.getElementById('cloud-canvas');
+            canvas.classList.remove('hidden');
+            canvas.innerHTML = '';
+
+            // バブル生成
+            melosWords.forEach((item, idx) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'word-bubble absolute rounded-full flex items-center justify-center text-white font-extrabold shadow-md text-center leading-tight px-1';
+                bubble.style.width = `${item.size}px`;
+                bubble.style.height = `${item.size}px`;
+                bubble.style.left = `${item.x}px`;
+                bubble.style.top = `${item.y}px`;
+                bubble.style.backgroundColor = item.color;
+                bubble.style.fontSize = item.fontSize;
+                bubble.style.transform = 'scale(0)';
+                bubble.textContent = item.word;
+
+                bubble.onclick = () => {
+                    document.getElementById('word-info-bar').innerHTML =
+                        `🔍 <strong>「${item.word}」</strong> — 品詞：<span class="underline">${item.pos}</span> ／ 作中の出現回数：<strong>${item.count}回</strong>`;
+                };
+
+                canvas.appendChild(bubble);
+
+                setTimeout(() => {
+                    bubble.style.transform = 'scale(1)';
+                }, idx * 45);
+            });
+
+            // 右側の出現回数横棒グラフ生成
+            const barList = document.getElementById('melos-bar-list');
+            barList.innerHTML = melosWords.slice(0, 10).map(w => {
+                const widthPct = Math.round((w.count / 79) * 100);
+                return `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-20 truncate text-right font-bold text-slate-700 text-[11px]">${w.word}</span>
+                        <div class="flex-1 bg-slate-200 h-3.5 rounded-sm overflow-hidden">
+                            <div class="h-full transition-all duration-700" style="width: ${widthPct}%; background-color: ${w.color}"></div>
+                        </div>
+                        <span class="w-6 text-[10px] font-mono text-slate-600">${w.count}</span>
+                    </div>
+                `;
+            }).join('');
+
+            markCleared(3);
+        }
+
+
+        /* ==========================================
+           セクション4：問題カード＆統計探偵コラム
+        =========================================== */
+        function flipCard(cardEl, num) {
+            cardEl.classList.toggle('flipped');
+            markCleared(4);
+        }
+
+        function addIdeaNote() {
+            const input = document.getElementById('idea-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const board = document.getElementById('idea-board');
+            const note = document.createElement('div');
+            note.className = 'animate-pop bg-emerald-100 border border-emerald-300 text-slate-800 px-3 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2';
+
+            const span = document.createElement('span');
+            span.textContent = `💡 ${text}`;
+            note.appendChild(span);
+
+            board.appendChild(note);
+            input.value = '';
+            markCleared(4);
+        }
+
+        function answerDetective(choice) {
+            const res = document.getElementById('detective-result');
+            res.classList.remove('hidden', 'bg-emerald-600', 'bg-rose-600');
+
+            if (choice === 'madison') {
+                res.classList.add('bg-emerald-600', 'text-white', 'animate-pop');
+                res.innerHTML = '🎉 <strong>名推理！大正解！</strong>「upon」をほとんど使わず「whilst」や「by」を多く使うクセから、12篇すべて<strong>マディソン</strong>が書いたと解明されました！';
+                markCleared(4);
+            } else {
+                res.classList.add('bg-rose-600', 'text-white', 'animate-pop');
+                res.innerHTML = '💦 <strong>おしい！</strong> ハミルトンは「upon」を1000語あたり3回ほど使いますが、謎の論文Xでは0.1回しか使われていません。もう片方の人物を選んでみよう！';
+            }
+        }
+
+        // 初期化処理
+        window.onload = function () {
+            initStackedChart();
+            switchCrossTab('all');
+        };
+    </script>
+</body>
+</html>

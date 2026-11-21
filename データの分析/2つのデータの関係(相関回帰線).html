@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2つのデータの関係｜データ探偵＆コンビニ店長シミュレーター</title>
+  <style>
+    /* =========================================
+       カラー変数・基本設定（ポップ＆高コントラスト）
+       ========================================= */
+    :root {
+      --bg-main: #f4f7fb;
+      --bg-card: #ffffff;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #dbeafe;
+      --accent: #f97316;
+      --accent-light: #ffedd5;
+      --teal: #0d9488;
+      --teal-light: #ccfbf1;
+      --danger: #e11d48;
+      --danger-light: #ffe4e6;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --text-main: #1e293b;
+      --text-sub: #475569;
+      --border: #e2e8f0;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+      background: linear-gradient(135deg, #eef6ff 0%, #f8fafc 55%, #fff7ed 100%);
+      color: var(--text-main);
+      line-height: 1.65;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* =========================================
+       ヘッダー＆上部ナビゲーション
+       ========================================= */
+    header {
+      background: #ffffff;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      font-size: 1.9rem;
+      background: var(--primary-light);
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.25;
+    }
+
+    .brand-sub {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .nav-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      border: 2px solid var(--border);
+      background: #f8fafc;
+      color: var(--text-sub);
+      font-weight: 700;
+      font-size: 0.92rem;
+      padding: 9px 15px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+
+    .nav-tab:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    /* =========================================
+       メインコンテナ＆セクション切り替え
+       ========================================= */
+    main {
+      flex: 1;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+
+    .section-panel {
+      display: none;
+      animation: fadeSlideIn 0.4s ease forwards;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 1.65rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-main);
+    }
+
+    .page-badge {
+      background: var(--teal);
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 999px;
+      letter-spacing: 0.03em;
+    }
+
+    /* 汎用カード・グリッド */
+    .card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .grid-2-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    /* ボタンスタイル */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-2px);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
+    }
+
+    .btn-accent:hover {
+      filter: brightness(1.08);
+      transform: translateY(-2px);
+    }
+
+    .btn-teal {
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+    }
+
+    .btn-teal:hover {
+      filter: brightness(1.08);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      color: var(--text-main);
+      border: 2px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .btn-sm {
+      padding: 7px 13px;
+      font-size: 0.85rem;
+      border-radius: 10px;
+    }
+
+    /* スライダー共通 */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 4px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    /* SVGコンテナ */
+    .svg-box {
+      width: 100%;
+      background: #f8fafc;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .svg-box svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* =========================================
+       セクション1：相関係数＆因果の3規準
+       ========================================= */
+    .r-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .r-value-badge {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .r-status-pill {
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      transition: all 0.25s ease;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .example-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 14px;
+      background: #f1f5f9;
+      border-left: 6px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .example-box .ex-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .example-box .ex-text {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .alert-banner {
+      background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+      border: 2px solid #fda4af;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .alert-banner-icon {
+      font-size: 2.2rem;
+      flex-shrink: 0;
+    }
+
+    .alert-banner-text {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #9f1239;
+    }
+
+    .criteria-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .criteria-card {
+      background: #f8fafc;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .criteria-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+    }
+
+    .criteria-card.revealed {
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14);
+    }
+
+    .criteria-num {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+
+    .criteria-title {
+      font-size: 1.08rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .criteria-desc {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: all 0.35s ease;
+    }
+
+    .criteria-card.revealed .criteria-desc {
+      max-height: 150px;
+      opacity: 1;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .tap-hint {
+      font-size: 0.78rem;
+      color: var(--primary);
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .criteria-card.revealed .tap-hint {
+      display: none;
+    }
+
+    /* =========================================
+       セクション2：問題1（緊急ニュース＆擬似相関）
+       ========================================= */
+    .news-ticker {
+      background: #be123c;
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 6px 18px rgba(190, 18, 60, 0.25);
+    }
+
+    .news-badge {
+      background: #facc15;
+      color: #1e293b;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      animation: pulseBadge 1.5s infinite;
+    }
+
+    @keyframes pulseBadge {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .news-headline {
+      font-size: 1.12rem;
+      font-weight: 800;
+    }
+
+    /* SVGアニメーション用クラス */
+    .ice-dot {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: scale(0);
+      transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .ice-dot.shown {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .sun-group {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: translateY(-25px) scale(0.3);
+      transition: all 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .sun-group.revealed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .causal-arrow {
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      transition: stroke-dashoffset 0.8s ease 0.35s;
+    }
+
+    .causal-arrow.revealed {
+      stroke-dashoffset: 0;
+    }
+
+    .spurious-stamp {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: scale(2.4) rotate(-18deg);
+      transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.9s;
+    }
+
+    .spurious-stamp.revealed {
+      opacity: 1;
+      transform: scale(1) rotate(-8deg);
+    }
+
+    .reveal-summary {
+      display: none;
+      margin-top: 16px;
+      background: var(--teal-light);
+      border: 2px solid var(--teal);
+      border-radius: 14px;
+      padding: 16px;
+      animation: fadeSlideIn 0.5s ease;
+    }
+
+    .reveal-summary.shown {
+      display: block;
+    }
+
+    /* =========================================
+       セクション3：問題2（クイズ＆反転アニメーション）
+       ========================================= */
+    .quiz-switcher {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .quiz-tab-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: #ffffff;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      color: var(--text-sub);
+    }
+
+    .quiz-tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);
+    }
+
+    .claim-box {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+    }
+
+    .claim-box .claim-lead {
+      font-size: 0.98rem;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .claim-box .claim-conclusion {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #b45309;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .choice-btn {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 14px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .choice-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      transform: translateY(-2px);
+    }
+
+    .choice-btn.correct {
+      background: var(--success-light);
+      border-color: var(--success);
+      color: #14532d;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+    }
+
+    .choice-btn.wrong {
+      background: var(--danger-light);
+      border-color: var(--danger);
+      color: #881337;
+    }
+
+    .choice-btn .c-num {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .choice-btn .c-name {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+
+    .choice-btn .c-sub {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 3px;
+    }
+
+    .quiz-feedback {
+      display: none;
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 10px;
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .quiz-feedback.shown {
+      display: block;
+    }
+
+    .quiz-feedback.is-hint {
+      background: #fff7ed;
+      border: 2px solid #fb923c;
+      color: #9a3412;
+    }
+
+    .quiz-feedback.is-correct {
+      background: #f0fdf4;
+      border: 2px solid #22c55e;
+      color: #14532d;
+    }
+
+    .flip-arrow {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .flip-arrow.flipped {
+      transform: rotate(180deg);
+    }
+
+    /* =========================================
+       セクション4：コンビニ店長シミュレーター
+       ========================================= */
+    .data-table-wrap {
+      overflow-x: auto;
+      margin-bottom: 12px;
+    }
+
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .mini-table th {
+      background: var(--teal);
+      color: #ffffff;
+      padding: 6px 8px;
+      font-weight: 700;
+    }
+
+    .mini-table td {
+      border-bottom: 1px solid var(--border);
+      padding: 5px 8px;
+      background: #ffffff;
+    }
+
+    .mini-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .var-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .var-badge {
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .var-x {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1.5px solid #93c5fd;
+    }
+
+    .var-y {
+      background: #ffedd5;
+      color: #9a3412;
+      border: 1.5px solid #fdba74;
+    }
+
+    .formula-box {
+      background: #1e293b;
+      color: #f8fafc;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 1.08rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 12px 0;
+      letter-spacing: 0.02em;
+    }
+
+    .formula-box .hl-x {
+      color: #60a5fa;
+    }
+
+    .formula-box .hl-y {
+      color: #fb923c;
+      font-size: 1.35rem;
+    }
+
+    .store-visual {
+      border-radius: 16px;
+      padding: 16px;
+      transition: background 0.5s ease;
+      border: 2px solid var(--border);
+      margin-top: 12px;
+    }
+
+    .store-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .weather-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 1.05rem;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 6px 14px;
+      border-radius: 999px;
+    }
+
+    .predict-big {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ea580c;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 4px 16px;
+      border-radius: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shelf-box {
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 2px solid #cbd5e1;
+    }
+
+    .shelf-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    .bottle-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-height: 58px;
+      align-items: center;
+    }
+
+    .bottle-icon {
+      font-size: 1.3rem;
+      transition: transform 0.25s ease;
+      animation: popBottle 0.25s ease;
+    }
+
+    @keyframes popBottle {
+      from { transform: scale(0.3); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .error-meter {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff7ed;
+      border: 2px solid #fdba74;
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #9a3412;
+    }
+
+    .pos-card {
+      background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+      border: 2px solid #5eead4;
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .pos-icon {
+      font-size: 2.8rem;
+      background: #ffffff;
+      width: 68px;
+      height: 68px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+      flex-shrink: 0;
+    }
+
+    /* =========================================
+       下部ステップナビゲーション
+       ========================================= */
+    footer {
+      background: #ffffff;
+      border-top: 2px solid var(--border);
+      padding: 14px 20px;
+    }
+
+    .footer-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .step-dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .step-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .step-dot.active {
+      width: 32px;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+
+    /* =========================================
+       レスポンシブ調整
+       ========================================= */
+    @media (max-width: 900px) {
+      .grid-2, .grid-2-equal, .criteria-grid, .choice-grid {
+        grid-template-columns: 1fr;
+      }
+      .section-title {
+        font-size: 1.35rem;
+      }
+      .nav-tab {
+        font-size: 0.82rem;
+        padding: 7px 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================
+       ヘッダー＆上部ナビゲーションバー
+       ========================================= -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">🕵️</div>
+        <div>
+          <div class="brand-title">2つのデータの関係</div>
+          <div class="brand-sub">情報Ⅰ 理論編52（p.130〜131）インタラクティブ教材</div>
+        </div>
+      </div>
+      <nav class="nav-tabs" aria-label="単元ナビゲーション">
+        <button class="nav-tab active" data-target="sec1">① 相関と因果</button>
+        <button class="nav-tab" data-target="sec2">問題1：アイスの謎</button>
+        <button class="nav-tab" data-target="sec3">問題2：ウソを見破れ！</button>
+        <button class="nav-tab" data-target="sec4">② 未来を予測！</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- =========================================
+         セクション1：① 相関関係と因果関係（p.130）
+         ========================================= -->
+    <section id="sec1" class="section-panel active">
+      <div class="section-header">
+        <h1 class="section-title">📊 ① 相関関係と因果関係</h1>
+        <span class="page-badge">教科書 p.130</span>
+      </div>
+
+      <!-- 1. 相関係数シミュレーター -->
+      <div class="card">
+        <div class="card-title">🎛️ さわって体験！相関係数シミュレーター（r = −1.0 〜 +1.0）</div>
+        <div class="grid-2">
+          <!-- 左：リアルタイム散布図SVG -->
+          <div class="svg-box">
+            <svg id="corrSvg" viewBox="0 0 460 320" role="img" aria-label="相関係数シミュレーターの散布図">
+              <!-- 背景グリッド -->
+              <rect x="55" y="25" width="380" height="250" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="6"/>
+              <g stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4">
+                <line x1="55" y1="87.5" x2="435" y2="87.5"/>
+                <line x1="55" y1="150" x2="435" y2="150"/>
+                <line x1="55" y1="212.5" x2="435" y2="212.5"/>
+                <line x1="150" y1="25" x2="150" y2="275"/>
+                <line x1="245" y1="25" x2="245" y2="275"/>
+                <line x1="340" y1="25" x2="340" y2="275"/>
+              </g>
+              <!-- 傾向ライン -->
+              <line id="corrTrendLine" x1="75" y1="240" x2="415" y2="60" stroke="#93c5fd" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+              <!-- データ点グループ -->
+              <g id="corrDotsGroup"></g>
+              <!-- 軸ラベル -->
+              <text x="245" y="305" text-anchor="middle" font-size="14" font-weight="800" fill="#334155">データ X（増加 →）</text>
+              <text x="22" y="150" text-anchor="middle" font-size="14" font-weight="800" fill="#334155" transform="rotate(-90 22 150)">データ Y（増加 →）</text>
+            </svg>
+          </div>
+
+          <!-- 右：スライダー＆解説 -->
+          <div>
+            <div class="r-display">
+              <div>
+                <div style="font-size:0.85rem;font-weight:700;color:var(--text-sub);">相関係数 r</div>
+                <div class="r-value-badge" id="rValueText">+0.80</div>
+              </div>
+              <div class="r-status-pill" id="rStatusPill" style="background:#dbeafe;color:#1d4ed8;">強い正の相関（右上がり）</div>
+            </div>
+
+            <input type="range" id="rSlider" min="-1" max="1" step="0.05" value="0.8">
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;font-weight:700;color:var(--text-sub);margin-top:6px;">
+              <span>−1.0（負の相関）</span>
+              <span>0（無相関）</span>
+              <span>+1.0（正の相関）</span>
+            </div>
+
+            <div class="preset-row">
+              <button class="btn btn-outline btn-sm" onclick="setCorrPreset(0.9)">📈 強い正 (+0.9)</button>
+              <button class="btn btn-outline btn-sm" onclick="setCorrPreset(0.4)">↗️ 弱い正 (+0.4)</button>
+              <button class="btn btn-outline btn-sm" onclick="setCorrPreset(0.0)">☁️ 無相関 (0.0)</button>
+              <button class="btn btn-outline btn-sm" onclick="setCorrPreset(-0.9)">📉 強い負 (−0.9)</button>
+            </div>
+
+            <div class="example-box" id="corrExampleBox">
+              <div class="ex-label">💡 身近なデータの例</div>
+              <div class="ex-text" id="corrExampleText">気温が高いほど、アイスクリームがよく売れる！</div>
+              <div style="font-size:0.85rem;color:var(--text-sub);margin-top:6px;" id="corrExampleSub">
+                片方が増えると、もう片方も増える関係です。絶対値が1に近いほど点が直線状に並びます。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 相関関係と因果関係のちがい＋3つの規準 -->
+      <div class="card">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0;">⚖️ 相関関係と因果関係のちがい</div>
+          <button class="btn btn-primary btn-sm" id="revealAllCriteriaBtn">✨ 3つの規準を順番に表示</button>
+        </div>
+
+        <div class="alert-banner">
+          <div class="alert-banner-icon">⚠️</div>
+          <div>
+            <div class="alert-banner-text">「相関関係がある」 ≠ 「因果関係（原因と結果）がある」</div>
+            <div style="font-size:0.9rem;color:#881337;margin-top:2px;">
+              2つのデータが一緒に動いていても、本当に「原因→結果」と言い切るには次の<strong>3つの規準</strong>が必要です！
+            </div>
+          </div>
+        </div>
+
+        <div class="criteria-grid">
+          <div class="criteria-card" data-criteria="1" onclick="toggleCriteria(this)">
+            <span class="criteria-num">規準 1</span>
+            <div class="criteria-title">共変性があること</div>
+            <div class="tap-hint">👆 クリックして解説を見る</div>
+            <div class="criteria-desc">
+              2つのデータに<strong>相関関係があること</strong>。そもそも一緒に増減していなければ、原因と結果とはいえません。
+            </div>
+          </div>
+
+          <div class="criteria-card" data-criteria="2" onclick="toggleCriteria(this)">
+            <span class="criteria-num">規準 2</span>
+            <div class="criteria-title">時間的順序関係があること</div>
+            <div class="tap-hint">👆 クリックして解説を見る</div>
+            <div class="criteria-desc">
+              <strong>原因が結果より先に生じていること</strong>。あとから起きたことが、前の出来事の原因にはなれません。
+            </div>
+          </div>
+
+          <div class="criteria-card" data-criteria="3" onclick="toggleCriteria(this)">
+            <span class="criteria-num">規準 3</span>
+            <div class="criteria-title">交絡因子を排除していること</div>
+            <div class="tap-hint">👆 クリックして解説を見る</div>
+            <div class="criteria-desc">
+              調べたい2つ以外で両方に影響を与える<strong>「かくれた第3の原因（交絡因子）」</strong>がないこと。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================
+         セクション2：問題1「アイスクリームと水難事故のナゾ」
+         ========================================= -->
+    <section id="sec2" class="section-panel">
+      <div class="section-header">
+        <h1 class="section-title">🕵️ 問題1：アイスクリームと水難事故のナゾ</h1>
+        <span class="page-badge">教科書 p.130 問題1・図1</span>
+      </div>
+
+      <div class="news-ticker">
+        <span class="news-badge">🚨 緊急ニュース</span>
+        <div class="news-headline">「アイスが売れる月ほど水難事故が激増！アイスには危険な成分が入っているに違いない！？」</div>
+      </div>
+
+      <div class="grid-2-equal">
+        <!-- 左：教科書再現の散布図 -->
+        <div class="card" style="margin-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+            <div class="card-title" style="margin-bottom:0;">📈 月別データ散布図（1年間）</div>
+            <button class="btn btn-teal btn-sm" id="plotIceBtn">▶ 12ヶ月分をプロット</button>
+          </div>
+          <div class="svg-box">
+            <svg id="iceScatterSvg" viewBox="0 0 460 330" role="img" aria-label="アイスクリームの売上と水難事故の散布図">
+              <rect x="65" y="25" width="365" height="245" fill="#fffdf5" stroke="#334155" stroke-width="2"/>
+              <!-- グリッド線（横：0〜80件、縦：0〜12億円） -->
+              <g id="iceGrid" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"></g>
+              <g id="iceAxesText" font-size="12" font-weight="700" fill="#475569"></g>
+              <!-- 12ヶ月の点 -->
+              <g id="iceDotsGroup"></g>
+              <!-- 軸タイトル -->
+              <text x="247" y="314" text-anchor="middle" font-size="14" font-weight="800" fill="#1e293b">アイスクリームの売り上げ（億円）</text>
+              <text x="20" y="148" text-anchor="middle" font-size="14" font-weight="800" fill="#1e293b" transform="rotate(-90 20 148)">水難事故（件）</text>
+            </svg>
+          </div>
+          <p style="font-size:0.9rem;color:var(--text-sub);margin-top:12px;">
+            たしかに綺麗な<strong>右上がり（強い正の相関）</strong>になっています…。本当にアイスのせいなのでしょうか？
+          </p>
+        </div>
+
+        <!-- 右：真犯人をあばくアニメーション -->
+        <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div class="card-title">🔍 データ探偵の推理ボード</div>
+            <div class="svg-box" style="background:#ffffff;">
+              <svg id="iceDiagramSvg" viewBox="0 0 440 270" role="img" aria-label="交絡因子と擬似相関の図解">
+                <defs>
+                  <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+                    <polygon points="0 0, 8 3.5, 0 7" fill="#ea580c"/>
+                  </marker>
+                  <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+                    <polygon points="0 0, 8 3.5, 0 7" fill="#e11d48"/>
+                  </marker>
+                </defs>
+
+                <!-- 隠れていた真犯人：太陽（気温） -->
+                <g id="sunGroup" class="sun-group">
+                  <circle cx="220" cy="56" r="42" fill="#fef08a" stroke="#f59e0b" stroke-width="3.5"/>
+                  <text x="220" y="50" text-anchor="middle" font-size="26">☀️</text>
+                  <text x="220" y="72" text-anchor="middle" font-size="13" font-weight="900" fill="#b45309">気温</text>
+                  <rect x="164" y="102" width="112" height="22" rx="11" fill="#ea580c"/>
+                  <text x="220" y="117" text-anchor="middle" font-size="11.5" font-weight="800" fill="#ffffff">交絡因子（真犯人）</text>
+                </g>
+
+                <!-- 気温 → アイス / 気温 → 水難事故 の実線矢印 -->
+                <path id="arrowToIce" class="causal-arrow" d="M 185 95 L 118 168" stroke="#ea580c" stroke-width="5" fill="none" marker-end="url(#arrowOrange)"/>
+                <path id="arrowToAcc" class="causal-arrow" d="M 255 95 L 322 168" stroke="#ea580c" stroke-width="5" fill="none" marker-end="url(#arrowOrange)"/>
+
+                <!-- アイスノード -->
+                <rect x="26" y="176" width="136" height="68" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2.5"/>
+                <text x="94" y="204" text-anchor="middle" font-size="22">🍦</text>
+                <text x="94" y="229" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1e3a8a">アイスの売上</text>
+
+                <!-- 水難事故ノード -->
+                <rect x="278" y="176" width="136" height="68" rx="14" fill="#ffe4e6" stroke="#e11d48" stroke-width="2.5"/>
+                <text x="346" y="204" text-anchor="middle" font-size="22">🌊</text>
+                <text x="346" y="229" text-anchor="middle" font-size="13.5" font-weight="800" fill="#881337">水難事故</text>
+
+                <!-- 2つをつなぐ矢印（初期は実線、解明後は点線） -->
+                <line id="iceLinkLine" x1="166" y1="210" x2="270" y2="210" stroke="#e11d48" stroke-width="4" marker-end="url(#arrowRed)"/>
+                <text id="iceLinkLabel" x="220" y="198" text-anchor="middle" font-size="12" font-weight="800" fill="#e11d48">危険成分！？</text>
+
+                <!-- 擬似相関スタンプ -->
+                <g id="spuriousStamp" class="spurious-stamp">
+                  <rect x="150" y="182" width="140" height="54" rx="10" fill="rgba(255,255,255,0.95)" stroke="#e11d48" stroke-width="3.5"/>
+                  <text x="220" y="205" text-anchor="middle" font-size="15" font-weight="900" fill="#e11d48">擬似相関</text>
+                  <text x="220" y="224" text-anchor="middle" font-size="10.5" font-weight="800" fill="#9f1239">（みせかけの関係）</text>
+                </g>
+              </svg>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+              <button class="btn btn-accent" id="revealCulpritBtn" style="flex:1;">🔍 真犯人（交絡因子）をあばく！</button>
+              <button class="btn btn-outline" id="resetIceBtn">↺ リセット</button>
+            </div>
+          </div>
+
+          <div class="reveal-summary" id="iceSummary">
+            <strong style="color:#0f766e;font-size:1.05rem;">💡 謎が解けた！</strong>
+            <p style="font-size:0.92rem;margin-top:4px;">
+              夏になって<strong>「気温（交絡因子）」</strong>が上がると、アイスも売れるし、海や川に行く人が増えて水難事故も増えます。交絡因子の影響で2つのデータに関係があるように見える現象を<strong>「擬似相関」</strong>といいます！
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================
+         セクション3：問題2「どの規準を満たしていない？」
+         ========================================= -->
+    <section id="sec3" class="section-panel">
+      <div class="section-header">
+        <h1 class="section-title">🚨 問題2：ウソの因果関係を見破れ！</h1>
+        <span class="page-badge">教科書 p.130 問題2</span>
+      </div>
+
+      <div class="quiz-switcher">
+        <button class="quiz-tab-btn active" id="qTab1" onclick="switchQuiz(1)">第1問：身長と算数のテスト</button>
+        <button class="quiz-tab-btn" id="qTab2" onclick="switchQuiz(2)">第2問：消防車と火事の大きさ</button>
+      </div>
+
+      <!-- 第1問 -->
+      <div id="quizPanel1" class="card">
+        <div class="claim-box">
+          <div class="claim-lead">
+            📏 小学生をランダムに選んで同じ算数のテストをすると、<strong>身長が高いほど成績が良かった</strong>。
+          </div>
+          <div class="claim-conclusion">
+            主張：「身長が高くなると、算数ができるようになる！」
+          </div>
+        </div>
+
+        <p style="font-weight:800;margin-bottom:12px;">❓ この主張は、因果関係の「規準1〜3」のどれを満たしていないでしょう？</p>
+
+        <div class="choice-grid">
+          <button class="choice-btn" onclick="checkQuiz(1, 1, this)">
+            <span class="c-num">規準 1</span>
+            <span class="c-name">共変性</span>
+            <span class="c-sub">相関関係があること</span>
+          </button>
+          <button class="choice-btn" onclick="checkQuiz(1, 2, this)">
+            <span class="c-num">規準 2</span>
+            <span class="c-name">時間的順序関係</span>
+            <span class="c-sub">原因が結果より先</span>
+          </button>
+          <button class="choice-btn" onclick="checkQuiz(1, 3, this)">
+            <span class="c-num">規準 3</span>
+            <span class="c-name">交絡因子の排除</span>
+            <span class="c-sub">かくれた第3の原因がない</span>
+          </button>
+        </div>
+
+        <div id="quiz1Feedback" class="quiz-feedback"></div>
+
+        <!-- 正解時の図解アニメーション -->
+        <div id="quiz1Visual" style="display:none;margin-top:16px;">
+          <div class="svg-box" style="max-width:560px;margin:0 auto;background:#ffffff;">
+            <svg viewBox="0 0 460 245" role="img" aria-label="学年という交絡因子の図解">
+              <defs>
+                <marker id="q1Arrow" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+                  <polygon points="0 0, 8 3.5, 0 7" fill="#16a34a"/>
+                </marker>
+              </defs>
+              <g id="q1GradeGroup" class="sun-group">
+                <rect x="145" y="16" width="170" height="62" rx="16" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/>
+                <text x="230" y="42" text-anchor="middle" font-size="20">🎒 学年（年齢）</text>
+                <text x="230" y="64" text-anchor="middle" font-size="12" font-weight="800" fill="#15803d">かくれた交絡因子！</text>
+              </g>
+              <path id="q1ArrL" class="causal-arrow" d="M 190 78 L 125 148" stroke="#16a34a" stroke-width="4.5" fill="none" marker-end="url(#q1Arrow)"/>
+              <path id="q1ArrR" class="causal-arrow" d="M 270 78 L 335 148" stroke="#16a34a" stroke-width="4.5" fill="none" marker-end="url(#q1Arrow)"/>
+
+              <rect x="35" y="156" width="145" height="62" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2.5"/>
+              <text x="107" y="193" text-anchor="middle" font-size="15" font-weight="800" fill="#1e3a8a">📏 身長が高い</text>
+
+              <rect x="280" y="156" width="145" height="62" rx="14" fill="#ffedd5" stroke="#f97316" stroke-width="2.5"/>
+              <text x="352" y="193" text-anchor="middle" font-size="15" font-weight="800" fill="#9a3412">✏️ 算数が得意</text>
+
+              <line x1="184" y1="187" x2="276" y2="187" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 6"/>
+              <text x="230" y="178" text-anchor="middle" font-size="12" font-weight="800" fill="#e11d48">擬似相関</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第2問 -->
+      <div id="quizPanel2" class="card" style="display:none;">
+        <div class="claim-box">
+          <div class="claim-lead">
+            🚒 データ分析の結果、<strong>消防車の出動台数が多い現場ほど、火事が大きい</strong>ことが分かった。
+          </div>
+          <div class="claim-conclusion">
+            主張：「消防車がたくさん出動するせいで、火事が大きくなる！」
+          </div>
+        </div>
+
+        <p style="font-weight:800;margin-bottom:12px;">❓ この主張は、因果関係の「規準1〜3」のどれを満たしていないでしょう？</p>
+
+        <div class="choice-grid">
+          <button class="choice-btn" onclick="checkQuiz(2, 1, this)">
+            <span class="c-num">規準 1</span>
+            <span class="c-name">共変性</span>
+            <span class="c-sub">相関関係があること</span>
+          </button>
+          <button class="choice-btn" onclick="checkQuiz(2, 2, this)">
+            <span class="c-num">規準 2</span>
+            <span class="c-name">時間的順序関係</span>
+            <span class="c-sub">原因が結果より先</span>
+          </button>
+          <button class="choice-btn" onclick="checkQuiz(2, 3, this)">
+            <span class="c-num">規準 3</span>
+            <span class="c-name">交絡因子の排除</span>
+            <span class="c-sub">かくれた第3の原因がない</span>
+          </button>
+        </div>
+
+        <div id="quiz2Feedback" class="quiz-feedback"></div>
+
+        <!-- 正解時の矢印反転アニメーション -->
+        <div id="quiz2Visual" style="display:none;margin-top:16px;">
+          <div class="svg-box" style="max-width:560px;margin:0 auto;background:#ffffff;">
+            <svg viewBox="0 0 460 180" role="img" aria-label="時間的順序関係の反転アニメーション">
+              <text id="q2TopLabel" x="230" y="30" text-anchor="middle" font-size="14" font-weight="900" fill="#e11d48">❌ 誤った考え：原因と結果が逆！</text>
+
+              <!-- 左ボックス：消防車 -->
+              <rect x="24" y="58" width="152" height="78" rx="14" fill="#fee2e2" stroke="#ef4444" stroke-width="2.5"/>
+              <text x="100" y="90" text-anchor="middle" font-size="24">🚒</text>
+              <text x="100" y="116" text-anchor="middle" font-size="13.5" font-weight="800" fill="#991b1b">消防車が多く出動</text>
+              <text id="q2LeftTag" x="100" y="156" text-anchor="middle" font-size="13" font-weight="900" fill="#64748b">（原因？）</text>
+
+              <!-- 中央の反転する矢印 -->
+              <g id="q2FlipArrow" class="flip-arrow">
+                <line x1="188" y1="97" x2="262" y2="97" stroke="#16a34a" stroke-width="7" stroke-linecap="round"/>
+                <polygon points="274,97 254,84 254,110" fill="#16a34a"/>
+              </g>
+
+              <!-- 右ボックス：火事 -->
+              <rect x="284" y="58" width="152" height="78" rx="14" fill="#ffedd5" stroke="#f97316" stroke-width="2.5"/>
+              <text x="360" y="90" text-anchor="middle" font-size="24">🔥</text>
+              <text x="360" y="116" text-anchor="middle" font-size="13.5" font-weight="800" fill="#9a3412">火事が大きい</text>
+              <text id="q2RightTag" x="360" y="156" text-anchor="middle" font-size="13" font-weight="900" fill="#64748b">（結果？）</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================
+         セクション4：② 過去のデータから未来を予測（p.131）
+         ========================================= -->
+    <section id="sec4" class="section-panel">
+      <div class="section-header">
+        <h1 class="section-title">🏪 ② 過去のデータから未来を予測（コンビニ店長シミュレーター）</h1>
+        <span class="page-badge">教科書 p.131</span>
+      </div>
+
+      <div class="grid-2">
+        <!-- 左：散布図＋最小二乗法＆予測ポイント -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="var-badges">
+            <span class="var-badge var-x">横軸 X：平均気温（説明変数・原因）</span>
+            <span class="var-badge var-y">縦軸 Y：飲料販売量（目的変数・結果）</span>
+          </div>
+
+          <div class="svg-box">
+            <svg id="regSvg" viewBox="0 0 480 340" role="img" aria-label="平均気温と飲料販売量の単回帰分析グラフ">
+              <rect x="65" y="22" width="385" height="260" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+              <g id="regGrid" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4"></g>
+              <g id="regAxesText" font-size="11.5" font-weight="700" fill="#475569"></g>
+
+              <!-- 最小二乗法の正方形グループ -->
+              <g id="lsqSquaresGroup"></g>
+              <!-- 散布図の点 -->
+              <g id="regDotsGroup"></g>
+              <!-- 回帰直線 -->
+              <line id="regLine" x1="65" y1="200" x2="450" y2="100" stroke="#f97316" stroke-width="4.5" stroke-linecap="round" opacity="0"/>
+              <!-- 予測の点線ガイドと赤い点 -->
+              <g id="predictGuideGroup" opacity="0">
+                <line id="guideV" x1="395" y1="282" x2="395" y2="99" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="6 4"/>
+                <line id="guideH" x1="65" y1="99" x2="395" y2="99" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="6 4"/>
+                <circle id="predictDot" cx="395" cy="99" r="8" fill="#e11d48" stroke="#ffffff" stroke-width="3"/>
+              </g>
+
+              <text x="257" y="324" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1e40af">平均気温 X（℃）【説明変数】</text>
+              <text x="19" y="152" text-anchor="middle" font-size="13.5" font-weight="800" fill="#9a3412" transform="rotate(-90 19 152)">飲料販売量 Y（本）【目的変数】</text>
+            </svg>
+          </div>
+
+          <!-- 体験①：最小二乗法ボタン＆誤差メーター -->
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+            <button class="btn btn-accent" id="runLsqBtn" style="flex:1;">✨ ベストな直線（回帰直線）を引く！</button>
+            <button class="btn btn-outline" id="resetLsqBtn">↺ リセット</button>
+          </div>
+
+          <div class="error-meter" id="errorMeter">
+            <span>📐 最小二乗法（オレンジの正方形の合計面積）</span>
+            <span id="errorSumText">ボタンを押してスタート！</span>
+          </div>
+
+          <!-- 教科書データ表の一部 -->
+          <details style="margin-top:14px;">
+            <summary style="cursor:pointer;font-weight:800;color:var(--teal);font-size:0.92rem;">📋 教科書の元データ表を見る（1月1日〜1月8日）</summary>
+            <div class="data-table-wrap" style="margin-top:8px;">
+              <table class="mini-table">
+                <thead>
+                  <tr><th>日付</th><th>平均気温 (℃)</th><th>飲料販売量 (本)</th><th>日付</th><th>平均気温 (℃)</th><th>飲料販売量 (本)</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1月1日</td><td>7.5</td><td>296</td><td>1月5日</td><td>10.9</td><td>429</td></tr>
+                  <tr><td>1月2日</td><td>7.3</td><td>414</td><td>1月6日</td><td>8.9</td><td>478</td></tr>
+                  <tr><td>1月3日</td><td>9.3</td><td>343</td><td>1月7日</td><td>8.7</td><td>384</td></tr>
+                  <tr><td>1月4日</td><td>9.2</td><td>514</td><td>1月8日</td><td>6.8</td><td>541</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+
+        <!-- 右：体験② 明日の仕入れ本数を予測しよう！ -->
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title">🔮 明日の仕入れ本数を予測しよう！</div>
+          <p style="font-size:0.9rem;color:var(--text-sub);margin-bottom:10px;">
+            単回帰分析で求めた<strong>回帰式</strong>に、明日の予想気温 X を入れると、売れる本数 Y を予測できます！
+          </p>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="tempSlider" style="font-weight:800;font-size:0.95rem;">🌡️ 明日の予想気温（X）</label>
+            <span id="tempValBadge" style="font-size:1.5rem;font-weight:900;color:var(--primary);">30 ℃</span>
+          </div>
+
+          <input type="range" id="tempSlider" min="5" max="35" step="1" value="30">
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:700;color:var(--text-sub);margin-top:4px;">
+            <span>5℃（冬）</span>
+            <span>20℃（春・秋）</span>
+            <span>35℃（猛暑）</span>
+          </div>
+
+          <div class="preset-row">
+            <button class="btn btn-outline btn-sm" onclick="setTempPreset(10)">❄️ 10℃</button>
+            <button class="btn btn-outline btn-sm" onclick="setTempPreset(20)">🌤️ 20℃（ワークシート）</button>
+            <button class="btn btn-outline btn-sm" onclick="setTempPreset(30)">☀️ 30℃（教科書例）</button>
+          </div>
+
+          <!-- 回帰式のリアルタイム計算表示 -->
+          <div class="formula-box">
+            Y = 6.4205 × <span class="hl-x" id="calcX">30</span> + 370.87<br>
+            = <span id="calcRaw">563.49</span> → <span class="hl-y">約 <span id="calcRound">563</span> 本</span>
+          </div>
+
+          <!-- 天気＆コンビニのドリンク棚アニメーション -->
+          <div class="store-visual" id="storeVisual">
+            <div class="store-top">
+              <div class="weather-pill" id="weatherPill">☀️ 真夏日！ゴクゴク売れる</div>
+              <div class="predict-big"><span id="predictBigNum">563</span><span style="font-size:1rem;"> 本</span></div>
+            </div>
+            <div class="shelf-box">
+              <div class="shelf-label">🥤 コンビニ冷蔵棚の仕入れイメージ（1本 ＝ 約30本分）</div>
+              <div class="bottle-grid" id="bottleGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- プラスワン：POSシステム -->
+      <div class="pos-card" style="margin-top:22px;">
+        <div class="pos-icon">🧾</div>
+        <div style="flex:1;min-width:240px;">
+          <div style="font-size:1.08rem;font-weight:900;color:#0f766e;margin-bottom:4px;">
+            💡 プラスワン：コンビニのレジの裏側「POS（ポス）システム」
+          </div>
+          <p style="font-size:0.93rem;color:#134e4a;">
+            コンビニのレジで「ピッ！」とバーコードを読み取るとき、<strong>「いつ・どの商品が・いくらで・どんな決済方法で・どんなお客さんに」</strong>売れたかというデータが自動で集められています。このデータを分析することで、天気予報に合わせた仕入れや、新商品の開発（販売戦略）に役立てています！
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================
+       下部ナビゲーション（「前へ」「次へ」）
+       ========================================= -->
+  <footer>
+    <div class="footer-inner">
+      <button class="btn btn-outline" id="prevBtn">◀ 前へ</button>
+      <div class="step-dots" id="stepDots">
+        <div class="step-dot active" data-index="0" title="① 相関と因果"></div>
+        <div class="step-dot" data-index="1" title="問題1：アイスの謎"></div>
+        <div class="step-dot" data-index="2" title="問題2：ウソを見破れ！"></div>
+        <div class="step-dot" data-index="3" title="② 未来を予測！"></div>
+      </div>
+      <button class="btn btn-primary" id="nextBtn">次へ ▶</button>
+    </div>
+  </footer>
+
+  <!-- =========================================
+       JavaScript ロジック（純粋JS・外部依存なし）
+       ========================================= -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* =========================================
+         1. ナビゲーション制御
+         ========================================= */
+      const sections = ['sec1', 'sec2', 'sec3', 'sec4'];
+      let currentIdx = 0;
+
+      const navTabs = document.querySelectorAll('.nav-tab');
+      const stepDots = document.querySelectorAll('.step-dot');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+
+      function showSection(index) {
+        if (index < 0 || index >= sections.length) return;
+        currentIdx = index;
+
+        sections.forEach((id, idx) => {
+          document.getElementById(id).classList.toggle('active', idx === currentIdx);
+        });
+        navTabs.forEach((tab, idx) => {
+          tab.classList.toggle('active', idx === currentIdx);
+        });
+        stepDots.forEach((dot, idx) => {
+          dot.classList.toggle('active', idx === currentIdx);
+        });
+
+        prevBtn.disabled = currentIdx === 0;
+        prevBtn.style.opacity = currentIdx === 0 ? '0.4' : '1';
+        nextBtn.disabled = currentIdx === sections.length - 1;
+        nextBtn.style.opacity = currentIdx === sections.length - 1 ? '0.4' : '1';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // セクション2を開いたときにまだプロットされていなければ自動でプロット
+        if (currentIdx === 1 && !icePlottedOnce) {
+          plotIceData();
+        }
+      }
+
+      navTabs.forEach((tab, idx) => {
+        tab.addEventListener('click', () => showSection(idx));
+      });
+      stepDots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => showSection(idx));
+      });
+      prevBtn.addEventListener('click', () => showSection(currentIdx - 1));
+      nextBtn.addEventListener('click', () => showSection(currentIdx + 1));
+
+      /* =========================================
+         2. セクション1：相関係数シミュレーター
+         ========================================= */
+      // 固定の標準化データペア (u, v) を32個用意（再現性と綺麗な分布のため）
+      const basePairs = [
+        [-1.65, 0.35], [-1.45, -0.55], [-1.30, 0.80], [-1.15, -0.20],
+        [-1.00, 0.95], [-0.90, -0.85], [-0.75, 0.15], [-0.65, 1.20],
+        [-0.55, -0.60], [-0.45, 0.45], [-0.35, -1.15], [-0.25, 0.70],
+        [-0.15, -0.35], [-0.08, 1.35], [0.00, -0.95], [0.08, 0.25],
+        [0.15, -0.10], [0.22, 0.90], [0.30, -1.25], [0.40, 0.50],
+        [0.50, -0.50], [0.60, 1.05], [0.70, -0.80], [0.80, 0.20],
+        [0.92, -0.30], [1.05, 0.85], [1.15, -0.90], [1.25, 0.40],
+        [1.38, -0.45], [1.50, 0.65], [1.62, -0.15], [-0.82, -1.30]
+      ];
+
+      const corrDotsGroup = document.getElementById('corrDotsGroup');
+      const corrTrendLine = document.getElementById('corrTrendLine');
+      const rSlider = document.getElementById('rSlider');
+      const rValueText = document.getElementById('rValueText');
+      const rStatusPill = document.getElementById('rStatusPill');
+      const corrExampleBox = document.getElementById('corrExampleBox');
+      const corrExampleText = document.getElementById('corrExampleText');
+      const corrExampleSub = document.getElementById('corrExampleSub');
+
+      const corrDotEls = [];
+      const currentPos = [];
+      let targetR = 0.8;
+      let displayR = 0.8;
+
+      // SVG座標変換（x, y はおよそ -2.2 〜 +2.2）
+      function toCorrSvgX(val) {
+        return 245 + val * 82;
+      }
+      function toCorrSvgY(val) {
+        return 150 - val * 54;
+      }
+
+      // ドット生成
+      basePairs.forEach(([u, v]) => {
+        const y = targetR * u + Math.sqrt(Math.max(0, 1 - targetR * targetR)) * v;
+        const cx = toCorrSvgX(u);
+        const cy = toCorrSvgY(y);
+        currentPos.push({ x: cx, y: cy });
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', '6.5');
+        circle.setAttribute('fill', '#2563eb');
+        circle.setAttribute('stroke', '#ffffff');
+        circle.setAttribute('stroke-width', '2');
+        corrDotsGroup.appendChild(circle);
+        corrDotEls.push(circle);
+      });
+
+      function updateCorrInfo(r) {
+        const sign = r > 0 ? '+' : '';
+        rValueText.textContent = sign + r.toFixed(2);
+
+        let label = '';
+        let bg = '';
+        let fg = '';
+        let ex = '';
+        let sub = '';
+
+        if (r >= 0.7) {
+          label = '強い正の相関（右上がり）';
+          bg = '#dbeafe'; fg = '#1d4ed8';
+          ex = '☀️ 気温が高いほど、アイスクリームがよく売れる！';
+          sub = 'Xが増えるとYもはっきり増えます。点が右上がりの直線にギュッと集まります。';
+        } else if (r >= 0.25) {
+          label = '弱い正の相関（ゆるい右上がり）';
+          bg = '#e0f2fe'; fg = '#0369a1';
+          ex = '📚 勉強時間が長いほど、テストの点が上がりやすい';
+          sub = '全体的に右上がりですが、個人差などがあって少しバラつきがあります。';
+        } else if (r > -0.25) {
+          label = 'ほぼ無相関（関係なし）';
+          bg = '#f1f5f9'; fg = '#475569';
+          ex = '👟 靴のサイズと、英語のテストの点数';
+          sub = '点がバラバラに散らばり、片方が増えてももう片方に決まった傾向はありません。';
+        } else if (r > -0.7) {
+          label = '弱い負の相関（ゆるい右下がり）';
+          bg = '#ffedd5'; fg = '#c2410c';
+          ex = '📱 スマホ時間が長いほど、睡眠時間が短くなりやすい';
+          sub = 'Xが増えるとYが減る傾向がゆるやかに見られます。';
+        } else {
+          label = '強い負の相関（右下がり）';
+          bg = '#ffe4e6'; fg = '#be123c';
+          ex = '🧥 気温が高いほど、冬用コートやカイロの売上が減る！';
+          sub = 'Xが増えるとYがはっきり減ります。点が右下がりの直線にギュッと集まります。';
+        }
+
+        rStatusPill.textContent = label;
+        rStatusPill.style.background = bg;
+        rStatusPill.style.color = fg;
+        corrExampleBox.style.borderLeftColor = fg;
+        corrExampleText.textContent = ex;
+        corrExampleSub.textContent = sub;
+
+        // ドット色も相関の向きに合わせて変化
+        const dotColor = r >= 0.25 ? '#2563eb' : (r <= -0.25 ? '#e11d48' : '#64748b');
+        corrDotEls.forEach(el => el.setAttribute('fill', dotColor));
+        corrTrendLine.setAttribute('stroke', dotColor);
+      }
+
+      // 滑らかに点を動かすアニメーションループ
+      function animateCorr() {
+        displayR += (targetR - displayR) * 0.16;
+        const sqrtPart = Math.sqrt(Math.max(0, 1 - displayR * displayR));
+
+        basePairs.forEach(([u, v], i) => {
+          const yVal = displayR * u + sqrtPart * v;
+          const tx = toCorrSvgX(u);
+          const ty = Math.max(34, Math.min(266, toCorrSvgY(yVal)));
+          currentPos[i].x += (tx - currentPos[i].x) * 0.22;
+          currentPos[i].y += (ty - currentPos[i].y) * 0.22;
+          corrDotEls[i].setAttribute('cx', currentPos[i].x.toFixed(1));
+          corrDotEls[i].setAttribute('cy', currentPos[i].y.toFixed(1));
+        });
+
+        // 傾向ラインの更新
+        const yLeft = toCorrSvgY(displayR * (-1.9));
+        const yRight = toCorrSvgY(displayR * (1.9));
+        corrTrendLine.setAttribute('x1', toCorrSvgX(-1.9));
+        corrTrendLine.setAttribute('y1', Math.max(30, Math.min(270, yLeft)));
+        corrTrendLine.setAttribute('x2', toCorrSvgX(1.9));
+        corrTrendLine.setAttribute('y2', Math.max(30, Math.min(270, yRight)));
+        corrTrendLine.setAttribute('opacity', Math.min(0.65, Math.abs(displayR) * 0.8));
+
+        requestAnimationFrame(animateCorr);
+      }
+
+      rSlider.addEventListener('input', (e) => {
+        targetR = parseFloat(e.target.value);
+        updateCorrInfo(targetR);
+      });
+
+      window.setCorrPreset = function (val) {
+        targetR = val;
+        rSlider.value = val;
+        updateCorrInfo(val);
+      };
+
+      // 3つの規準カード開閉
+      window.toggleCriteria = function (el) {
+        el.classList.toggle('revealed');
+      };
+
+      document.getElementById('revealAllCriteriaBtn').addEventListener('click', () => {
+        const cards = document.querySelectorAll('.criteria-card');
+        cards.forEach(c => c.classList.remove('revealed'));
+        cards.forEach((c, idx) => {
+          setTimeout(() => c.classList.add('revealed'), idx * 450 + 100);
+        });
+      });
+
+      updateCorrInfo(0.8);
+      animateCorr();
+
+      /* =========================================
+         3. セクション2：問題1（アイスクリームと水難事故）
+         ========================================= */
+      // 教科書の12ヶ月分の散布図を再現したデータ（億円, 件）
+      const iceData = [
+        { m: '1月', x: 0.9, y: 4 },
+        { m: '2月', x: 1.3, y: 15 },
+        { m: '3月', x: 2.2, y: 7 },
+        { m: '4月', x: 3.6, y: 24 },
+        { m: '5月', x: 4.9, y: 26 },
+        { m: '6月', x: 5.6, y: 29 },
+        { m: '7月', x: 7.6, y: 52 },
+        { m: '8月', x: 10.7, y: 75 },
+        { m: '9月', x: 9.0, y: 62 },
+        { m: '10月', x: 7.2, y: 46 },
+        { m: '11月', x: 5.6, y: 34 },
+        { m: '12月', x: 5.8, y: 22 }
+      ];
+
+      const iceGrid = document.getElementById('iceGrid');
+      const iceAxesText = document.getElementById('iceAxesText');
+      const iceDotsGroup = document.getElementById('iceDotsGroup');
+      let icePlottedOnce = false;
+
+      // 軸とグリッド描画（x: 0..12, y: 0..80）
+      for (let xVal = 0; xVal <= 12; xVal += 2) {
+        const px = 65 + (xVal / 12) * 365;
+        if (xVal > 0 && xVal < 12) {
+          const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          l.setAttribute('x1', px); l.setAttribute('y1', 25);
+          l.setAttribute('x2', px); l.setAttribute('y2', 270);
+          iceGrid.appendChild(l);
+        }
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', px); t.setAttribute('y', 288);
+        t.setAttribute('text-anchor', 'middle');
+        t.textContent = xVal;
+        iceAxesText.appendChild(t);
+      }
+
+      for (let yVal = 0; yVal <= 80; yVal += 10) {
+        const py = 270 - (yVal / 80) * 245;
+        if (yVal > 0 && yVal < 80) {
+          const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          l.setAttribute('x1', 65); l.setAttribute('y1', py);
+          l.setAttribute('x2', 430); l.setAttribute('y2', py);
+          iceGrid.appendChild(l);
+        }
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', 55); t.setAttribute('y', py + 4);
+        t.setAttribute('text-anchor', 'end');
+        t.textContent = yVal;
+        iceAxesText.appendChild(t);
+      }
+
+      // 12個のドットを作成
+      const iceDotEls = iceData.map((d) => {
+        const cx = 65 + (d.x / 12) * 365;
+        const cy = 270 - (d.y / 80) * 245;
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', cx.toFixed(1));
+        c.setAttribute('cy', cy.toFixed(1));
+        c.setAttribute('r', '7');
+        c.setAttribute('fill', '#10b981');
+        c.setAttribute('stroke', '#ffffff');
+        c.setAttribute('stroke-width', '2');
+        c.classList.add('ice-dot');
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = `${d.m}：売上 約${d.x}億円 / 水難事故 約${d.y}件`;
+        c.appendChild(title);
+        iceDotsGroup.appendChild(c);
+        return c;
+      });
+
+      function plotIceData() {
+        icePlottedOnce = true;
+        iceDotEls.forEach(el => el.classList.remove('shown'));
+        iceDotEls.forEach((el, i) => {
+          setTimeout(() => el.classList.add('shown'), i * 95 + 60);
+        });
+      }
+
+      document.getElementById('plotIceBtn').addEventListener('click', plotIceData);
+
+      // 真犯人をあばくアニメーション
+      const sunGroup = document.getElementById('sunGroup');
+      const arrowToIce = document.getElementById('arrowToIce');
+      const arrowToAcc = document.getElementById('arrowToAcc');
+      const iceLinkLine = document.getElementById('iceLinkLine');
+      const iceLinkLabel = document.getElementById('iceLinkLabel');
+      const spuriousStamp = document.getElementById('spuriousStamp');
+      const iceSummary = document.getElementById('iceSummary');
+
+      document.getElementById('revealCulpritBtn').addEventListener('click', () => {
+        sunGroup.classList.add('revealed');
+        arrowToIce.classList.add('revealed');
+        arrowToAcc.classList.add('revealed');
+        spuriousStamp.classList.add('revealed');
+
+        // アイスと水難事故の線を点線に変更
+        setTimeout(() => {
+          iceLinkLine.setAttribute('stroke', '#94a3b8');
+          iceLinkLine.setAttribute('stroke-dasharray', '7 6');
+          iceLinkLine.removeAttribute('marker-end');
+          iceLinkLabel.style.opacity = '0';
+          iceSummary.classList.add('shown');
+        }, 700);
+      });
+
+      document.getElementById('resetIceBtn').addEventListener('click', () => {
+        sunGroup.classList.remove('revealed');
+        arrowToIce.classList.remove('revealed');
+        arrowToAcc.classList.remove('revealed');
+        spuriousStamp.classList.remove('revealed');
+        iceLinkLine.setAttribute('stroke', '#e11d48');
+        iceLinkLine.removeAttribute('stroke-dasharray');
+        iceLinkLine.setAttribute('marker-end', 'url(#arrowRed)');
+        iceLinkLabel.style.opacity = '1';
+        iceSummary.classList.remove('shown');
+      });
+
+      /* =========================================
+         4. セクション3：問題2（クイズ＆図解）
+         ========================================= */
+      window.switchQuiz = function (num) {
+        document.getElementById('quizPanel1').style.display = num === 1 ? 'block' : 'none';
+        document.getElementById('quizPanel2').style.display = num === 2 ? 'block' : 'none';
+        document.getElementById('qTab1').classList.toggle('active', num === 1);
+        document.getElementById('qTab2').classList.toggle('active', num === 2);
+      };
+
+      window.checkQuiz = function (qNum, choice, btnEl) {
+        const panel = document.getElementById('quizPanel' + qNum);
+        const btns = panel.querySelectorAll('.choice-btn');
+        btns.forEach(b => b.classList.remove('correct', 'wrong'));
+
+        const fb = document.getElementById('quiz' + qNum + 'Feedback');
+        fb.classList.remove('is-hint', 'is-correct');
+        fb.classList.add('shown');
+
+        if (qNum === 1) {
+          if (choice === 3) {
+            btnEl.classList.add('correct');
+            fb.classList.add('is-correct');
+            fb.innerHTML = '🎉 <strong>大正解！規準3（交絡因子の排除）</strong>を満たしていません！<br>高学年の小学生ほど身長も高く、算数もたくさん習っているため、<strong>「学年（年齢）」という交絡因子</strong>が両方に影響しています。';
+
+            const vis = document.getElementById('quiz1Visual');
+            vis.style.display = 'block';
+            const g = document.getElementById('q1GradeGroup');
+            const al = document.getElementById('q1ArrL');
+            const ar = document.getElementById('q1ArrR');
+            g.classList.remove('revealed'); al.classList.remove('revealed'); ar.classList.remove('revealed');
+            setTimeout(() => {
+              g.classList.add('revealed');
+              al.classList.add('revealed');
+              ar.classList.add('revealed');
+            }, 60);
+          } else {
+            btnEl.classList.add('wrong');
+            fb.classList.add('is-hint');
+            fb.innerHTML = choice === 1
+              ? '💡 <strong>ヒント：</strong>「身長が高いほど成績が良い」という相関（共変性）自体はデータに出ていますよ！1年生と6年生を混ぜてテストしていることに注目してみよう。'
+              : '💡 <strong>ヒント：</strong>身長とテストの点数の裏に、両方を大きくしている<strong>「かくれた第3の原因（1年生と6年生のちがい）」</strong>がひそんでいませんか？';
+          }
+        } else if (qNum === 2) {
+          if (choice === 2) {
+            btnEl.classList.add('correct');
+            fb.classList.add('is-correct');
+            fb.innerHTML = '🎉 <strong>大正解！規準2（時間的順序関係）</strong>を満たしていません！<br>消防車が来たから火事が大きくなったのではなく、<strong>「火事が大きい（先・原因）」から「消防車が多く出動する（後・結果）」</strong>という順番が逆になっています！';
+
+            const vis = document.getElementById('quiz2Visual');
+            vis.style.display = 'block';
+            const arrow = document.getElementById('q2FlipArrow');
+            const topLabel = document.getElementById('q2TopLabel');
+            const leftTag = document.getElementById('q2LeftTag');
+            const rightTag = document.getElementById('q2RightTag');
+
+            // 初期状態にしてからクルッと反転させる
+            arrow.classList.remove('flipped');
+            topLabel.textContent = '❌ 誤った考え：消防車 → 火事が大きい？';
+            topLabel.setAttribute('fill', '#e11d48');
+            leftTag.textContent = '（原因？）';
+            rightTag.textContent = '（結果？）';
+
+            setTimeout(() => {
+              arrow.classList.add('flipped');
+              topLabel.textContent = '✅ 正しい順序：火事が大きい（先） → 消防車が多く出動（後）！';
+              topLabel.setAttribute('fill', '#15803d');
+              leftTag.textContent = '【後・結果】';
+              leftTag.setAttribute('fill', '#1e40af');
+              rightTag.textContent = '【先・原因】';
+              rightTag.setAttribute('fill', '#ea580c');
+            }, 550);
+          } else {
+            btnEl.classList.add('wrong');
+            fb.classList.add('is-hint');
+            fb.innerHTML = choice === 1
+              ? '💡 <strong>ヒント：</strong>消防車の台数と火事の大きさには強い相関（共変性）がありますよ！どっちが<strong>先に</strong>起きる出来事か考えてみよう。'
+              : '💡 <strong>ヒント：</strong>「火事が大きくなる」のと「消防車が出動する」の、<strong>時間の順番</strong>をよく思い出してみよう！';
+          }
+        }
+      };
+
+      /* =========================================
+         5. セクション4：単回帰分析＆コンビニ店長シミュレーター
+         ========================================= */
+      // 教科書の回帰式：Y = 6.4205 X + 370.87
+      const TRUE_A = 6.4205;
+      const TRUE_B = 370.87;
+
+      // 教科書の1月1日〜8日のデータ＋回帰式に沿った年間サンプル点
+      const regPoints = [
+        [7.5, 296], [7.3, 414], [9.3, 343], [9.2, 514],
+        [10.9, 429], [8.9, 478], [8.7, 384], [6.8, 541],
+        [3.5, 390], [4.8, 355], [5.5, 450], [6.2, 330],
+        [11.5, 480], [12.4, 395], [13.2, 465], [14.0, 520],
+        [14.8, 420], [15.6, 510], [16.5, 455], [17.3, 545],
+        [18.2, 475], [19.0, 580], [19.8, 435], [20.5, 520],
+        [21.4, 605], [22.2, 485], [23.0, 560], [23.8, 450],
+        [24.6, 590], [25.5, 515], [26.2, 620], [27.0, 540],
+        [27.8, 650], [28.6, 575], [29.4, 610], [31.2, 590]
+      ];
+
+      // 最小二乗法の正方形を見やすく表示する代表点（8点）
+      const lsqSampleIndices = [0, 3, 12, 17, 21, 27, 31, 34];
+
+      const regGrid = document.getElementById('regGrid');
+      const regAxesText = document.getElementById('regAxesText');
+      const regDotsGroup = document.getElementById('regDotsGroup');
+      const lsqSquaresGroup = document.getElementById('lsqSquaresGroup');
+      const regLine = document.getElementById('regLine');
+      const predictGuideGroup = document.getElementById('predictGuideGroup');
+      const guideV = document.getElementById('guideV');
+      const guideH = document.getElementById('guideH');
+      const predictDot = document.getElementById('predictDot');
+      const errorSumText = document.getElementById('errorSumText');
+
+      // 座標変換（X: 0..35, Y: 0..800）
+      function toRegX(temp) { return 65 + (temp / 35) * 385; }
+      function toRegY(sales) { return 282 - (sales / 800) * 260; }
+
+      // グリッドと目盛り描画
+      for (let x = 0; x <= 35; x += 5) {
+        const px = toRegX(x);
+        if (x > 0 && x < 35) {
+          const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          l.setAttribute('x1', px); l.setAttribute('y1', 22);
+          l.setAttribute('x2', px); l.setAttribute('y2', 282);
+          regGrid.appendChild(l);
+        }
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', px); t.setAttribute('y', 298);
+        t.setAttribute('text-anchor', 'middle');
+        t.textContent = x;
+        regAxesText.appendChild(t);
+      }
+
+      for (let y = 0; y <= 800; y += 100) {
+        const py = toRegY(y);
+        if (y > 0 && y < 800) {
+          const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          l.setAttribute('x1', 65); l.setAttribute('y1', py);
+          l.setAttribute('x2', 450); l.setAttribute('y2', py);
+          regGrid.appendChild(l);
+        }
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', 56); t.setAttribute('y', py + 4);
+        t.setAttribute('text-anchor', 'end');
+        t.textContent = y;
+        regAxesText.appendChild(t);
+      }
+
+      // 散布図の点をプロット
+      regPoints.forEach(([x, y], idx) => {
+        const isSample = lsqSampleIndices.includes(idx);
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', toRegX(x).toFixed(1));
+        c.setAttribute('cy', toRegY(y).toFixed(1));
+        c.setAttribute('r', isSample ? '5' : '3.6');
+        c.setAttribute('fill', isSample ? '#0d9488' : '#34d399');
+        if (isSample) {
+          c.setAttribute('stroke', '#ffffff');
+          c.setAttribute('stroke-width', '1.5');
+        }
+        regDotsGroup.appendChild(c);
+      });
+
+      // 最小二乗法の正方形要素を作成
+      const lsqRects = lsqSampleIndices.map(() => {
+        const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r.setAttribute('fill', 'rgba(249, 115, 22, 0.22)');
+        r.setAttribute('stroke', '#ea580c');
+        r.setAttribute('stroke-width', '1.5');
+        r.setAttribute('opacity', '0');
+        lsqSquaresGroup.appendChild(r);
+        return r;
+      });
+
+      let lsqAnimId = null;
+      let isLineShown = false;
+
+      function drawRegLineAndSquares(a, b, showSquares) {
+        const x1 = 2, x2 = 33;
+        regLine.setAttribute('x1', toRegX(x1));
+        regLine.setAttribute('y1', toRegY(a * x1 + b));
+        regLine.setAttribute('x2', toRegX(x2));
+        regLine.setAttribute('y2', toRegY(a * x2 + b));
+        regLine.setAttribute('opacity', '1');
+
+        let sumSq = 0;
+        lsqSampleIndices.forEach((pIdx, i) => {
+          const [px, py] = regPoints[pIdx];
+          const predY = a * px + b;
+          const diffData = py - predY;
+          sumSq += diffData * diffData;
+
+          const svgX = toRegX(px);
+          const svgYDot = toRegY(py);
+          const svgYLine = toRegY(predY);
+          const side = Math.abs(svgYDot - svgYLine);
+
+          const rect = lsqRects[i];
+          rect.setAttribute('opacity', showSquares ? '1' : '0');
+          rect.setAttribute('x', svgX);
+          rect.setAttribute('y', Math.min(svgYDot, svgYLine));
+          rect.setAttribute('width', side);
+          rect.setAttribute('height', side);
+        });
+
+        return Math.round(sumSq);
+      }
+
+      // 最小二乗法アニメーション実行
+      document.getElementById('runLsqBtn').addEventListener('click', () => {
+        if (lsqAnimId) cancelAnimationFrame(lsqAnimId);
+        isLineShown = true;
+
+        // わざとズレた初期直線からスタートして最適な回帰直線へ収束
+        const startA = -2.2;
+        const startB = 560;
+        const duration = 1800;
+        const startTime = performance.now();
+
+        function step(now) {
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / duration);
+          // イージング（easeOutCubic）
+          const ease = 1 - Math.pow(1 - t, 3);
+
+          const curA = startA + (TRUE_A - startA) * ease;
+          const curB = startB + (TRUE_B - startB) * ease;
+          const errVal = drawRegLineAndSquares(curA, curB, true);
+
+          errorSumText.textContent = t < 1
+            ? `ズレの2乗の合計：${errVal.toLocaleString()}（縮小中…）`
+            : `最小値：${errVal.toLocaleString()} ✨ ベストな直線に収束！`;
+
+          if (t < 1) {
+            lsqAnimId = requestAnimationFrame(step);
+          } else {
+            predictGuideGroup.setAttribute('opacity', '1');
+            updateTempPrediction(parseInt(tempSlider.value, 10));
+          }
+        }
+
+        lsqAnimId = requestAnimationFrame(step);
+      });
+
+      document.getElementById('resetLsqBtn').addEventListener('click', () => {
+        if (lsqAnimId) cancelAnimationFrame(lsqAnimId);
+        isLineShown = false;
+        regLine.setAttribute('opacity', '0');
+        predictGuideGroup.setAttribute('opacity', '0');
+        lsqRects.forEach(r => r.setAttribute('opacity', '0'));
+        errorSumText.textContent = 'ボタンを押してスタート！';
+      });
+
+      // 体験②：明日の仕入れ予測スライダー
+      const tempSlider = document.getElementById('tempSlider');
+      const tempValBadge = document.getElementById('tempValBadge');
+      const calcX = document.getElementById('calcX');
+      const calcRaw = document.getElementById('calcRaw');
+      const calcRound = document.getElementById('calcRound');
+      const predictBigNum = document.getElementById('predictBigNum');
+      const storeVisual = document.getElementById('storeVisual');
+      const weatherPill = document.getElementById('weatherPill');
+      const bottleGrid = document.getElementById('bottleGrid');
+
+      function updateTempPrediction(temp) {
+        const rawY = TRUE_A * temp + TRUE_B;
+        const roundY = Math.round(rawY);
+
+        tempValBadge.textContent = `${temp} ℃`;
+        calcX.textContent = temp;
+        calcRaw.textContent = rawY.toFixed(2);
+        calcRound.textContent = roundY;
+        predictBigNum.textContent = roundY;
+
+        // 散布図のガイド線を更新（スライダー操作時は回帰直線も表示）
+        if (!isLineShown) {
+          drawRegLineAndSquares(TRUE_A, TRUE_B, false);
+          isLineShown = true;
+          errorSumText.textContent = '回帰式 Y = 6.4205X + 370.87 を表示中';
+        }
+        predictGuideGroup.setAttribute('opacity', '1');
+
+        const px = toRegX(temp);
+        const py = toRegY(rawY);
+        guideV.setAttribute('x1', px); guideV.setAttribute('y1', 282);
+        guideV.setAttribute('x2', px); guideV.setAttribute('y2', py);
+        guideH.setAttribute('x1', 65); guideH.setAttribute('y1', py);
+        guideH.setAttribute('x2', px); guideH.setAttribute('y2', py);
+        predictDot.setAttribute('cx', px);
+        predictDot.setAttribute('cy', py);
+
+        // 気温に応じた背景＆天気コメント
+        if (temp <= 11) {
+          storeVisual.style.background = 'linear-gradient(135deg, #e0f2fe, #dbeafe)';
+          weatherPill.textContent = '❄️ 寒い冬の日（ホットが人気）';
+        } else if (temp <= 22) {
+          storeVisual.style.background = 'linear-gradient(135deg, #ecfccb, #fef9c3)';
+          weatherPill.textContent = '🌤️ 過ごしやすい陽気';
+        } else if (temp <= 28) {
+          storeVisual.style.background = 'linear-gradient(135deg, #ffedd5, #fed7aa)';
+          weatherPill.textContent = '☀️ 暑い日！冷たい飲料が好調';
+        } else {
+          storeVisual.style.background = 'linear-gradient(135deg, #fecaca, #fed7aa)';
+          weatherPill.textContent = '🔥 猛暑日！ゴクゴク売れる！';
+        }
+
+        // 棚のドリンクアイコン本数（約30本につき1アイコン）
+        const iconCount = Math.max(8, Math.round(roundY / 30));
+        const icons = ['🥤', '🧃', '🍵', '💧'];
+        bottleGrid.innerHTML = '';
+        for (let i = 0; i < iconCount; i++) {
+          const span = document.createElement('span');
+          span.className = 'bottle-icon';
+          span.textContent = icons[i % icons.length];
+          bottleGrid.appendChild(span);
+        }
+      }
+
+      tempSlider.addEventListener('input', (e) => {
+        updateTempPrediction(parseInt(e.target.value, 10));
+      });
+
+      window.setTempPreset = function (t) {
+        tempSlider.value = t;
+        updateTempPrediction(t);
+      };
+
+      // 初期状態（気温30℃の計算結果・棚表示をセットしつつ、直線は未表示で最小二乗法体験を待つ）
+      (function initTempDisplayOnly() {
+        const temp = 30;
+        const rawY = TRUE_A * temp + TRUE_B;
+        const roundY = Math.round(rawY);
+        tempValBadge.textContent = `${temp} ℃`;
+        calcX.textContent = temp;
+        calcRaw.textContent = rawY.toFixed(2);
+        calcRound.textContent = roundY;
+        predictBigNum.textContent = roundY;
+        storeVisual.style.background = 'linear-gradient(135deg, #fecaca, #fed7aa)';
+        weatherPill.textContent = '🔥 猛暑日！ゴクゴク売れる！';
+        const iconCount = Math.round(roundY / 30);
+        const icons = ['🥤', '🧃', '🍵', '💧'];
+        for (let i = 0; i < iconCount; i++) {
+          const span = document.createElement('span');
+          span.className = 'bottle-icon';
+          span.textContent = icons[i % icons.length];
+          bottleGrid.appendChild(span);
+        }
+      })();
+
+    })();
+  </script>
+</body>
+</html>

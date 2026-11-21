@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>情報Ⅰ「不確実な事象の解釈」アニメ図鑑＆1万回シミュレーション</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans JP"', 'sans-serif'],
+          },
+          colors: {
+            navy: '#1E3A5F',
+            tealbrand: '#2A7B6F',
+            accent: '#E87A3E',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #F4F7FA;
+      color: #1E293B;
+      overflow-x: hidden;
+    }
+
+    /* コイン/ボールの3Dフリップアニメーション */
+    @keyframes coinFlip {
+      0% { transform: rotateY(0deg) scale(0.7); opacity: 0.4; }
+      50% { transform: rotateY(180deg) scale(1.18); opacity: 1; }
+      100% { transform: rotateY(360deg) scale(1); opacity: 1; }
+    }
+    .animate-coin-flip {
+      animation: coinFlip 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* ポップイン演出 */
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      70% { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.35s ease-out forwards;
+    }
+
+    /* 標本抽出で選ばれた人アイコンのハイライト */
+    .person-dot {
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .person-selected {
+      transform: scale(1.3);
+      box-shadow: 0 0 0 3px #1E3A5F, 0 4px 10px rgba(30, 58, 95, 0.35);
+      z-index: 10;
+    }
+    .person-dimmed {
+      opacity: 0.25;
+      transform: scale(0.88);
+    }
+
+    /* カスタムレンジスライダー */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 10px;
+      border-radius: 9999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #1E3A5F;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+    }
+
+    /* スクロールバー調整（ミニ試行テーブル用） */
+    .custom-scroll::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #EEF2F6;
+      border-radius: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ==================== ヘッダー＆ナビゲーション ==================== -->
+  <header class="bg-navy text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 sm:py-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold tracking-wider bg-white/15 px-3 py-1 rounded-full mb-1">
+            <span>📘 高校 情報Ⅰ</span>
+            <span class="text-orange-300">|</span>
+            <span>教科書 pp.128–129「不確実な事象の解釈」</span>
+          </div>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">
+            データの力で「イカサマ」を見抜け！
+          </h1>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-200 max-w-md leading-relaxed">
+          「たまたま（偶然）」か「ワザと（必然）」か？<br class="hidden sm:inline" />
+          アニメと1万回シミュレーションで体感しよう！
+        </p>
+      </div>
+
+      <!-- 大きなメインタブ切替 -->
+      <nav class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="tablist">
+        <button
+          id="tab-btn-words"
+          onclick="switchMainTab('words')"
+          class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm bg-white text-navy ring-2 ring-accent"
+          role="tab"
+          aria-selected="true"
+        >
+          <span class="text-xl">📖</span>
+          <span>① アニメでわかる！重要ワード図鑑</span>
+        </button>
+        <button
+          id="tab-btn-sim"
+          onclick="switchMainTab('sim')"
+          class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm bg-white/15 text-white hover:bg-white/25"
+          role="tab"
+          aria-selected="false"
+        >
+          <span class="text-xl">🪙</span>
+          <span>② 1万回コイン投げシミュレーション（p.129例題）</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== メインコンテンツ ==================== -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-8">
+
+    <!-- ================================================================
+         画面①：アニメでわかる！重要ワード図鑑（p.128-129 全用語網羅）
+         ================================================================ -->
+    <section id="panel-words" class="space-y-8 animate-pop">
+
+      <!-- イントロバナー -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border-l-8 border-accent flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-black text-navy mb-1">まずはここをチェック！教科書の重要キーワード5選</h2>
+          <p class="text-sm sm:text-base text-slate-600">
+            むずかしい数式はナシ！ボタンやスライダーを動かしながら、p.128–129の言葉をスッキリ理解しよう。
+          </p>
+        </div>
+        <button
+          onclick="switchMainTab('sim')"
+          class="shrink-0 bg-accent hover:bg-orange-600 text-white font-bold px-5 py-3 rounded-xl shadow transition flex items-center gap-2 text-sm sm:text-base"
+        >
+          <span>すぐ実験する！</span>
+          <span>➔</span>
+        </button>
+      </div>
+
+      <!-- 1. 仮説検定 ＆ 3ステップのしくみ -->
+      <article class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-navy/5 px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="bg-navy text-white font-black px-3 py-1 rounded-lg text-sm">ワード 1</span>
+            <h3 class="text-xl sm:text-2xl font-black text-navy">仮説検定（かせつけんてい）</h3>
+            <span class="text-xs font-bold bg-tealbrand/15 text-tealbrand px-2.5 py-1 rounded-full">p.128–129</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-play-steps"
+              onclick="playHypothesisSteps()"
+              class="bg-tealbrand hover:bg-teal-800 text-white font-bold px-4 py-2 rounded-xl text-sm shadow transition flex items-center gap-1.5"
+            >
+              <span>▶</span>
+              <span>3ステップをアニメ再生</span>
+            </button>
+            <button
+              onclick="resetHypothesisSteps()"
+              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl text-sm transition"
+            >
+              リセット
+            </button>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-6 space-y-5">
+          <!-- やさしい説明＆たとえ話 -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p class="text-base sm:text-lg font-bold text-navy mb-2">
+                統計的な考え方を使って「たまたま（偶然）」か「ワザと（必然）」かを見極める方法！
+              </p>
+              <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+                たとえばコインを30回投げてオモテが13回や16回なら「まあ偶然かな」と思うけど、<strong>オモテが2回だけ</strong>だったら「絶対インチキだ！」と疑うよね。その判断を<strong>勘ではなくデータの確率で客観的に行うワザ</strong>が「仮説検定」だよ。
+              </p>
+            </div>
+            <div class="bg-orange-50 rounded-xl p-4 border border-orange-200">
+              <div class="text-xs font-black text-accent mb-1">💡 身近なたとえ（スマホのガチャ）</div>
+              <p class="text-sm text-slate-700 leading-relaxed">
+                「運営が確率操作してる！」と直接証明するのは大変。でも<strong>「もし表示どおり公正（H₀）なら、100連爆死する確率は0.01%…ありえない！」</strong>と逆から追い詰めると納得できる！
+              </p>
+            </div>
+          </div>
+
+          <!-- 3ステップ・インタラクティブカード -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- STEP 1 -->
+            <div
+              id="h-step-1"
+              onclick="highlightStep(1)"
+              class="cursor-pointer rounded-2xl p-5 border-2 border-slate-200 bg-white transition-all duration-300 hover:border-tealbrand/60"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="bg-navy text-white text-xs font-black px-2.5 py-1 rounded-full">STEP 1</span>
+                <span class="text-2xl">🔄</span>
+              </div>
+              <h4 class="font-black text-lg text-navy mb-2">あえて「反対の仮説」を立てる</h4>
+              <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                本当に主張したいこと（<strong class="text-accent">H₁：イカサマだ！</strong>）を言うために、まず反対の仮説（<strong class="text-tealbrand">H₀：コインは公正だ</strong>）を仮定する。
+              </p>
+              <div class="bg-slate-100 rounded-lg p-2.5 text-xs font-bold text-slate-700">
+                H₁：オモテが出やすい（主張）<br />
+                H₀：公正である（反対の仮説）
+              </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div
+              id="h-step-2"
+              onclick="highlightStep(2)"
+              class="cursor-pointer rounded-2xl p-5 border-2 border-slate-200 bg-white transition-all duration-300 hover:border-tealbrand/60"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="bg-tealbrand text-white text-xs font-black px-2.5 py-1 rounded-full">STEP 2</span>
+                <span class="text-2xl">💻</span>
+              </div>
+              <h4 class="font-black text-lg text-navy mb-2">H₀のもとで起こる確率を調べる</h4>
+              <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                「もしH₀（公正）が正しいとしたら、今回起きた結果以上に極端なことが<strong>どれくらいの確率で起きるか</strong>」をシミュレーション等で調べる。
+              </p>
+              <div class="bg-slate-100 rounded-lg p-2.5 text-xs font-bold text-slate-700">
+                例：公正なコインで30回中2回以下しかオモテが出ない確率 ＝ 0.00004%！
+              </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div
+              id="h-step-3"
+              onclick="highlightStep(3)"
+              class="cursor-pointer rounded-2xl p-5 border-2 border-slate-200 bg-white transition-all duration-300 hover:border-tealbrand/60"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="bg-accent text-white text-xs font-black px-2.5 py-1 rounded-full">STEP 3</span>
+                <span class="text-2xl">⚖️</span>
+              </div>
+              <h4 class="font-black text-lg text-navy mb-2">めったに起きないならH₁を認める！</h4>
+              <p class="text-sm text-slate-600 leading-relaxed mb-3">
+                その確率が基準（ふつう<strong>5%未満</strong>）なら、「偶然にしてはありえない！<strong>H₀が間違いだ</strong>」と判断し、主張（<strong class="text-accent">H₁</strong>）を認める！
+              </p>
+              <div class="bg-slate-100 rounded-lg p-2.5 text-xs font-bold text-slate-700">
+                5%未満 → H₀はウソ！H₁を主張！<br />
+                5%以上 → 偶然かも…主張できない
+              </div>
+            </div>
+          </div>
+
+          <!-- ステップ解説ナレーションバー -->
+          <div id="h-step-narration" class="bg-navy text-white rounded-xl px-5 py-3.5 text-sm sm:text-base font-bold flex items-center gap-3 transition-all">
+            <span class="text-xl">💬</span>
+            <span>上の「▶ 3ステップをアニメ再生」ボタンか、各STEPカードをクリックして流れを確認しよう！</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. 有意水準（危険率） -->
+      <article class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-navy/5 px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <span class="bg-navy text-white font-black px-3 py-1 rounded-lg text-sm">ワード 2</span>
+            <h3 class="text-xl sm:text-2xl font-black text-navy">有意水準（ゆういすいじゅん）／ 危険率</h3>
+            <span class="text-xs font-bold bg-tealbrand/15 text-tealbrand px-2.5 py-1 rounded-full">p.129</span>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-6 space-y-5">
+          <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+            「どこからを『偶然にしてはありえない』とみなすか？」という<strong>ジャッジの境界線</strong>のこと。ふつう<strong>5%（0.05）</strong>がよく使われるよ。下のスライダーを動かして判定の変化を体感してみよう！
+          </p>
+
+          <!-- インタラクティブ・ゲージ -->
+          <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label for="sig-slider" class="font-bold text-navy text-base sm:text-lg">
+                調べた事象が起こる確率を動かしてみよう：
+              </label>
+              <div class="text-3xl font-black tabular-nums" id="sig-value-text" style="color: #2A7B6F;">
+                8.8%
+              </div>
+            </div>
+
+            <!-- ゾーン可視化バー -->
+            <div class="relative pt-7 pb-2">
+              <!-- 5%ラインのラベル -->
+              <div class="absolute top-0 text-xs font-black text-accent -translate-x-1/2 flex flex-col items-center" style="left: 25%;">
+                <span>▲ 有意水準 5%</span>
+              </div>
+              <div class="w-full h-7 rounded-full overflow-hidden flex shadow-inner border border-slate-300 relative">
+                <!-- 0%〜5% (全体の25%幅) -->
+                <div class="w-1/4 bg-gradient-to-r from-red-500 to-accent flex items-center justify-center text-[11px] sm:text-xs font-black text-white">
+                  5%未満（アウト！）
+                </div>
+                <!-- 5%〜20% (全体の75%幅) -->
+                <div class="w-3/4 bg-gradient-to-r from-tealbrand to-sky-500 flex items-center justify-center text-[11px] sm:text-xs font-black text-white">
+                  5%以上（偶然の範囲）
+                </div>
+              </div>
+              <!-- スライダー本体 -->
+              <input
+                id="sig-slider"
+                type="range"
+                min="0"
+                max="20"
+                step="0.2"
+                value="8.8"
+                oninput="updateSignificanceGauge(this.value)"
+                class="w-full mt-3 bg-slate-200"
+              />
+              <div class="flex justify-between text-xs font-bold text-slate-500 mt-1">
+                <span>0%</span>
+                <span class="text-accent font-black">5%（境界線）</span>
+                <span>10%</span>
+                <span>15%</span>
+                <span>20%</span>
+              </div>
+            </div>
+
+            <!-- リアルタイム判定カード -->
+            <div id="sig-judge-box" class="rounded-xl p-4 sm:p-5 border-2 transition-all duration-300 flex items-center gap-4">
+              <div id="sig-judge-icon" class="text-4xl shrink-0">🤔</div>
+              <div>
+                <div id="sig-judge-title" class="font-black text-lg sm:text-xl mb-1"></div>
+                <p id="sig-judge-desc" class="text-sm sm:text-base"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. 大数の法則 -->
+      <article class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-navy/5 px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="bg-navy text-white font-black px-3 py-1 rounded-lg text-sm">ワード 3</span>
+            <h3 class="text-xl sm:text-2xl font-black text-navy">大数の法則（たいすうのほうそく）</h3>
+            <span class="text-xs font-bold bg-tealbrand/15 text-tealbrand px-2.5 py-1 rounded-full">p.129</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-lln-play"
+              onclick="startLLNAnimation()"
+              class="bg-accent hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl text-sm shadow transition flex items-center gap-1.5"
+            >
+              <span>▶</span>
+              <span>シミュレーション再生（500回）</span>
+            </button>
+            <button
+              onclick="resetLLNAnimation()"
+              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl text-sm transition"
+            >
+              リセット
+            </button>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-6 space-y-4">
+          <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+            試行回数を増やすほど、オモテが出る割合は<strong>一定の値（コインなら 0.5＝50%）に近づいていく</strong>という法則！再生ボタンを押して、最初は激しくブレる線がピタッと0.5に吸い寄せられる様子を見てみよう。
+          </p>
+
+          <!-- ライブ数値バッジ -->
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+              <div class="text-xs font-bold text-slate-500">投げた回数</div>
+              <div id="lln-trials" class="text-xl sm:text-2xl font-black text-navy tabular-nums">0 回</div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+              <div class="text-xs font-bold text-slate-500">オモテが出た回数</div>
+              <div id="lln-heads" class="text-xl sm:text-2xl font-black text-tealbrand tabular-nums">0 回</div>
+            </div>
+            <div class="bg-orange-50 rounded-xl p-3 border border-orange-200">
+              <div class="text-xs font-bold text-accent">今のオモテの割合</div>
+              <div id="lln-ratio" class="text-xl sm:text-2xl font-black text-accent tabular-nums">---</div>
+            </div>
+          </div>
+
+          <!-- 折れ線グラフ Canvas -->
+          <div class="w-full h-64 sm:h-72 bg-slate-50 rounded-xl border border-slate-200 p-2 relative">
+            <canvas id="lln-canvas" class="w-full h-full block"></canvas>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4. 全数調査・標本調査・単純無作為抽出法・層別抽出法 -->
+      <article class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-navy/5 px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <span class="bg-navy text-white font-black px-3 py-1 rounded-lg text-sm">ワード 4</span>
+            <h3 class="text-xl sm:text-2xl font-black text-navy">全数調査・標本調査・単純無作為抽出法・層別抽出法</h3>
+            <span class="text-xs font-bold bg-tealbrand/15 text-tealbrand px-2.5 py-1 rounded-full">p.128 COLUMN</span>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-6 space-y-6">
+          <!-- 全数調査 vs 標本調査 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 flex items-start gap-4">
+              <div class="bg-navy text-white rounded-xl p-3 text-2xl shrink-0">👥</div>
+              <div>
+                <h4 class="font-black text-navy text-lg">全数調査（ぜんすうちょうさ）</h4>
+                <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+                  調査対象（母集団）の<strong>全員</strong>を調べる方法。正確だけど、お金も時間もすごくかかる！（例：国勢調査、クラス全員のアンケート）
+                </p>
+              </div>
+            </div>
+            <div class="bg-teal-50/70 rounded-xl p-4 border border-teal-200 flex items-start gap-4">
+              <div class="bg-tealbrand text-white rounded-xl p-3 text-2xl shrink-0">🎯</div>
+              <div>
+                <h4 class="font-black text-tealbrand text-lg">標本調査（ひょうほんちょうさ）</h4>
+                <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+                  母集団の<strong>一部（標本）</strong>だけを取り出して調べ、全体を推測する方法。ただし<strong>「選び方」をミスると大ハズレ</strong>する！
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1936年アメリカ大統領選挙ミニアニメ -->
+          <div class="bg-slate-50 rounded-2xl p-5 border-2 border-navy/15 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span class="text-xs font-black bg-accent text-white px-2.5 py-1 rounded-full">歴史的大逆転！1936年 アメリカ大統領選挙</span>
+                <h4 class="font-black text-navy text-lg sm:text-xl mt-1.5">
+                  なぜ「200万人調査」がハズレて、「3,000人調査」が的中したの？
+                </h4>
+              </div>
+              <div class="text-xs font-bold bg-white px-3 py-2 rounded-xl border border-slate-200 text-slate-700">
+                実際の結果：<span class="text-tealbrand font-black">ルーズベルト氏 当選（支持率 約62%）</span>
+              </div>
+            </div>
+
+            <!-- 抽出モード切替ボタン -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <button
+                id="btn-sample-biased"
+                onclick="runSamplingDemo('biased')"
+                class="py-3 px-4 rounded-xl font-bold text-sm border-2 transition text-left bg-white border-slate-300 hover:border-accent"
+              >
+                <div class="font-black text-accent">① 偏った名簿（200万人調査）</div>
+                <div class="text-xs text-slate-500 mt-0.5">自動車・電話を持つ富裕層ばかり抽出</div>
+              </button>
+              <button
+                id="btn-sample-random"
+                onclick="runSamplingDemo('random')"
+                class="py-3 px-4 rounded-xl font-bold text-sm border-2 transition text-left bg-white border-slate-300 hover:border-navy"
+              >
+                <div class="font-black text-navy">② 単純無作為抽出法（くじ引き）</div>
+                <div class="text-xs text-slate-500 mt-0.5">完全にランダム（たまに偏るリスクあり）</div>
+              </button>
+              <button
+                id="btn-sample-stratified"
+                onclick="runSamplingDemo('stratified')"
+                class="py-3 px-4 rounded-xl font-bold text-sm border-2 transition text-left bg-white border-slate-300 hover:border-tealbrand"
+              >
+                <div class="font-black text-tealbrand">③ 層別抽出法（3,000人調査）</div>
+                <div class="text-xs text-slate-500 mt-0.5">収入などの層ごとに割合をそろえて抽出</div>
+              </button>
+            </div>
+
+            <!-- 母集団グリッド＆結果表示 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center pt-2">
+              <!-- 母集団ドットエリア -->
+              <div class="lg:col-span-7 bg-white rounded-xl p-4 border border-slate-200">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 text-xs font-bold">
+                  <span class="text-navy">母集団（国民全体 60人のモデル）</span>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-accent inline-block"></span>富裕層(20%):ランドン派多</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-tealbrand inline-block"></span>中間層(40%):ルーズベルト派多</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-navy inline-block"></span>一般層(40%):ルーズベルト派多</span>
+                  </div>
+                </div>
+                <div id="population-grid" class="grid grid-cols-10 gap-2 sm:gap-2.5 justify-items-center py-1">
+                  <!-- JSで60人分のアイコンを生成 -->
+                </div>
+              </div>
+
+              <!-- 抽出結果レポート -->
+              <div class="lg:col-span-5 bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+                <div id="sample-result-badge" class="inline-block text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                  上のボタンを押して抽出してみよう！
+                </div>
+                <h5 id="sample-result-title" class="font-black text-lg text-navy">
+                  どの方法が正確に当てられる？
+                </h5>
+                <p id="sample-result-desc" class="text-sm text-slate-600 leading-relaxed">
+                  3つの抽出ボタンを切り替えると、母集団からどの層（色）の人が選ばれるかアニメーションで比較できます。
+                </p>
+                <!-- 予想グラフバー -->
+                <div id="sample-bars" class="space-y-2 pt-1 hidden">
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-tealbrand">ルーズベルト予想</span>
+                      <span id="bar-roosevelt-pct">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                      <div id="bar-roosevelt" class="bg-tealbrand h-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                      <span class="text-accent">ランドン予想</span>
+                      <span id="bar-landon-pct">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                      <div id="bar-landon" class="bg-accent h-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 5. データサイエンティスト -->
+      <article class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-navy/5 px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <span class="bg-navy text-white font-black px-3 py-1 rounded-lg text-sm">ワード 5</span>
+            <h3 class="text-xl sm:text-2xl font-black text-navy">データサイエンティスト（data scientist）</h3>
+            <span class="text-xs font-bold bg-tealbrand/15 text-tealbrand px-2.5 py-1 rounded-full">p.129</span>
+          </div>
+        </div>
+
+        <div class="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <!-- SVGベン図 -->
+          <div class="md:col-span-5 flex justify-center">
+            <svg viewBox="0 0 320 260" class="w-full max-w-xs drop-shadow-sm" aria-label="データサイエンティストの3つのスキル">
+              <!-- 円1: 情報処理 -->
+              <circle cx="160" cy="88" r="72" fill="#1E3A5F" fill-opacity="0.78" />
+              <text x="160" y="64" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="900">情報処理</text>
+              <text x="160" y="82" text-anchor="middle" fill="#CBD5E1" font-size="10" font-weight="700">プログラミング・AI</text>
+              <!-- 円2: 統計学 -->
+              <circle cx="105" cy="172" r="72" fill="#2A7B6F" fill-opacity="0.78" />
+              <text x="84" y="182" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="900">統計学</text>
+              <text x="84" y="200" text-anchor="middle" fill="#D1FAE5" font-size="10" font-weight="700">確率・仮説検定</text>
+              <!-- 円3: 社会の動向 -->
+              <circle cx="215" cy="172" r="72" fill="#E87A3E" fill-opacity="0.82" />
+              <text x="236" y="182" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="900">社会・企業</text>
+              <text x="236" y="200" text-anchor="middle" fill="#FFEDD5" font-size="10" font-weight="700">ビジネス・課題発見</text>
+              <!-- 中央の重なり -->
+              <circle cx="160" cy="144" r="28" fill="#FFFFFF" stroke="#1E3A5F" stroke-width="3" />
+              <text x="160" y="140" text-anchor="middle" fill="#1E3A5F" font-size="11" font-weight="900">データ</text>
+              <text x="160" y="154" text-anchor="middle" fill="#E87A3E" font-size="10" font-weight="900">解決力!</text>
+            </svg>
+          </div>
+          <!-- 説明テキスト -->
+          <div class="md:col-span-7 space-y-3">
+            <h4 class="text-lg sm:text-xl font-black text-navy">
+              データの内容や分布を解析して、問題解決の道筋を引き出す専門家！
+            </h4>
+            <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+              コンピュータでデータを扱う<strong>「情報処理」</strong>、偶然か必然かを見極める<strong>「統計学」</strong>、そして「今世の中で何が起きているか？」を知る<strong>「社会や企業の動向」</strong>の3つのチカラを組み合わせて活躍する、いま大注目の職業だよ！
+            </p>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <span class="bg-navy/10 text-navy text-xs font-bold px-3 py-1.5 rounded-lg">🏪 コンビニの売れ筋予測</span>
+              <span class="bg-tealbrand/10 text-tealbrand text-xs font-bold px-3 py-1.5 rounded-lg">⚾ プロ野球のデータ分析</span>
+              <span class="bg-accent/15 text-accent text-xs font-bold px-3 py-1.5 rounded-lg">🎵 音楽アプリのおすすめ機能</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ================================================================
+         画面②：教科書p.129 例題シミュレーション（リアルタイム・アニメーション）
+         ================================================================ -->
+    <section id="panel-sim" class="hidden space-y-6 animate-pop">
+
+      <!-- テーマ切替トグル（コイン投げ ⇄ 野球の部活チャレンジ） -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-md border border-slate-200 flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <span id="theme-badge-icon" class="text-3xl sm:text-4xl">🪙</span>
+          <div>
+            <div class="text-xs font-black text-accent tracking-wider uppercase">モード切替で「同じしくみ」を発見！</div>
+            <h2 id="theme-title" class="text-lg sm:text-2xl font-black text-navy">
+              例題：コインを30回投げてオモテ18回はイカサマ？
+            </h2>
+          </div>
+        </div>
+
+        <div class="inline-flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 w-full lg:w-auto">
+          <button
+            id="mode-btn-coin"
+            onclick="setSimTheme('coin')"
+            class="flex-1 lg:flex-none px-4 py-2.5 rounded-lg font-bold text-sm sm:text-base transition bg-navy text-white shadow"
+          >
+            🪙 コイン投げモード
+          </button>
+          <button
+            id="mode-btn-baseball"
+            onclick="setSimTheme('baseball')"
+            class="flex-1 lg:flex-none px-4 py-2.5 rounded-lg font-bold text-sm sm:text-base transition text-slate-600 hover:text-navy"
+          >
+            ⚾ 部活チャレンジ（A校vsB校）
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 1：仮説を立てる -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="bg-navy text-white text-xs font-black px-3 py-1 rounded-full">STEP 1</span>
+          <h3 class="font-black text-navy text-lg">仮説を立てる</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-orange-50 border-2 border-accent/40 rounded-xl p-4">
+            <div class="text-xs font-black text-accent mb-1">本当に主張したい仮説（H₁）</div>
+            <div id="text-h1" class="text-base sm:text-lg font-black text-navy">
+              「このコインはオモテが出やすい（インチキだ）！」
+            </div>
+          </div>
+          <div class="bg-teal-50 border-2 border-tealbrand/40 rounded-xl p-4">
+            <div class="text-xs font-black text-tealbrand mb-1">あえて立てる反対の仮説（H₀）※これで実験！</div>
+            <div id="text-h0" class="text-base sm:text-lg font-black text-navy">
+              「このコインは公正である（オモテとウラの確率は 1/2 ずつ）」
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2：コンピュータで試行する -->
+      <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-200 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="bg-tealbrand text-white text-xs font-black px-3 py-1 rounded-full">STEP 2</span>
+            <h3 class="font-black text-navy text-lg">コンピュータで試行してみよう！（H₀が正しいと仮定）</h3>
+          </div>
+          <div class="bg-navy text-white px-4 py-1.5 rounded-full text-sm font-black tabular-nums">
+            総試行回数：<span id="sim-total-trials" class="text-orange-300 text-lg">0</span> 試行
+          </div>
+        </div>
+
+        <!-- 操作ボタン群 -->
+        <div class="flex flex-wrap gap-2.5">
+          <button
+            onclick="runSingleTrialAnimated()"
+            class="bg-accent hover:bg-orange-600 active:scale-95 text-white font-black px-4 py-3 rounded-xl shadow transition text-sm sm:text-base flex items-center gap-1.5"
+          >
+            <span>▶</span>
+            <span id="btn-single-label">1試行（30回投げる）</span>
+          </button>
+          <button
+            onclick="runBatchTrials(10)"
+            class="bg-tealbrand hover:bg-teal-800 active:scale-95 text-white font-bold px-4 py-3 rounded-xl shadow transition text-sm sm:text-base"
+          >
+            +10試行
+          </button>
+          <button
+            onclick="runBatchTrials(100)"
+            class="bg-tealbrand hover:bg-teal-800 active:scale-95 text-white font-bold px-4 py-3 rounded-xl shadow transition text-sm sm:text-base"
+          >
+            +100試行
+          </button>
+          <button
+            onclick="runBatchTrials(1000)"
+            class="bg-navy hover:bg-slate-800 active:scale-95 text-white font-bold px-4 py-3 rounded-xl shadow transition text-sm sm:text-base"
+          >
+            +1,000試行
+          </button>
+          <button
+            onclick="runBatchTrials(10000)"
+            class="bg-gradient-to-r from-navy to-tealbrand hover:opacity-90 active:scale-95 text-white font-black px-5 py-3 rounded-xl shadow-md transition text-sm sm:text-base"
+          >
+            ⚡ 一気に10,000試行！
+          </button>
+          <button
+            onclick="resetSimulation()"
+            class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-3 rounded-xl transition text-sm sm:text-base ml-auto"
+          >
+            🔄 リセット
+          </button>
+        </div>
+
+        <!-- 30個のコイン/ボール アニメーション表示エリア -->
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div class="text-sm font-bold text-slate-600" id="latest-trial-title">
+              直近の1試行（30回分）の結果：ボタンを押してスタート！
+            </div>
+            <div class="text-base sm:text-lg font-black text-navy">
+              <span id="latest-count-label">今回のオモテの数</span>：
+              <span id="latest-heads-count" class="text-2xl text-accent tabular-nums">--</span> / 30回
+            </div>
+          </div>
+          <!-- 30個のグリッド -->
+          <div id="coin-grid" class="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-15 gap-2 justify-items-center">
+            <!-- JSで30個生成 -->
+          </div>
+        </div>
+
+        <!-- 教科書の表風：直近の試行履歴ミニテーブル -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div class="bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 flex justify-between items-center">
+            <span>📋 試行データの記録表（教科書の表と同じイメージ・最新10試行を表示）</span>
+            <span id="table-legend" class="text-slate-500">オ＝オモテ ／ ウ＝ウラ</span>
+          </div>
+          <div class="overflow-x-auto custom-scroll max-h-44">
+            <table class="w-full text-center text-xs border-collapse min-w-[760px]">
+              <thead class="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200">
+                <tr id="history-table-head">
+                  <!-- JSで1〜30のヘッダー生成 -->
+                </tr>
+              </thead>
+              <tbody id="history-table-body" class="divide-y divide-slate-100 font-bold">
+                <tr>
+                  <td colspan="32" class="py-5 text-slate-400">まだ試行データがありません。上のボタンを押してみよう！</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3：ヒストグラム＆考察・自動ジャッジ -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- 左側：ヒストグラム描画エリア -->
+        <div class="lg:col-span-7 bg-white rounded-2xl p-5 shadow-md border border-slate-200 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="bg-accent text-white text-xs font-black px-3 py-1 rounded-full">図2 ヒストグラム</span>
+              <h3 id="hist-title" class="font-black text-navy text-lg">オモテの数の分布</h3>
+            </div>
+            <span class="text-xs font-bold text-slate-500">※ 15回が真ん中（理論上の期待値）</span>
+          </div>
+
+          <div class="w-full h-72 sm:h-80 bg-slate-50 rounded-xl border border-slate-200 p-2 relative">
+            <canvas id="hist-canvas" class="w-full h-full block"></canvas>
+          </div>
+
+          <!-- グラフの注目ポイント -->
+          <div class="bg-teal-50/70 rounded-xl p-3.5 text-xs sm:text-sm text-slate-700 border border-teal-200 leading-relaxed">
+            <strong>👀 注目ポイント：</strong>
+            「+100試行」だとグラフはガタガタだけど、「10,000試行」まで増やすと<strong>15回を頂点にしたきれいな山形</strong>になるよ！（大数の法則）
+          </div>
+        </div>
+
+        <!-- 右側：STEP 3 考察＆自動ジャッジパネル -->
+        <div class="lg:col-span-5 bg-white rounded-2xl p-5 shadow-md border border-slate-200 space-y-5">
+          <div class="flex items-center gap-2">
+            <span class="bg-accent text-white text-xs font-black px-3 py-1 rounded-full">STEP 3</span>
+            <h3 class="font-black text-navy text-lg">考察・データ探偵ジャッジ！</h3>
+          </div>
+
+          <!-- 調べる基準回数スライダー -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <label for="target-slider" id="target-slider-label" class="text-sm font-bold text-navy">
+                調べるオモテの回数：
+              </label>
+              <span class="text-2xl font-black text-accent tabular-nums">
+                <span id="target-k-val">18</span> 回
+              </span>
+            </div>
+            <input
+              id="target-slider"
+              type="range"
+              min="15"
+              max="25"
+              step="1"
+              value="18"
+              oninput="updateTargetK(this.value)"
+              class="w-full bg-slate-200"
+            />
+            <div class="flex justify-between text-xs font-bold text-slate-500">
+              <span>15回</span>
+              <span class="text-accent">18回(例題)</span>
+              <span>20回</span>
+              <span>22回</span>
+              <span>25回</span>
+            </div>
+          </div>
+
+          <!-- 確率の計算モード切替 -->
+          <div class="space-y-2">
+            <div class="text-xs font-black text-slate-500">確率の調べ方（教科書 p.129 注釈③）</div>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                id="calc-mode-exact"
+                onclick="setCalcMode('exact')"
+                class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition bg-navy text-white border-navy"
+              >
+                ちょうど <span class="k-sync">18</span>回 のみ<br />
+                <span class="text-[11px] font-normal opacity-80">（教科書 図2の説明）</span>
+              </button>
+              <button
+                id="calc-mode-gte"
+                onclick="setCalcMode('gte')"
+                class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition bg-white text-slate-700 border-slate-300 hover:border-navy"
+              >
+                <span class="k-sync">18</span>回以上 すべて<br />
+                <span class="text-[11px] font-normal opacity-80">（本来の仮説検定）</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 計算式ボックス -->
+          <div class="bg-slate-900 text-white rounded-xl p-4 space-y-1.5">
+            <div class="text-xs text-slate-400 font-bold" id="formula-label">
+              「ちょうど 18回」が出た割合
+            </div>
+            <div class="text-base sm:text-lg font-mono font-bold flex flex-wrap items-baseline gap-1.5">
+              <span id="formula-hits" class="text-orange-300">0</span>回
+              <span>÷</span>
+              <span id="formula-total">0</span>試行
+              <span>＝</span>
+              <span id="formula-dec" class="text-teal-300">---</span>
+            </div>
+            <div class="text-right text-2xl sm:text-3xl font-black text-orange-400 tabular-nums" id="formula-pct">
+              --- %
+            </div>
+          </div>
+
+          <!-- 有意水準5% 自動ジャッジカード -->
+          <div id="sim-judge-card" class="rounded-2xl p-4 border-2 border-slate-200 bg-slate-50 transition-all duration-300">
+            <div class="flex items-start gap-3">
+              <div id="sim-judge-emoji" class="text-3xl shrink-0">⏳</div>
+              <div>
+                <div id="sim-judge-heading" class="font-black text-base sm:text-lg text-navy mb-1">
+                  まずはシミュレーションを回してみよう！
+                </div>
+                <p id="sim-judge-text" class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  「一気に10,000試行！」ボタンを押すと、有意水準 5% と比べた判定結果がここに表示されるよ。
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-8">
+    高校 情報Ⅰ「不確実な事象の解釈」（pp.128–129）学習用インタラクティブ教材
+  </footer>
+
+  <!-- ==================== JavaScript ==================== -->
+  <script>
+    /* =========================================================================
+       1. メインタブ切替
+       ========================================================================= */
+    let currentTab = 'words';
+
+    function switchMainTab(tab) {
+      currentTab = tab;
+      const panelWords = document.getElementById('panel-words');
+      const panelSim = document.getElementById('panel-sim');
+      const btnWords = document.getElementById('tab-btn-words');
+      const btnSim = document.getElementById('tab-btn-sim');
+
+      if (tab === 'words') {
+        panelWords.classList.remove('hidden');
+        panelSim.classList.add('hidden');
+        btnWords.className = 'flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm bg-white text-navy ring-2 ring-accent';
+        btnSim.className = 'flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm bg-white/15 text-white hover:bg-white/25';
+        // Canvasサイズ再計算
+        requestAnimationFrame(() => drawLLNCanvas());
+      } else {
+        panelWords.classList.add('hidden');
+        panelSim.classList.remove('hidden');
+        btnSim.className = 'flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm bg-white text-navy ring-2 ring-accent';
+        btnWords.className = 'flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm bg-white/15 text-white hover:bg-white/25';
+        // Canvasサイズ再計算
+        requestAnimationFrame(() => drawHistogram());
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* =========================================================================
+       2. 画面①：仮説検定 3ステップアニメーション
+       ========================================================================= */
+    let stepTimer = null;
+    const stepNarrations = {
+      1: '【STEP 1】まず「コインは公正である（H₀）」という反対の仮説をあえて立てます。ここが出発点！',
+      2: '【STEP 2】もしH₀が正しいとしたら、今回の結果以上に極端なことが起こる確率を調べます。',
+      3: '【STEP 3】その確率が5%未満など「めったに起きない」なら、H₀は間違いと判断してH₁を主張します！'
+    };
+
+    function highlightStep(stepNum) {
+      if (stepTimer) {
+        clearTimeout(stepTimer);
+        stepTimer = null;
+      }
+      [1, 2, 3].forEach((n) => {
+        const el = document.getElementById(`h-step-${n}`);
+        if (n === stepNum) {
+          el.classList.remove('border-slate-200', 'bg-white', 'opacity-60');
+          el.classList.add('border-accent', 'bg-orange-50/70', 'shadow-lg', 'scale-[1.02]');
+        } else {
+          el.classList.remove('border-accent', 'bg-orange-50/70', 'shadow-lg', 'scale-[1.02]');
+          el.classList.add('border-slate-200', 'bg-white', 'opacity-60');
+        }
+      });
+      const bar = document.getElementById('h-step-narration');
+      bar.innerHTML = `<span class="text-xl">✨</span><span>${stepNarrations[stepNum]}</span>`;
+    }
+
+    function playHypothesisSteps() {
+      resetHypothesisSteps();
+      let current = 1;
+      function next() {
+        highlightStep(current);
+        current++;
+        if (current <= 3) {
+          stepTimer = setTimeout(next, 2200);
+        }
+      }
+      next();
+    }
+
+    function resetHypothesisSteps() {
+      if (stepTimer) {
+        clearTimeout(stepTimer);
+        stepTimer = null;
+      }
+      [1, 2, 3].forEach((n) => {
+        const el = document.getElementById(`h-step-${n}`);
+        el.classList.remove('border-accent', 'bg-orange-50/70', 'shadow-lg', 'scale-[1.02]', 'opacity-60');
+        el.classList.add('border-slate-200', 'bg-white');
+      });
+      document.getElementById('h-step-narration').innerHTML =
+        '<span class="text-xl">💬</span><span>上の「▶ 3ステップをアニメ再生」ボタンか、各STEPカードをクリックして流れを確認しよう！</span>';
+    }
+
+    /* =========================================================================
+       3. 画面①：有意水準（危険率）インタラクティブゲージ
+       ========================================================================= */
+    function updateSignificanceGauge(valStr) {
+      const val = parseFloat(valStr);
+      const valText = document.getElementById('sig-value-text');
+      const box = document.getElementById('sig-judge-box');
+      const icon = document.getElementById('sig-judge-icon');
+      const title = document.getElementById('sig-judge-title');
+      const desc = document.getElementById('sig-judge-desc');
+
+      valText.textContent = `${val.toFixed(1)}%`;
+
+      if (val < 5.0) {
+        valText.style.color = '#E87A3E';
+        box.className = 'rounded-xl p-4 sm:p-5 border-2 border-accent bg-orange-50 transition-all duration-300 flex items-center gap-4';
+        icon.textContent = '🚨';
+        title.className = 'font-black text-lg sm:text-xl mb-1 text-red-700';
+        title.textContent = '5%未満！偶然にしてはありえない！イカサマ判定（H₀棄却）';
+        desc.className = 'text-sm sm:text-base text-slate-700';
+        desc.textContent = `起こる確率がたった ${val.toFixed(1)}%（20回に1回未満）。「公正である（H₀）」という仮説は間違いと判断し、主張（H₁）を認めるよ！`;
+      } else {
+        valText.style.color = '#2A7B6F';
+        box.className = 'rounded-xl p-4 sm:p-5 border-2 border-tealbrand bg-teal-50/70 transition-all duration-300 flex items-center gap-4';
+        icon.textContent = '🤔';
+        title.className = 'font-black text-lg sm:text-xl mb-1 text-tealbrand';
+        title.textContent = '5%以上！たまたまかも…偶然の範囲（主張できない）';
+        desc.className = 'text-sm sm:text-base text-slate-700';
+        desc.textContent = `起こる確率は ${val.toFixed(1)}%。公正なコインでも十分起こり得る範囲なので、「インチキだ（H₁）」とは言い切れないよ。`;
+      }
+    }
+
+    /* =========================================================================
+       4. 画面①：大数の法則 リアルタイム折れ線グラフ
+       ========================================================================= */
+    let llnData = [];
+    let llnHeads = 0;
+    let llnAnimId = null;
+    const LLN_MAX = 500;
+
+    function startLLNAnimation() {
+      if (llnAnimId) cancelAnimationFrame(llnAnimId);
+      llnData = [];
+      llnHeads = 0;
+
+      function step() {
+        // 最初はゆっくり（ブレを見せる）、後半はスピードアップ
+        const speed = llnData.length < 40 ? 1 : llnData.length < 150 ? 4 : 10;
+        for (let i = 0; i < speed && llnData.length < LLN_MAX; i++) {
+          if (Math.random() < 0.5) llnHeads++;
+          const n = llnData.length + 1;
+          llnData.push(llnHeads / n);
+        }
+
+        const n = llnData.length;
+        document.getElementById('lln-trials').textContent = `${n} 回`;
+        document.getElementById('lln-heads').textContent = `${llnHeads} 回`;
+        document.getElementById('lln-ratio').textContent = `${(llnData[n - 1] * 100).toFixed(1)}%`;
+
+        drawLLNCanvas();
+
+        if (n < LLN_MAX) {
+          llnAnimId = requestAnimationFrame(step);
+        } else {
+          llnAnimId = null;
+        }
+      }
+      llnAnimId = requestAnimationFrame(step);
+    }
+
+    function resetLLNAnimation() {
+      if (llnAnimId) {
+        cancelAnimationFrame(llnAnimId);
+        llnAnimId = null;
+      }
+      llnData = [];
+      llnHeads = 0;
+      document.getElementById('lln-trials').textContent = '0 回';
+      document.getElementById('lln-heads').textContent = '0 回';
+      document.getElementById('lln-ratio').textContent = '---';
+      drawLLNCanvas();
+    }
+
+    function drawLLNCanvas() {
+      const canvas = document.getElementById('lln-canvas');
+      if (!canvas || canvas.offsetWidth === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const pad = { top: 20, right: 24, bottom: 34, left: 50 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 背景グリッド（0%, 25%, 50%, 75%, 100%）
+      ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
+      [0, 0.25, 0.5, 0.75, 1.0].forEach((v) => {
+        const y = pad.top + plotH * (1 - v);
+        ctx.beginPath();
+        ctx.strokeStyle = v === 0.5 ? '#E87A3E' : '#E2E8F0';
+        ctx.lineWidth = v === 0.5 ? 2 : 1;
+        if (v === 0.5) ctx.setLineDash([6, 4]);
+        else ctx.setLineDash([]);
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+
+        ctx.fillStyle = v === 0.5 ? '#E87A3E' : '#64748B';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${Math.round(v * 100)}%`, pad.left - 8, y);
+      });
+      ctx.setLineDash([]);
+
+      // 軸
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left + plotW, pad.top + plotH);
+      ctx.stroke();
+
+      // X軸ラベル
+      ctx.fillStyle = '#64748B';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      [0, 100, 200, 300, 400, 500].forEach((tick) => {
+        const x = pad.left + (tick / LLN_MAX) * plotW;
+        ctx.fillText(`${tick}回`, x, pad.top + plotH + 8);
+      });
+
+      // 0.5の注釈
+      ctx.fillStyle = '#E87A3E';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('理論値 50% (0.5)', pad.left + plotW, pad.top + plotH * 0.5 - 5);
+
+      // データ線描画
+      if (llnData.length > 0) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#2A7B6F';
+        ctx.lineWidth = 2.5;
+        llnData.forEach((ratio, idx) => {
+          const x = pad.left + ((idx + 1) / LLN_MAX) * plotW;
+          const y = pad.top + plotH * (1 - ratio);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // 先端のドット
+        const lastIdx = llnData.length - 1;
+        const lx = pad.left + ((lastIdx + 1) / LLN_MAX) * plotW;
+        const ly = pad.top + plotH * (1 - llnData[lastIdx]);
+        ctx.beginPath();
+        ctx.fillStyle = '#1E3A5F';
+        ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = 'bold 14px "Noto Sans JP", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('「▶ シミュレーション再生」を押してスタート！', pad.left + plotW / 2, pad.top + plotH / 2 - 18);
+      }
+    }
+
+    /* =========================================================================
+       5. 画面①：1936年アメリカ大統領選挙 抽出法ミニアニメ
+       ========================================================================= */
+    // 母集団60人のモデル：
+    // 富裕層 12人 (20%): ランドン支持 9人, ルーズベルト支持 3人
+    // 中間層 24人 (40%): ランドン支持 7人, ルーズベルト支持 17人
+    // 一般層 24人 (40%): ランドン支持 6人, ルーズベルト支持 18人
+    // 全体：ルーズベルト支持 38/60 (63.3%) ← 史実(約62%)に一致
+    const population = [];
+    function initPopulation() {
+      population.length = 0;
+      const groups = [
+        { type: 'rich', color: 'bg-accent', count: 12, rooseveltCount: 3 },
+        { type: 'mid', color: 'bg-tealbrand', count: 24, rooseveltCount: 17 },
+        { type: 'low', color: 'bg-navy', count: 24, rooseveltCount: 18 },
+      ];
+      let id = 0;
+      groups.forEach((g) => {
+        for (let i = 0; i < g.count; i++) {
+          population.push({
+            id: id++,
+            type: g.type,
+            color: g.color,
+            vote: i < g.rooseveltCount ? 'R' : 'L',
+          });
+        }
+      });
+
+      const grid = document.getElementById('population-grid');
+      grid.innerHTML = '';
+      population.forEach((p) => {
+        const dot = document.createElement('div');
+        dot.id = `pop-dot-${p.id}`;
+        dot.className = `person-dot w-6 h-6 sm:w-7 sm:h-7 rounded-full ${p.color} text-white text-[10px] font-black flex items-center justify-center shadow-sm`;
+        dot.textContent = p.vote === 'R' ? 'ル' : 'ラ';
+        dot.title = `${p.type === 'rich' ? '富裕層' : p.type === 'mid' ? '中間層' : '一般層'} / ${p.vote === 'R' ? 'ルーズベルト派' : 'ランドン派'}`;
+        grid.appendChild(dot);
+      });
+    }
+
+    function pickRandomSubset(arr, k) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy.slice(0, k);
+    }
+
+    function runSamplingDemo(mode) {
+      // ボタンのアクティブスタイル更新
+      ['biased', 'random', 'stratified'].forEach((m) => {
+        const b = document.getElementById(`btn-sample-${m}`);
+        if (m === mode) {
+          b.classList.add('ring-2', 'ring-navy', 'bg-slate-50', 'border-navy');
+        } else {
+          b.classList.remove('ring-2', 'ring-navy', 'bg-slate-50', 'border-navy');
+        }
+      });
+
+      let selected = [];
+      const rich = population.filter((p) => p.type === 'rich');
+      const mid = population.filter((p) => p.type === 'mid');
+      const low = population.filter((p) => p.type === 'low');
+
+      if (mode === 'biased') {
+        // 富裕層12人全員＋中間層から3人（当時の電話・自動車名簿の偏りを再現）
+        selected = [...rich, ...pickRandomSubset(mid, 3)];
+      } else if (mode === 'random') {
+        // 単純無作為抽出（15人ランダム）
+        selected = pickRandomSubset(population, 15);
+      } else {
+        // 層別抽出法（比率通り 20%:40%:40% → 3人:6人:6人 = 15人）
+        selected = [
+          ...pickRandomSubset(rich, 3),
+          ...pickRandomSubset(mid, 6),
+          ...pickRandomSubset(low, 6),
+        ];
+      }
+
+      const selectedIds = new Set(selected.map((p) => p.id));
+      population.forEach((p) => {
+        const el = document.getElementById(`pop-dot-${p.id}`);
+        if (selectedIds.has(p.id)) {
+          el.classList.add('person-selected');
+          el.classList.remove('person-dimmed');
+        } else {
+          el.classList.remove('person-selected');
+          el.classList.add('person-dimmed');
+        }
+      });
+
+      // 集計
+      const rVotes = selected.filter((p) => p.vote === 'R').length;
+      const rPct = Math.round((rVotes / selected.length) * 100);
+      const lPct = 100 - rPct;
+
+      const badge = document.getElementById('sample-result-badge');
+      const title = document.getElementById('sample-result-title');
+      const desc = document.getElementById('sample-result-desc');
+      document.getElementById('sample-bars').classList.remove('hidden');
+      document.getElementById('bar-roosevelt').style.width = `${rPct}%`;
+      document.getElementById('bar-roosevelt-pct').textContent = `${rPct}%`;
+      document.getElementById('bar-landon').style.width = `${lPct}%`;
+      document.getElementById('bar-landon-pct').textContent = `${lPct}%`;
+
+      if (mode === 'biased') {
+        badge.className = 'inline-block text-xs font-black px-3 py-1 rounded-full bg-red-100 text-red-700';
+        badge.textContent = '❌ 予想大ハズレ！（ランドン当選と誤予想）';
+        title.textContent = '200万人集めても「偏り」で失敗！';
+        desc.textContent = '1936年当時、自動車や電話を持っていたのは富裕層ばかり。オレンジの層に偏ったため、人数が多くても国民全体の意見とズレてしまいました。';
+      } else if (mode === 'random') {
+        badge.className = 'inline-block text-xs font-black px-3 py-1 rounded-full bg-sky-100 text-navy';
+        badge.textContent = '🎲 単純無作為抽出（押すたびに変化！）';
+        title.textContent = rPct > 50 ? '今回はルーズベルト優勢と予想！' : 'たまたま偏ってランドン優勢に！';
+        desc.textContent = 'くじ引きのように無作為に選ぶ方法。偏りは減りますが、人数が少ないと「たまたま特定の層が多く選ばれる」リスクがあります。何度か押して確かめてみて！';
+      } else {
+        badge.className = 'inline-block text-xs font-black px-3 py-1 rounded-full bg-teal-100 text-tealbrand';
+        badge.textContent = '🎯 見事的中！（ルーズベルト当選を予想）';
+        title.textContent = '層別抽出法なら少数でも超正確！';
+        desc.textContent = '「収入・住所・性別」などのグループ（層）に分け、母集団と同じ割合（2:4:4）で抽出！たった3,000人でも200万人調査に大逆転勝利しました。';
+      }
+    }
+
+    /* =========================================================================
+       6. 画面②：教科書p.129 例題シミュレーション
+       ========================================================================= */
+    const TRIAL_FLIPS = 30;
+    let simTheme = 'coin'; // 'coin' | 'baseball'
+    let simCalcMode = 'exact'; // 'exact' | 'gte'
+    let targetK = 18;
+
+    let totalTrials = 0;
+    let counts = new Array(TRIAL_FLIPS + 1).fill(0); // counts[0..30]
+    let recentHistory = []; // 最新10件 { trialNo, flips: [0|1...], heads }
+    let batchAnimId = null;
+
+    const themeConfig = {
+      coin: {
+        icon: '🪙',
+        title: '例題：コインを30回投げてオモテ18回はイカサマ？',
+        h1: '「このコインはオモテが出やすい（インチキだ）！」',
+        h0: '「このコインは公正である（オモテとウラの確率は 1/2 ずつ）」',
+        singleBtn: '1試行（30回投げる）',
+        countLabel: '今回のオモテの数',
+        histTitle: 'オモテの数の分布',
+        sliderLabel: '調べるオモテの回数：',
+        posChar: 'オ',
+        negChar: 'ウ',
+        posName: 'オモテ',
+        tableLegend: 'オ＝オモテ ／ ウ＝ウラ',
+        claimShort: '「オモテが出やすい」',
+      },
+      baseball: {
+        icon: '⚾',
+        title: '部活チャレンジ：A校はB校に30戦18勝12敗！本当に強い？',
+        h1: '「A校はB校よりも実力が強い！」',
+        h0: '「A校とB校の実力は同じ（勝率は 1/2 ずつ）」',
+        singleBtn: '1試行（30試合する）',
+        countLabel: '今回のA校の勝ち数',
+        histTitle: 'A校の勝ち数の分布',
+        sliderLabel: '調べるA校の勝ち数：',
+        posChar: '勝',
+        negChar: '負',
+        posName: '勝ち',
+        tableLegend: '勝＝A校の勝ち ／ 負＝B校の勝ち',
+        claimShort: '「A校のほうが強い」',
+      }
+    };
+
+    function setSimTheme(mode) {
+      simTheme = mode;
+      const cfg = themeConfig[mode];
+      document.getElementById('theme-badge-icon').textContent = cfg.icon;
+      document.getElementById('theme-title').textContent = cfg.title;
+      document.getElementById('text-h1').textContent = cfg.h1;
+      document.getElementById('text-h0').textContent = cfg.h0;
+      document.getElementById('btn-single-label').textContent = cfg.singleBtn;
+      document.getElementById('latest-count-label').textContent = cfg.countLabel;
+      document.getElementById('hist-title').textContent = cfg.histTitle;
+      document.getElementById('target-slider-label').textContent = cfg.sliderLabel;
+      document.getElementById('table-legend').textContent = cfg.tableLegend;
+
+      const btnCoin = document.getElementById('mode-btn-coin');
+      const btnBase = document.getElementById('mode-btn-baseball');
+      if (mode === 'coin') {
+        btnCoin.className = 'flex-1 lg:flex-none px-4 py-2.5 rounded-lg font-bold text-sm sm:text-base transition bg-navy text-white shadow';
+        btnBase.className = 'flex-1 lg:flex-none px-4 py-2.5 rounded-lg font-bold text-sm sm:text-base transition text-slate-600 hover:text-navy';
+      } else {
+        btnBase.className = 'flex-1 lg:flex-none px-4 py-2.5 rounded-lg font-bold text-sm sm:text-base transition bg-navy text-white shadow';
+        btnCoin.className = 'flex-1 lg:flex-none px-4 py-2.5 rounded-lg font-bold text-sm sm:text-base transition text-slate-600 hover:text-navy';
+      }
+
+      // 既存のグリッド・表・グラフ・判定を新テーマで再描画
+      if (recentHistory.length > 0) {
+        renderCoinGrid(recentHistory[0].flips, false);
+      } else {
+        renderEmptyCoinGrid();
+      }
+      renderHistoryTable();
+      updateAnalysisAndJudge();
+      drawHistogram();
+    }
+
+    function initSimUI() {
+      // 履歴テーブルヘッダー生成
+      const headRow = document.getElementById('history-table-head');
+      let html = '<th class="py-2 px-2 bg-slate-100 text-left sticky left-0 z-10">試行</th>';
+      for (let i = 1; i <= TRIAL_FLIPS; i++) {
+        html += `<th class="py-2 px-1">${i}</th>`;
+      }
+      html += '<th class="py-2 px-2 bg-orange-50 text-accent font-black">合計</th>';
+      headRow.innerHTML = html;
+
+      renderEmptyCoinGrid();
+      drawHistogram();
+    }
+
+    function renderEmptyCoinGrid() {
+      const grid = document.getElementById('coin-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < TRIAL_FLIPS; i++) {
+        const el = document.createElement('div');
+        el.className = 'w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-200 text-slate-400 font-black text-xs flex items-center justify-center border border-slate-300';
+        el.textContent = i + 1;
+        grid.appendChild(el);
+      }
+    }
+
+    function renderCoinGrid(flips, animate) {
+      const cfg = themeConfig[simTheme];
+      const grid = document.getElementById('coin-grid');
+      grid.innerHTML = '';
+      flips.forEach((val, idx) => {
+        const el = document.createElement('div');
+        const isPos = val === 1;
+        const colorCls = isPos
+          ? (simTheme === 'coin'
+              ? 'bg-gradient-to-br from-amber-300 to-orange-500 text-white border-amber-600 shadow'
+              : 'bg-gradient-to-br from-orange-400 to-accent text-white border-orange-600 shadow')
+          : 'bg-gradient-to-br from-slate-200 to-slate-300 text-slate-600 border-slate-400';
+
+        el.className = `w-8 h-8 sm:w-9 sm:h-9 rounded-full font-black text-xs sm:text-sm flex items-center justify-center border-2 ${colorCls}`;
+        if (animate) {
+          el.style.animationDelay = `${idx * 14}ms`;
+          el.classList.add('animate-coin-flip');
+        }
+        el.textContent = isPos ? cfg.posChar : cfg.negChar;
+        grid.appendChild(el);
+      });
+    }
+
+    function simulateOneTrial() {
+      let heads = 0;
+      const flips = new Array(TRIAL_FLIPS);
+      for (let i = 0; i < TRIAL_FLIPS; i++) {
+        const r = Math.random() < 0.5 ? 1 : 0;
+        flips[i] = r;
+        heads += r;
+      }
+      totalTrials++;
+      counts[heads]++;
+      recentHistory.unshift({ trialNo: totalTrials, flips, heads });
+      if (recentHistory.length > 10) recentHistory.pop();
+      return { flips, heads };
+    }
+
+    function runSingleTrialAnimated() {
+      if (batchAnimId) {
+        cancelAnimationFrame(batchAnimId);
+        batchAnimId = null;
+      }
+      const { flips, heads } = simulateOneTrial();
+      document.getElementById('sim-total-trials').textContent = totalTrials.toLocaleString();
+      document.getElementById('latest-trial-title').textContent = `第 ${totalTrials.toLocaleString()} 試行目（30回分）の結果：`;
+      document.getElementById('latest-heads-count').textContent = heads;
+
+      renderCoinGrid(flips, true);
+      renderHistoryTable();
+      updateAnalysisAndJudge();
+      drawHistogram();
+    }
+
+    function runBatchTrials(num) {
+      if (batchAnimId) {
+        cancelAnimationFrame(batchAnimId);
+        batchAnimId = null;
+      }
+      let remaining = num;
+      // フレームあたりの実行数を調整して滑らかに伸びる演出
+      const perFrame = num <= 10 ? 2 : num <= 100 ? 5 : num <= 1000 ? 45 : 350;
+
+      function step() {
+        const chunk = Math.min(perFrame, remaining);
+        let lastRes = null;
+        for (let i = 0; i < chunk; i++) {
+          // 大量試行時は直近10件だけ配列を保持して高速化
+          if (remaining - i <= 10) {
+            lastRes = simulateOneTrial();
+          } else {
+            let heads = 0;
+            for (let f = 0; f < TRIAL_FLIPS; f++) {
+              if (Math.random() < 0.5) heads++;
+            }
+            totalTrials++;
+            counts[heads]++;
+          }
+        }
+        remaining -= chunk;
+
+        document.getElementById('sim-total-trials').textContent = totalTrials.toLocaleString();
+        if (lastRes) {
+          document.getElementById('latest-trial-title').textContent = `第 ${totalTrials.toLocaleString()} 試行目（30回分）の結果：`;
+          document.getElementById('latest-heads-count').textContent = lastRes.heads;
+          renderCoinGrid(lastRes.flips, false);
+        }
+
+        updateAnalysisAndJudge();
+        drawHistogram();
+
+        if (remaining > 0) {
+          batchAnimId = requestAnimationFrame(step);
+        } else {
+          batchAnimId = null;
+          renderHistoryTable();
+        }
+      }
+      batchAnimId = requestAnimationFrame(step);
+    }
+
+    function resetSimulation() {
+      if (batchAnimId) {
+        cancelAnimationFrame(batchAnimId);
+        batchAnimId = null;
+      }
+      totalTrials = 0;
+      counts.fill(0);
+      recentHistory = [];
+      document.getElementById('sim-total-trials').textContent = '0';
+      document.getElementById('latest-trial-title').textContent = '直近の1試行（30回分）の結果：ボタンを押してスタート！';
+      document.getElementById('latest-heads-count').textContent = '--';
+      renderEmptyCoinGrid();
+      renderHistoryTable();
+      updateAnalysisAndJudge();
+      drawHistogram();
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('history-table-body');
+      const cfg = themeConfig[simTheme];
+      if (recentHistory.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="32" class="py-5 text-slate-400">まだ試行データがありません。上のボタンを押してみよう！</td></tr>';
+        return;
+      }
+      tbody.innerHTML = recentHistory.map((row) => {
+        const cells = row.flips.map((v) =>
+          v === 1
+            ? `<td class="py-1.5 px-1 text-accent">${cfg.posChar}</td>`
+            : `<td class="py-1.5 px-1 text-slate-400">${cfg.negChar}</td>`
+        ).join('');
+        const isHit = simCalcMode === 'exact' ? row.heads === targetK : row.heads >= targetK;
+        return `
+          <tr class="${isHit ? 'bg-orange-50/70' : 'bg-white'}">
+            <td class="py-1.5 px-2 text-left text-navy bg-slate-50 sticky left-0 border-r border-slate-200 whitespace-nowrap">${row.trialNo.toLocaleString()}試行目</td>
+            ${cells}
+            <td class="py-1.5 px-2 font-black ${isHit ? 'text-accent bg-orange-100' : 'text-navy bg-slate-50'}">${row.heads}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateTargetK(val) {
+      targetK = parseInt(val, 10);
+      document.getElementById('target-k-val').textContent = targetK;
+      document.querySelectorAll('.k-sync').forEach((el) => (el.textContent = targetK));
+      renderHistoryTable();
+      updateAnalysisAndJudge();
+      drawHistogram();
+    }
+
+    function setCalcMode(mode) {
+      simCalcMode = mode;
+      const btnExact = document.getElementById('calc-mode-exact');
+      const btnGte = document.getElementById('calc-mode-gte');
+      if (mode === 'exact') {
+        btnExact.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition bg-navy text-white border-navy';
+        btnGte.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition bg-white text-slate-700 border-slate-300 hover:border-navy';
+      } else {
+        btnGte.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition bg-navy text-white border-navy';
+        btnExact.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition bg-white text-slate-700 border-slate-300 hover:border-navy';
+      }
+      renderHistoryTable();
+      updateAnalysisAndJudge();
+      drawHistogram();
+    }
+
+    function updateAnalysisAndJudge() {
+      const cfg = themeConfig[simTheme];
+      const label = document.getElementById('formula-label');
+      const hitsEl = document.getElementById('formula-hits');
+      const totalEl = document.getElementById('formula-total');
+      const decEl = document.getElementById('formula-dec');
+      const pctEl = document.getElementById('formula-pct');
+
+      const card = document.getElementById('sim-judge-card');
+      const emoji = document.getElementById('sim-judge-emoji');
+      const heading = document.getElementById('sim-judge-heading');
+      const text = document.getElementById('sim-judge-text');
+
+      label.textContent = simCalcMode === 'exact'
+        ? `「ちょうど ${targetK}回」${cfg.posName}が出た割合`
+        : `「${targetK}回以上（${targetK}〜30回）」${cfg.posName}が出た割合`;
+
+      if (totalTrials === 0) {
+        hitsEl.textContent = '0';
+        totalEl.textContent = '0';
+        decEl.textContent = '---';
+        pctEl.textContent = '--- %';
+        card.className = 'rounded-2xl p-4 border-2 border-slate-200 bg-slate-50 transition-all duration-300';
+        emoji.textContent = '⏳';
+        heading.className = 'font-black text-base sm:text-lg text-navy mb-1';
+        heading.textContent = 'まずはシミュレーションを回してみよう！';
+        text.textContent = '「一気に10,000試行！」ボタンを押すと、有意水準 5% と比べた判定結果がここに表示されるよ。';
+        return;
+      }
+
+      let hits = 0;
+      if (simCalcMode === 'exact') {
+        hits = counts[targetK];
+      } else {
+        for (let k = targetK; k <= TRIAL_FLIPS; k++) hits += counts[k];
+      }
+
+      const prob = hits / totalTrials;
+      const pct = prob * 100;
+
+      hitsEl.textContent = hits.toLocaleString();
+      totalEl.textContent = totalTrials.toLocaleString();
+      decEl.textContent = prob.toFixed(4);
+      pctEl.textContent = `${pct.toFixed(2)} %`;
+
+      if (pct < 5.0) {
+        card.className = 'rounded-2xl p-4 border-2 border-accent bg-orange-50 transition-all duration-300 shadow-sm';
+        emoji.textContent = '🚨';
+        heading.className = 'font-black text-base sm:text-lg text-red-700 mb-1';
+        heading.textContent = `5%未満！偶然とは考えにくい！${cfg.claimShort}と主張できる！`;
+        text.textContent = `確率は ${pct.toFixed(2)}% で有意水準 5% 未満！もしH₀が正しいならめったに起きない結果なので、「H₀は間違いだ」と判断してH₁を主張できるよ。`;
+      } else {
+        card.className = 'rounded-2xl p-4 border-2 border-tealbrand bg-teal-50/70 transition-all duration-300 shadow-sm';
+        emoji.textContent = '🤔';
+        heading.className = 'font-black text-base sm:text-lg text-tealbrand mb-1';
+        heading.textContent = `偶然でも十分起こる！${cfg.claimShort}とは言えない`;
+        text.textContent = `確率は ${pct.toFixed(2)}% もあり、有意水準 5% より大きい！H₀のもとでも偶然よく起こる範囲なので、${cfg.claimShort}とは言い切れないよ。スライダーで20回や21回も試してみよう！`;
+      }
+    }
+
+    function drawHistogram() {
+      const canvas = document.getElementById('hist-canvas');
+      if (!canvas || canvas.offsetWidth === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const pad = { top: 28, right: 18, bottom: 42, left: 52 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 表示範囲：5回〜25回（21本のバー）
+      const minK = 5;
+      const maxK = 25;
+      const numBars = maxK - minK + 1;
+      const maxCount = Math.max(5, ...counts.slice(minK, maxK + 1));
+      // きれいなY軸上限
+      const yMax = maxCount <= 10 ? 10 : Math.ceil((maxCount * 1.15) / 5) * 5;
+
+      // Y軸グリッド
+      ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
+      const yTicks = 4;
+      for (let i = 0; i <= yTicks; i++) {
+        const val = Math.round((yMax / yTicks) * i);
+        const y = pad.top + plotH * (1 - i / yTicks);
+        ctx.beginPath();
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 1;
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748B';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(val.toLocaleString(), pad.left - 8, y);
+      }
+
+      // 縦軸ラベル
+      ctx.fillStyle = '#64748B';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('(度数)', 4, 6);
+
+      // バー描画
+      const barSlot = plotW / numBars;
+      const barW = Math.max(4, barSlot * 0.78);
+
+      for (let k = minK; k <= maxK; k++) {
+        const idx = k - minK;
+        const c = counts[k];
+        const barH = (c / yMax) * plotH;
+        const x = pad.left + idx * barSlot + (barSlot - barW) / 2;
+        const y = pad.top + plotH - barH;
+
+        const isHighlighted = simCalcMode === 'exact' ? k === targetK : k >= targetK;
+
+        // バー本体
+        ctx.fillStyle = isHighlighted ? '#E87A3E' : '#2A7B6F';
+        ctx.globalAlpha = isHighlighted ? 0.95 : 0.78;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+
+        // X軸の数字（5, 10, 15, targetK, 20, 25）
+        if (k % 5 === 0 || k === targetK) {
+          ctx.fillStyle = k === targetK ? '#E87A3E' : '#475569';
+          ctx.font = k === targetK ? '900 12px "Noto Sans JP", sans-serif' : 'bold 11px "Noto Sans JP", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(k, x + barW / 2, pad.top + plotH + 6);
+        }
+
+        // ターゲットバーの上に度数表示
+        if (k === targetK && c > 0) {
+          ctx.fillStyle = '#E87A3E';
+          ctx.font = '900 11px "Noto Sans JP", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(c.toLocaleString(), x + barW / 2, y - 4);
+        }
+      }
+
+      // 軸線
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left + plotW, pad.top + plotH);
+      ctx.stroke();
+
+      // X軸タイトル
+      ctx.fillStyle = '#1E3A5F';
+      ctx.font = 'bold 12px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const xTitle = simTheme === 'coin' ? 'オモテの数（回）' : 'A校の勝ち数（勝）';
+      ctx.fillText(xTitle, pad.left + plotW / 2, h - 4);
+    }
+
+    /* =========================================================================
+       7. 初期化＆リサイズ対応
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      updateSignificanceGauge(8.8);
+      initPopulation();
+      initSimUI();
+      drawLLNCanvas();
+    });
+
+    window.addEventListener('resize', () => {
+      if (currentTab === 'words') drawLLNCanvas();
+      else drawHistogram();
+    });
+  </script>
+</body>
+</html>

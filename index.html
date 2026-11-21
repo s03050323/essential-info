@@ -47,15 +47,23 @@
       color: #ffffff;
       font-size: 0.95rem;
     }
-    tr:nth-child(even) {
+    /* フォルダ名（2列結合）の見た目 */
+    tr.folder-row td {
+      background-color: #dbeafe;
+      color: #1e3a8a;
+      font-weight: bold;
+      font-size: 1.05rem;
+      padding: 10px 16px;
+    }
+    tr:not(.folder-row):nth-child(even) {
       background-color: #f8fafc;
     }
-    tr:hover {
+    tr:not(.folder-row):hover {
       background-color: #eff6ff;
     }
     /* 左の列（リンク）の見た目 */
     td.title-col {
-      width: 35%;
+      width: 38%;
       font-weight: bold;
     }
     td.title-col a {
@@ -69,7 +77,7 @@
     }
     /* 右の列（詳細）の見た目 */
     td.detail-col {
-      width: 65%;
+      width: 62%;
       font-size: 0.95rem;
       line-height: 1.5;
     }
@@ -88,7 +96,75 @@
         </tr>
       </thead>
       <tbody>
-        <!-- 1つ目の教材 -->
+
+        <!-- =========================================
+             フォルダ①：データの分析
+             ========================================= -->
+        <tr class="folder-row">
+          <td colspan="2">📁 データの分析</td>
+        </tr>
+        <tr>
+          <td class="title-col">
+            <a href="データの分析/データの分析.html">データの分析</a>
+          </td>
+          <td class="detail-col">
+            （ここにタイトル・教科書ページ番号などを記入）
+          </td>
+        </tr>
+        <tr>
+          <td class="title-col">
+            <a href="データの分析/2つのデータの関係(相関回帰線).html">2つのデータの関係(相関回帰線)</a>
+          </td>
+          <td class="detail-col">
+            情報Ⅰ 理論編52（p.130〜131）インタラクティブ教材
+          </td>
+        </tr>
+        <tr>
+          <td class="title-col">
+            <a href="データの分析/データの種類と分析(テキストマイニング).html">データの種類と分析(テキストマイニング)</a>
+          </td>
+          <td class="detail-col">
+            （ここにタイトル・教科書ページ番号などを記入）
+          </td>
+        </tr>
+        <tr>
+          <td class="title-col">
+            <a href="データの分析/不確実な事象の解釈(仮説検定).html">不確実な事象の解釈(仮説検定)</a>
+          </td>
+          <td class="detail-col">
+            （ここにタイトル・教科書ページ番号などを記入）
+          </td>
+        </tr>
+
+        <!-- =========================================
+             フォルダ②：ネットワーク
+             ========================================= -->
+        <tr class="folder-row">
+          <td colspan="2">📁 ネットワーク</td>
+        </tr>
+        <tr>
+          <td class="title-col">
+            <a href="ネットワーク/4階層TCPIP.html">4階層TCPIP</a>
+          </td>
+          <td class="detail-col">
+            （ここにタイトル・教科書ページ番号などを記入）
+          </td>
+        </tr>
+        <tr>
+          <td class="title-col">
+            <a href="ネットワーク/電子メールSMTP.html">電子メールSMTP</a>
+          </td>
+          <td class="detail-col">
+            （ここにタイトル・教科書ページ番号などを記入）
+          </td>
+        </tr>
+
+        <!-- =========================================
+             既存の教材（index.htmlと同じ階層にあるファイル）
+             ========================================= -->
+        <tr class="folder-row">
+          <td colspan="2">📁 情報システム・セキュリティ／数学</td>
+        </tr>
         <tr>
           <td class="title-col">
             <a href="安全安心を守る仕組み.html">安全安心を守る仕組み</a>
@@ -97,8 +173,6 @@
             情報I 理論編 43「安全安心を守る仕組み」（教科書 p.112-113）
           </td>
         </tr>
-
-        <!-- 2つ目の教材 -->
         <tr>
           <td class="title-col">
             <a href="情報システム.html">情報システム</a>
@@ -107,8 +181,6 @@
             情報I 理論編 44（p.114-115）見て・触ってわかる！「情報システム」体験ラボ
           </td>
         </tr>
-
-        <!-- 3つ目の教材 -->
         <tr>
           <td class="title-col">
             <a href="情報システムの信頼性.html">情報システムの信頼性</a>
@@ -117,8 +189,6 @@
             情報I 45・理論編（p.116 - p.117）見て・触って納得！「情報システムの信頼性」体験ラボ
           </td>
         </tr>
-
-        <!-- 4つ目の教材 -->
         <tr>
           <td class="title-col">
             <a href="情報システムの活用.html">情報システムの活用</a>
@@ -127,8 +197,6 @@
             情報I 理論編 46「情報システムの活用」（教科書 p.118-119）
           </td>
         </tr>
-
-        <!-- 5つ目の教材 -->
         <tr>
           <td class="title-col">
             <a href="道を広げる.html">道を広げる</a>
@@ -137,6 +205,7 @@
             新課程 体系数学2 代数編「道の面積の証明」（例題14・練習34）
           </td>
         </tr>
+
       </tbody>
     </table>
   </div>

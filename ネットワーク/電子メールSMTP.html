@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>電子メールが届く仕組み（SMTP・POPサーバー）アニメーション教材</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans JP', 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    .node-card {
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .node-active {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.35);
+    }
+    .mail-packet {
+      transition: left 0.9s cubic-bezier(0.4, 0, 0.2, 1), top 0.9s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease, opacity 0.3s ease;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.08); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-indicator {
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+    @keyframes float-slow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .float-anim {
+      animation: float-slow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">中学技術・情報分野</span>
+            <span class="text-xs text-slate-500 font-medium">ネットワークとプロトコル</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-black text-slate-800 tracking-tight">電子メールが届く仕組み：SMTPサーバーとPOPサーバー</h1>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+        <button id="tabBtnSim" class="px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all bg-white text-blue-600 shadow-sm">
+          🎬 アニメーション
+        </button>
+        <button id="tabBtnCompare" class="px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-600 hover:text-slate-900">
+          📮 郵便との比較・まとめ
+        </button>
+        <button id="tabBtnQuiz" class="px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-600 hover:text-slate-900">
+          ✏️ 3問クイズ
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-5 flex flex-col gap-5">
+
+    <!-- ==================== TAB 1: ANIMATION SIMULATOR ==================== -->
+    <section id="viewSim" class="flex flex-col gap-5">
+
+      <!-- Mode & Controls Bar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <!-- Analogy Toggle -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">表示モード:</span>
+          <div class="inline-flex rounded-xl bg-slate-100 p-1">
+            <button id="modeBothBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-sm transition-all">
+              サーバー ＋ 郵便の例え
+            </button>
+            <button id="modeTechBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all">
+              技術用語のみ
+            </button>
+          </div>
+        </div>
+
+        <!-- Scenario Toggle (Normal vs Offline Receiver) -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-500">実験モード:</span>
+          <button id="toggleOfflineBtn" class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 transition-all">
+            <span id="offlineStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span id="offlineStatusText">花子さんのスマホ：電源ON</span>
+          </button>
+        </div>
+
+        <!-- Sound Toggle -->
+        <div class="flex items-center gap-2">
+          <button id="soundToggleBtn" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all">
+            <span id="soundIcon">🔊</span>
+            <span id="soundText">効果音 ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step Progress Stepper -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="grid grid-cols-6 gap-1.5 sm:gap-2">
+          <button data-step="0" class="step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-blue-600 bg-blue-50/70">
+            <span class="text-[11px] font-bold text-blue-600">STEP 0</span>
+            <span class="text-xs sm:text-sm font-black text-slate-800 truncate w-full text-center">準備・作成</span>
+          </button>
+          <button data-step="1" class="step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-slate-200 hover:border-slate-300">
+            <span class="text-[11px] font-bold text-slate-400">STEP 1</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-600 truncate w-full text-center">送信 (SMTP)</span>
+          </button>
+          <button data-step="2" class="step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-slate-200 hover:border-slate-300">
+            <span class="text-[11px] font-bold text-slate-400">STEP 2</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-600 truncate w-full text-center">宛先確認</span>
+          </button>
+          <button data-step="3" class="step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-slate-200 hover:border-slate-300">
+            <span class="text-[11px] font-bold text-slate-400">STEP 3</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-600 truncate w-full text-center">転送 (SMTP)</span>
+          </button>
+          <button data-step="4" class="step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-slate-200 hover:border-slate-300">
+            <span class="text-[11px] font-bold text-slate-400">STEP 4</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-600 truncate w-full text-center">メール箱保管</span>
+          </button>
+          <button data-step="5" class="step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-slate-200 hover:border-slate-300">
+            <span class="text-[11px] font-bold text-slate-400">STEP 5</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-600 truncate w-full text-center">受信 (POP)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Stage (Visual Diagram) -->
+      <div class="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-4 sm:p-6 text-white shadow-xl relative overflow-hidden border border-slate-700">
+        
+        <!-- Domain Zone Labels -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="bg-orange-500/10 border border-orange-400/30 rounded-2xl px-4 py-2 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-orange-400"></span>
+              <span class="text-xs sm:text-sm font-bold text-orange-200">送信側ネットワーク（@school-a.jp）</span>
+            </div>
+            <span class="analogy-badge text-xs bg-orange-500/20 text-orange-200 px-2.5 py-0.5 rounded-full border border-orange-400/30">📮 自分の町の郵便局エリア</span>
+          </div>
+          <div class="bg-emerald-500/10 border border-emerald-400/30 rounded-2xl px-4 py-2 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+              <span class="text-xs sm:text-sm font-bold text-emerald-200">受信側ネットワーク（@town-b.jp）</span>
+            </div>
+            <span class="analogy-badge text-xs bg-emerald-500/20 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-400/30">🏣 相手の町の郵便局エリア</span>
+          </div>
+        </div>
+
+        <!-- 4 Nodes Stage Container -->
+        <div id="stageArea" class="relative py-8 sm:py-10">
+
+          <!-- Connection Lines Background (Desktop) -->
+          <div class="hidden md:block absolute top-1/2 left-[12%] right-[12%] h-2 -translate-y-1/2 bg-slate-700 rounded-full z-0">
+            <div id="progressLine" class="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 rounded-full transition-all duration-700" style="width: 0%;"></div>
+          </div>
+
+          <!-- Protocol Floating Badges Between Nodes -->
+          <div id="protoBadge1" class="hidden md:flex absolute top-[18%] left-[21%] -translate-x-1/2 z-20 flex-col items-center transition-all duration-300 opacity-60">
+            <span class="px-2.5 py-1 rounded-full text-xs font-black bg-orange-500 text-white shadow-lg border border-orange-300">SMTP で送信</span>
+            <span class="text-[11px] text-orange-200 mt-0.5 font-medium">「お願いします！」</span>
+          </div>
+
+          <div id="protoBadge2" class="hidden md:flex absolute top-[18%] left-[50%] -translate-x-1/2 z-20 flex-col items-center transition-all duration-300 opacity-60">
+            <span class="px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-slate-950 shadow-lg border border-amber-200">🌐 インターネット (SMTP転送)</span>
+            <span class="text-[11px] text-amber-200 mt-0.5 font-medium">バケツリレーで配達</span>
+          </div>
+
+          <div id="protoBadge3" class="hidden md:flex absolute top-[18%] left-[79%] -translate-x-1/2 z-20 flex-col items-center transition-all duration-300 opacity-60">
+            <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-lg border border-emerald-300">POP で取り出し</span>
+            <span class="text-[11px] text-emerald-200 mt-0.5 font-medium">「私宛てのメールある？」</span>
+          </div>
+
+          <!-- Animated Moving Envelope Packet -->
+          <div id="movingPacket" class="mail-packet absolute z-30 pointer-events-none flex flex-col items-center" style="left: 8%; top: 44%;">
+            <div id="packetBubble" class="mb-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-yellow-300 text-slate-900 shadow whitespace-nowrap">
+              ✉️ hanako@town-b.jp 宛
+            </div>
+            <div class="w-14 h-10 rounded-xl bg-gradient-to-br from-yellow-300 to-amber-400 border-2 border-white shadow-xl flex items-center justify-center text-slate-900 font-black text-xl float-anim">
+              ✉️
+            </div>
+          </div>
+
+          <!-- 4 Nodes Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 relative z-10">
+
+            <!-- Node 1: Sender -->
+            <div id="node0" class="node-card bg-slate-800/95 border-2 border-orange-400 rounded-2xl p-4 flex flex-col items-center text-center relative">
+              <div class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 mb-2">① 送信者 (クライアント)</div>
+              <div class="w-16 h-16 rounded-2xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-3xl mb-2">
+                💻
+              </div>
+              <h3 class="font-black text-base text-white">太郎くんのPC</h3>
+              <p class="text-xs text-slate-300 font-mono mt-0.5">taro@school-a.jp</p>
+              <div class="analogy-badge mt-2.5 w-full bg-slate-900/80 rounded-xl p-2 border border-slate-700">
+                <p class="text-xs font-bold text-orange-300">🧑 手紙を書く人</p>
+                <p class="text-[11px] text-slate-300 mt-0.5">メールソフトで作成し「送信」を押す</p>
+              </div>
+            </div>
+
+            <!-- Node 2: SMTP Server -->
+            <div id="node1" class="node-card bg-slate-800/95 border-2 border-slate-600 rounded-2xl p-4 flex flex-col items-center text-center relative">
+              <div class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-500 text-white mb-2 shadow">② 送信メールサーバー</div>
+              <div class="w-16 h-16 rounded-2xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-3xl mb-2 relative">
+                🏢
+                <span class="absolute -bottom-1 -right-1 text-lg">🚚</span>
+              </div>
+              <h3 class="font-black text-base text-orange-300">SMTPサーバー</h3>
+              <p class="text-[11px] text-slate-300 mt-0.5">役割：メールを<strong>送る・届ける</strong></p>
+              <div class="analogy-badge mt-2.5 w-full bg-slate-900/80 rounded-xl p-2 border border-slate-700">
+                <p class="text-xs font-bold text-orange-300">📮 配達する郵便局員</p>
+                <p class="text-[11px] text-slate-300 mt-0.5">住所（@より後ろ）を見て相手の局へ運ぶ</p>
+              </div>
+            </div>
+
+            <!-- Node 3: POP Server (and Destination Mail Server) -->
+            <div id="node2" class="node-card bg-slate-800/95 border-2 border-slate-600 rounded-2xl p-4 flex flex-col items-center text-center relative">
+              <div class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500 text-white mb-2 shadow">③ 受信メールサーバー</div>
+              <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-3xl mb-2 relative">
+                🏦
+                <span id="mailboxBadge" class="hidden absolute -top-2 -right-2 px-2 py-0.5 text-[10px] font-black bg-yellow-300 text-slate-900 rounded-full shadow">1通保管中</span>
+              </div>
+              <h3 class="font-black text-base text-emerald-300">POPサーバー</h3>
+              <p class="text-[11px] text-slate-300 mt-0.5">役割：メール箱に<strong>保管し渡す</strong></p>
+              <div class="analogy-badge mt-2.5 w-full bg-slate-900/80 rounded-xl p-2 border border-slate-700">
+                <p class="text-xs font-bold text-emerald-300">📬 郵便局の私書箱</p>
+                <p class="text-[11px] text-slate-300 mt-0.5">24時間いつでも預かり、本人が来たら渡す</p>
+              </div>
+            </div>
+
+            <!-- Node 4: Receiver -->
+            <div id="node3" class="node-card bg-slate-800/95 border-2 border-slate-600 rounded-2xl p-4 flex flex-col items-center text-center relative">
+              <div class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 mb-2">④ 受信者 (クライアント)</div>
+              <div id="receiverDeviceBox" class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-3xl mb-2 relative">
+                📱
+                <span id="receiverPowerTag" class="absolute -bottom-1 -right-2 px-1.5 py-0.5 text-[10px] font-bold bg-emerald-500 text-white rounded-md">ON</span>
+              </div>
+              <h3 class="font-black text-base text-white">花子さんのスマホ</h3>
+              <p class="text-xs text-slate-300 font-mono mt-0.5">hanako@town-b.jp</p>
+              <div class="analogy-badge mt-2.5 w-full bg-slate-900/80 rounded-xl p-2 border border-slate-700">
+                <p class="text-xs font-bold text-emerald-300">👧 手紙を受け取る人</p>
+                <p class="text-[11px] text-slate-300 mt-0.5">パスワードで本人確認してメールを受け取る</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Live Narration Box inside Stage -->
+        <div class="mt-2 bg-slate-950/90 border border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div id="stepBadgeIcon" class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl shrink-0 font-black shadow-md">
+              0
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="stepProtocolTag" class="text-xs font-black px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                  準備完了
+                </span>
+                <h2 id="stepTitle" class="text-base sm:text-lg font-black text-white">
+                  太郎くんが花子さんへメールを書きました
+                </h2>
+              </div>
+              <p id="stepDescription" class="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed">
+                宛先は「hanako@town-b.jp」です。なぜ直接スマホへ送らずに、2種類のサーバー（SMTPとPOP）を通るのでしょうか？「次のステップへ」を押して動かしてみよう！
+              </p>
+              <p id="stepAnalogyText" class="text-xs text-amber-300 font-medium mt-1.5 flex items-center gap-1.5">
+                <span>💡 郵便でたとえると：</span>
+                <span id="stepAnalogyDetail">手紙を書いて封筒に宛名（住所と名前）を書いた状態です。</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Playback Buttons -->
+          <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-800 pt-3 md:pt-0">
+            <button id="prevStepBtn" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold transition-all disabled:opacity-40" disabled>
+              ◀ 戻る
+            </button>
+            <button id="autoPlayBtn" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-black transition-all shadow">
+              ▶ 自動再生
+            </button>
+            <button id="nextStepBtn" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-black transition-all shadow">
+              次のステップへ ▶
+            </button>
+            <button id="resetStepBtn" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all" title="最初に戻す">
+              ↺
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why do we need two servers? Interactive Spotlight Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-4 border-l-4 border-orange-500 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-black text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-full">覚えるポイント①</span>
+            <span class="text-lg">🚚</span>
+          </div>
+          <h3 class="font-black text-slate-800 text-sm sm:text-base">SMTPサーバー（送信専門）</h3>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+            <strong>S</strong>imple <strong>M</strong>ail <strong>T</strong>ransfer <strong>P</strong>rotocol。<br>
+            依頼されたメールを、宛先のサーバーまで<strong>バケツリレーで送り届ける配達係</strong>です。「送る」ときは必ずSMTPを使います。
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 border-l-4 border-emerald-500 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">覚えるポイント②</span>
+            <span class="text-lg">📬</span>
+          </div>
+          <h3 class="font-black text-slate-800 text-sm sm:text-base">POPサーバー（受信・保管専門）</h3>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+            <strong>P</strong>ost <strong>O</strong>ffice <strong>P</strong>rotocol（郵便局プロトコル）。<br>
+            届いたメールを<strong>自分専用のメールボックスで預かる私書箱係</strong>です。スマホやPCから取りに来るまで大事に保管します。
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 border-l-4 border-blue-500 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-black text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">テストによく出る疑問！</span>
+            <span class="text-lg">💡</span>
+          </div>
+          <h3 class="font-black text-slate-800 text-sm sm:text-base">なぜ直接スマホに送らないの？</h3>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+            もし直接送る仕組みだと、相手のスマホが<strong>電源OFFや圏外のときにメールが消えてしまう</strong>からです。24時間動くPOPサーバーが預かるから安心です！
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: ANALOGY & COMPARISON TABLE ==================== -->
+    <section id="viewCompare" class="hidden flex-col gap-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">板書・プリント用まとめ</span>
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 mt-1">SMTPサーバーとPOPサーバーの違い・郵便との比較</h2>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                <th class="py-3 px-4 font-black">比較項目</th>
+                <th class="py-3 px-4 font-black text-orange-700 bg-orange-50/60">🚚 SMTPサーバー</th>
+                <th class="py-3 px-4 font-black text-emerald-700 bg-emerald-50/60">📬 POPサーバー</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr>
+                <td class="py-3 px-4 font-bold text-slate-700">主な役割</td>
+                <td class="py-3 px-4 font-bold text-orange-700 bg-orange-50/30">メールを送信・転送する（送る係）</td>
+                <td class="py-3 px-4 font-bold text-emerald-700 bg-emerald-50/30">メールを保管し、受信者に渡す（預かる係）</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-bold text-slate-700">郵便でたとえると</td>
+                <td class="py-3 px-4">ポストに投函された手紙を相手の町の郵便局まで運ぶ<strong>「配達員・トラック」</strong></td>
+                <td class="py-3 px-4">届いた手紙を受取人が取りに来るまで預かる<strong>「郵便局の私書箱（ポスト）」</strong></td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-bold text-slate-700">いつ使われる？</td>
+                <td class="py-3 px-4">① 送信ボタンを押したとき<br>② サーバーから相手のサーバーへ転送するとき</td>
+                <td class="py-3 px-4">受信者がメールソフトを開いて「新着メールを受信（確認）」したとき</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-bold text-slate-700">英語の意味（覚え方）</td>
+                <td class="py-3 px-4">Simple Mail <strong>Transfer（転送・運ぶ）</strong> Protocol</td>
+                <td class="py-3 px-4"><strong>Post Office（郵便局）</strong> Protocol</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Address Breakdown Graphic -->
+        <div class="mt-6 bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200">
+          <h3 class="text-sm sm:text-base font-black text-slate-800 mb-3">🔍 メールアドレスのどこをサーバーは見ているの？</h3>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 py-3">
+            <div class="bg-emerald-100 border-2 border-emerald-400 rounded-2xl px-5 py-3 text-center">
+              <div class="text-lg sm:text-2xl font-black font-mono text-emerald-900">hanako</div>
+              <div class="text-xs font-bold text-emerald-700 mt-1">ユーザー名（誰の私書箱か）</div>
+              <div class="text-[11px] text-emerald-600">👉 POPサーバーがメール箱を分けるときに使う</div>
+            </div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-400">@</div>
+            <div class="bg-orange-100 border-2 border-orange-400 rounded-2xl px-5 py-3 text-center">
+              <div class="text-lg sm:text-2xl font-black font-mono text-orange-900">town-b.jp</div>
+              <div class="text-xs font-bold text-orange-700 mt-1">ドメイン名（どこのサーバーか）</div>
+              <div class="text-[11px] text-orange-600">👉 SMTPサーバーが送り先の場所を探すときに使う</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: MINI QUIZ ==================== -->
+    <section id="viewQuiz" class="hidden flex-col gap-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <span class="text-xs font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">授業の振り返りチェック</span>
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 mt-1">理解度チェック！3問クイズ</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="quizScoreBadge" class="text-sm font-black px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700">正解数: 0 / 3</span>
+            <button id="resetQuizBtn" class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 hover:bg-slate-50">
+              もう一度挑戦
+            </button>
+          </div>
+        </div>
+
+        <div id="quizContainer" class="flex flex-col gap-4"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ==================== AUDIO SYNTHESIZER (Web Audio API) ====================
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function playTone(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === 'step') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.12);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          osc.start(now);
+          osc.stop(now + 0.14);
+        } else if (type === 'complete') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.1);
+          osc.frequency.setValueAtTime(783.99, now + 0.2);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+          osc.start(now);
+          osc.stop(now + 0.38);
+        } else if (type === 'correct') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(660, now);
+          osc.frequency.setValueAtTime(880, now + 0.12);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(180, now + 0.15);
+          gain.gain.setValueAtTime(0.07, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+      } catch (e) {
+        // Ignore audio errors if blocked
+      }
+    }
+
+    // ==================== STEP DATA ====================
+    const stepsData = [
+      {
+        step: 0,
+        protocol: "STEP 0：メール作成",
+        title: "太郎くんが花子さんへメールを書きました",
+        desc: "太郎くん（taro@school-a.jp）が、花子さん（hanako@town-b.jp）にメールを書いて「送信」ボタンを押す前の状態です。",
+        analogy: "手紙を書いて封筒に入れ、宛名（hanako@town-b.jp）を書いた状態です。",
+        packetLeft: "8%",
+        packetTop: "44%",
+        bubbleText: "✉️ 作成中",
+        progressWidth: "0%",
+        activeNodes: [0],
+        activeProto: null,
+        mailboxStored: false
+      },
+      {
+        step: 1,
+        protocol: "STEP 1：SMTPで送信依頼",
+        title: "太郎くんのPCから「SMTPサーバー」へメールを送る",
+        desc: "送信ボタンを押すと、まず自分が契約している送信専門の「SMTPサーバー」へメールが送られます。このときの通信ルールが SMTP です。",
+        analogy: "書いた手紙を近くのポストに投函し、自分の町の郵便局（配達係）に集荷してもらった状態です。",
+        packetLeft: "34%",
+        packetTop: "44%",
+        bubbleText: "🚚 SMTPで送信！",
+        progressWidth: "33%",
+        activeNodes: [0, 1],
+        activeProto: 1,
+        mailboxStored: false
+      },
+      {
+        step: 2,
+        protocol: "STEP 2：宛先ドメインの確認",
+        title: "SMTPサーバーが「@の後ろ（ドメイン名）」を調べる",
+        desc: "SMTPサーバーは宛先「hanako@town-b.jp」の @より後ろ（town-b.jp）を見て、インターネット上のどのメールサーバーへ運べばよいか場所を調べます。",
+        analogy: "郵便局員さんが封筒の「住所（○○県○○市）」を見て、どこの郵便局へトラックで運ぶか仕分けしています。",
+        packetLeft: "36%",
+        packetTop: "38%",
+        bubbleText: "🔍 @town-b.jp を検索中",
+        progressWidth: "48%",
+        activeNodes: [1],
+        activeProto: 2,
+        mailboxStored: false
+      },
+      {
+        step: 3,
+        protocol: "STEP 3：インターネット経由で転送 (SMTP)",
+        title: "送信側のSMTPサーバーから、受信側のメールサーバーへ転送！",
+        desc: "インターネットを通って、花子さん側のメールサーバーへメールが転送されます。サーバー同士でメールをバケツリレーするときも SMTP が使われます。",
+        analogy: "自分の町の郵便局から、花子さんの町の郵便局へ配達トラックで手紙が運ばれました。",
+        packetLeft: "61%",
+        packetTop: "44%",
+        bubbleText: "🌐 SMTPでバケツリレー",
+        progressWidth: "68%",
+        activeNodes: [1, 2],
+        activeProto: 2,
+        mailboxStored: true
+      },
+      {
+        step: 4,
+        protocol: "STEP 4：POPサーバーのメールボックスで保管",
+        title: "花子さん専用の「メールボックス」に入れて預かる",
+        desc: "届いたメールは @より前の名前（hanako）を見て、POPサーバー内の花子さん専用メールボックスに保管されます。花子さんのスマホが電源OFFでも安心です！",
+        analogy: "相手の町の郵便局にある「花子さん専用の私書箱」に手紙が入り、本人が取りに来るまで安全に保管されています。",
+        packetLeft: "63%",
+        packetTop: "40%",
+        bubbleText: "📥 私書箱に保管中",
+        progressWidth: "72%",
+        activeNodes: [2],
+        activeProto: null,
+        mailboxStored: true
+      },
+      {
+        step: 5,
+        protocol: "STEP 5：POPでメールを受信（取り出し）",
+        title: "花子さんが「POPサーバー」からメールを取り出して読む！",
+        desc: "花子さんがスマホでメールアプリを開くと、IDとパスワードで本人確認を行い、POPサーバーから自分のスマホへメールを取り出します。このルールが POP です！",
+        analogy: "花子さんが郵便局の私書箱を開けて、自分宛ての手紙を取り出して読みました。配達完了です！",
+        packetLeft: "88%",
+        packetTop: "44%",
+        bubbleText: "🎉 受信完了 (POP)！",
+        progressWidth: "100%",
+        activeNodes: [2, 3],
+        activeProto: 3,
+        mailboxStored: false
+      }
+    ];
+
+    let currentStep = 0;
+    let isReceiverOffline = false;
+    let autoPlayTimer = null;
+
+    // Elements
+    const stepPills = document.querySelectorAll('.step-pill');
+    const movingPacket = document.getElementById('movingPacket');
+    const packetBubble = document.getElementById('packetBubble');
+    const progressLine = document.getElementById('progressLine');
+    const mailboxBadge = document.getElementById('mailboxBadge');
+    const stepBadgeIcon = document.getElementById('stepBadgeIcon');
+    const stepProtocolTag = document.getElementById('stepProtocolTag');
+    const stepTitle = document.getElementById('stepTitle');
+    const stepDescription = document.getElementById('stepDescription');
+    const stepAnalogyDetail = document.getElementById('stepAnalogyDetail');
+    const prevStepBtn = document.getElementById('prevStepBtn');
+    const nextStepBtn = document.getElementById('nextStepBtn');
+    const autoPlayBtn = document.getElementById('autoPlayBtn');
+    const resetStepBtn = document.getElementById('resetStepBtn');
+
+    function updateStageUI() {
+      const data = stepsData[currentStep];
+
+      // Update Step Pills
+      stepPills.forEach((pill, idx) => {
+        const labelSpan = pill.querySelector('span:first-child');
+        const titleSpan = pill.querySelector('span:last-child');
+        if (idx === currentStep) {
+          pill.className = "step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-blue-600 bg-blue-50/80 shadow-sm";
+          labelSpan.className = "text-[11px] font-black text-blue-600";
+          titleSpan.className = "text-xs sm:text-sm font-black text-slate-900 truncate w-full text-center";
+        } else if (idx < currentStep) {
+          pill.className = "step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-emerald-300 bg-emerald-50/40";
+          labelSpan.className = "text-[11px] font-bold text-emerald-600";
+          titleSpan.className = "text-xs sm:text-sm font-bold text-slate-700 truncate w-full text-center";
+        } else {
+          pill.className = "step-pill group flex flex-col items-center p-2 rounded-xl border-2 transition-all border-slate-200 hover:border-slate-300";
+          labelSpan.className = "text-[11px] font-bold text-slate-400";
+          titleSpan.className = "text-xs sm:text-sm font-bold text-slate-600 truncate w-full text-center";
+        }
+      });
+
+      // Handle Offline experiment on Step 5
+      let customTitle = data.title;
+      let customDesc = data.desc;
+      let customAnalogy = data.analogy;
+      let packetLeft = data.packetLeft;
+      let bubbleText = data.bubbleText;
+      let progressW = data.progressWidth;
+      let showMailbox = data.mailboxStored;
+
+      if (isReceiverOffline && currentStep === 4) {
+        customTitle = "花子さんのスマホは電源OFFですが、POPサーバーがしっかり保管！";
+        customDesc = "今、花子さんのスマホは電源が切れています。でも24時間動いているPOPサーバーのメールボックスが代わりに預かってくれるので、メールは消えません！";
+      } else if (isReceiverOffline && currentStep === 5) {
+        customTitle = "スマホが電源OFFなので、POPサーバーで待機中！（実験モード）";
+        customDesc = "花子さんのスマホが電源OFFのため、まだPOPで取り出せません。上の「実験モード：花子さんのスマホ」をクリックして電源ONにしてみよう！";
+        customAnalogy = "花子さんがまだ郵便局の私書箱に取りに来ていないので、郵便局が安全に預かり続けています。";
+        packetLeft = "63%";
+        bubbleText = "⏳ スマホON待ち（保管中）";
+        progressW = "72%";
+        showMailbox = true;
+      }
+
+      // Move Packet
+      movingPacket.style.left = packetLeft;
+      movingPacket.style.top = data.packetTop;
+      packetBubble.textContent = bubbleText;
+      progressLine.style.width = progressW;
+
+      // Mailbox badge
+      if (showMailbox) {
+        mailboxBadge.classList.remove('hidden');
+      } else {
+        mailboxBadge.classList.add('hidden');
+      }
+
+      // Highlight Active Nodes
+      for (let i = 0; i < 4; i++) {
+        const nodeEl = document.getElementById('node' + i);
+        if (data.activeNodes.includes(i)) {
+          nodeEl.classList.add('node-active');
+          nodeEl.classList.remove('border-slate-600');
+          nodeEl.classList.add(i <= 1 ? 'border-orange-400' : 'border-emerald-400');
+        } else {
+          nodeEl.classList.remove('node-active', 'border-orange-400', 'border-emerald-400');
+          nodeEl.classList.add('border-slate-600');
+        }
+      }
+
+      // Highlight Protocol Badges
+      for (let p = 1; p <= 3; p++) {
+        const pBadge = document.getElementById('protoBadge' + p);
+        if (data.activeProto === p) {
+          pBadge.classList.remove('opacity-60');
+          pBadge.classList.add('opacity-100', 'scale-110');
+        } else {
+          pBadge.classList.add('opacity-60');
+          pBadge.classList.remove('opacity-100', 'scale-110');
+        }
+      }
+
+      // Update Narration Text
+      stepBadgeIcon.textContent = data.step;
+      stepProtocolTag.textContent = data.protocol;
+      stepTitle.textContent = customTitle;
+      stepDescription.textContent = customDesc;
+      stepAnalogyDetail.textContent = customAnalogy;
+
+      // Update Buttons
+      prevStepBtn.disabled = currentStep === 0;
+      if (currentStep === stepsData.length - 1) {
+        nextStepBtn.textContent = "最初に戻る ↺";
+      } else {
+        nextStepBtn.textContent = "次のステップへ ▶";
+      }
+    }
+
+    function goToStep(stepIndex) {
+      currentStep = stepIndex;
+      if (currentStep === stepsData.length - 1 && !isReceiverOffline) {
+        playTone('complete');
+      } else {
+        playTone('step');
+      }
+      updateStageUI();
+    }
+
+    function stopAutoPlay() {
+      if (autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+      }
+      autoPlayBtn.textContent = "▶ 自動再生";
+      autoPlayBtn.classList.remove('bg-rose-500', 'hover:bg-rose-400', 'text-white');
+      autoPlayBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+    }
+
+    function toggleAutoPlay() {
+      if (autoPlayTimer) {
+        stopAutoPlay();
+        return;
+      }
+      if (currentStep === stepsData.length - 1) {
+        currentStep = 0;
+        updateStageUI();
+      }
+      autoPlayBtn.textContent = "⏸ 一時停止";
+      autoPlayBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+      autoPlayBtn.classList.add('bg-rose-500', 'hover:bg-rose-400', 'text-white');
+
+      autoPlayTimer = setInterval(() => {
+        if (currentStep < stepsData.length - 1) {
+          goToStep(currentStep + 1);
+        } else {
+          stopAutoPlay();
+        }
+      }, 2800);
+    }
+
+    // Event Listeners for Step Controls
+    prevStepBtn.addEventListener('click', () => {
+      stopAutoPlay();
+      if (currentStep > 0) goToStep(currentStep - 1);
+    });
+
+    nextStepBtn.addEventListener('click', () => {
+      stopAutoPlay();
+      if (currentStep < stepsData.length - 1) {
+        goToStep(currentStep + 1);
+      } else {
+        goToStep(0);
+      }
+    });
+
+    resetStepBtn.addEventListener('click', () => {
+      stopAutoPlay();
+      goToStep(0);
+    });
+
+    autoPlayBtn.addEventListener('click', toggleAutoPlay);
+
+    stepPills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        stopAutoPlay();
+        const target = parseInt(pill.getAttribute('data-step'), 10);
+        goToStep(target);
+      });
+    });
+
+    // Mode Toggle (With Analogy vs Tech Only)
+    const modeBothBtn = document.getElementById('modeBothBtn');
+    const modeTechBtn = document.getElementById('modeTechBtn');
+    const analogyBadges = document.querySelectorAll('.analogy-badge');
+    const stepAnalogyText = document.getElementById('stepAnalogyText');
+
+    modeBothBtn.addEventListener('click', () => {
+      modeBothBtn.className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-sm transition-all";
+      modeTechBtn.className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all";
+      analogyBadges.forEach(el => el.classList.remove('hidden'));
+      stepAnalogyText.classList.remove('hidden');
+    });
+
+    modeTechBtn.addEventListener('click', () => {
+      modeTechBtn.className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-sm transition-all";
+      modeBothBtn.className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all";
+      analogyBadges.forEach(el => el.classList.add('hidden'));
+      stepAnalogyText.classList.add('hidden');
+    });
+
+    // Offline Receiver Experiment Toggle
+    const toggleOfflineBtn = document.getElementById('toggleOfflineBtn');
+    const offlineStatusDot = document.getElementById('offlineStatusDot');
+    const offlineStatusText = document.getElementById('offlineStatusText');
+    const receiverPowerTag = document.getElementById('receiverPowerTag');
+    const receiverDeviceBox = document.getElementById('receiverDeviceBox');
+
+    toggleOfflineBtn.addEventListener('click', () => {
+      isReceiverOffline = !isReceiverOffline;
+      if (isReceiverOffline) {
+        offlineStatusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+        offlineStatusText.textContent = "花子さんのスマホ：電源OFF (圏外)";
+        receiverPowerTag.textContent = "OFF";
+        receiverPowerTag.className = "absolute -bottom-1 -right-2 px-1.5 py-0.5 text-[10px] font-bold bg-rose-600 text-white rounded-md";
+        receiverDeviceBox.classList.add('opacity-50');
+      } else {
+        offlineStatusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+        offlineStatusText.textContent = "花子さんのスマホ：電源ON";
+        receiverPowerTag.textContent = "ON";
+        receiverPowerTag.className = "absolute -bottom-1 -right-2 px-1.5 py-0.5 text-[10px] font-bold bg-emerald-500 text-white rounded-md";
+        receiverDeviceBox.classList.remove('opacity-50');
+        if (currentStep === 5) playTone('complete');
+      }
+      updateStageUI();
+    });
+
+    // Sound Toggle
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const soundIcon = document.getElementById('soundIcon');
+    const soundText = document.getElementById('soundText');
+
+    soundToggleBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundIcon.textContent = soundEnabled ? "🔊" : "🔇";
+      soundText.textContent = soundEnabled ? "効果音 ON" : "効果音 OFF";
+    });
+
+    // ==================== NAVIGATION TABS ====================
+    const tabBtnSim = document.getElementById('tabBtnSim');
+    const tabBtnCompare = document.getElementById('tabBtnCompare');
+    const tabBtnQuiz = document.getElementById('tabBtnQuiz');
+    const viewSim = document.getElementById('viewSim');
+    const viewCompare = document.getElementById('viewCompare');
+    const viewQuiz = document.getElementById('viewQuiz');
+
+    function switchTab(activeTab) {
+      stopAutoPlay();
+      const tabs = [
+        { btn: tabBtnSim, view: viewSim, id: 'sim' },
+        { btn: tabBtnCompare, view: viewCompare, id: 'compare' },
+        { btn: tabBtnQuiz, view: viewQuiz, id: 'quiz' }
+      ];
+      tabs.forEach(t => {
+        if (t.id === activeTab) {
+          t.btn.className = "px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all bg-white text-blue-600 shadow-sm";
+          t.view.classList.remove('hidden');
+          t.view.classList.add('flex');
+        } else {
+          t.btn.className = "px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-600 hover:text-slate-900";
+          t.view.classList.add('hidden');
+          t.view.classList.remove('flex');
+        }
+      });
+    }
+
+    tabBtnSim.addEventListener('click', () => switchTab('sim'));
+    tabBtnCompare.addEventListener('click', () => switchTab('compare'));
+    tabBtnQuiz.addEventListener('click', () => switchTab('quiz'));
+
+    // ==================== 3-QUESTION QUIZ ====================
+    const quizQuestions = [
+      {
+        q: "第1問：メールを「送信」したり、相手のメールサーバーへ「転送」したりするときに使われるサーバーはどちら？",
+        options: [
+          "SMTPサーバー",
+          "POPサーバー",
+          "Webサーバー"
+        ],
+        correct: 0,
+        explanation: "正解！SMTP（Simple Mail Transfer Protocol）はメールを「送る・転送する（Transfer）」役割を持つサーバーです。"
+      },
+      {
+        q: "第2問：相手のスマホの電源が切れているときでも、届いたメールが消えずに済むのはなぜ？",
+        options: [
+          "送信者のパソコンが電源ONになるまでずっと電波を出し続けているから",
+          "24時間動いている受信側のメールサーバー（POPサーバー）のメールボックスが預かってくれるから",
+          "スマホの電源が切れているとメールは自動的にキャンセルされるから"
+        ],
+        correct: 1,
+        explanation: "正解！郵便局の私書箱のように、24時間稼働しているPOPサーバーが自分専用のメールボックスで保管してくれるため、いつでも好きなときに受け取れます。"
+      },
+      {
+        q: "第3問：SMTPサーバーが「どこのメールサーバーへ運べばよいか」を調べるとき、メールアドレス（hanako@town-b.jp）のどこを見ている？",
+        options: [
+          "@より前のユーザー名（hanako）",
+          "@より後ろのドメイン名（town-b.jp）",
+          "メールの件名（タイトル）"
+        ],
+        correct: 1,
+        explanation: "正解！@より後ろの「ドメイン名（town-b.jp）」がインターネット上の住所にあたり、SMTPサーバーはそこを見て相手のメールサーバーを探します。"
+      }
+    ];
+
+    let quizAnswers = {};
+    const quizContainer = document.getElementById('quizContainer');
+    const quizScoreBadge = document.getElementById('quizScoreBadge');
+    const resetQuizBtn = document.getElementById('resetQuizBtn');
+
+    function renderQuiz() {
+      quizContainer.innerHTML = '';
+      let correctCount = 0;
+
+      quizQuestions.forEach((item, qIdx) => {
+        const answered = quizAnswers[qIdx] !== undefined;
+        const selectedOpt = quizAnswers[qIdx];
+        if (answered && selectedOpt === item.correct) {
+          correctCount++;
+        }
+
+        const card = document.createElement('div');
+        card.className = "rounded-2xl border border-slate-200 p-4 bg-slate-50/60";
+
+        const title = document.createElement('h3');
+        title.className = "font-black text-slate-800 text-sm sm:text-base mb-3";
+        title.textContent = item.q;
+        card.appendChild(title);
+
+        const optList = document.createElement('div');
+        optList.className = "flex flex-col gap-2";
+
+        item.options.forEach((optText, oIdx) => {
+          const btn = document.createElement('button');
+          let btnStyle = "text-left px-4 py-2.5 rounded-xl border text-xs sm:text-sm font-bold transition-all ";
+
+          if (!answered) {
+            btnStyle += "bg-white border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 text-slate-700";
+          } else {
+            if (oIdx === item.correct) {
+              btnStyle += "bg-emerald-100 border-emerald-500 text-emerald-900";
+            } else if (oIdx === selectedOpt) {
+              btnStyle += "bg-rose-100 border-rose-400 text-rose-900";
+            } else {
+              btnStyle += "bg-white border-slate-200 text-slate-400 opacity-70";
+            }
+          }
+
+          btn.className = btnStyle;
+          btn.textContent = `${oIdx + 1}. ${optText}`;
+          btn.disabled = answered;
+
+          btn.addEventListener('click', () => {
+            quizAnswers[qIdx] = oIdx;
+            if (oIdx === item.correct) {
+              playTone('correct');
+            } else {
+              playTone('wrong');
+            }
+            renderQuiz();
+          });
+
+          optList.appendChild(btn);
+        });
+
+        card.appendChild(optList);
+
+        if (answered) {
+          const expBox = document.createElement('div');
+          const isRight = selectedOpt === item.correct;
+          expBox.className = `mt-3 p-3 rounded-xl text-xs sm:text-sm font-medium ${isRight ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`;
+          expBox.innerHTML = `<span class="font-black">${isRight ? '⭕ 大正解！' : '❌ おしい！'}</span> ${item.explanation}`;
+          card.appendChild(expBox);
+        }
+
+        quizContainer.appendChild(card);
+      });
+
+      quizScoreBadge.textContent = `正解数: ${correctCount} / ${quizQuestions.length}`;
+    }
+
+    resetQuizBtn.addEventListener('click', () => {
+      quizAnswers = {};
+      renderQuiz();
+    });
+
+    // Initialize
+    updateStageUI();
+    renderQuiz();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>情報Ⅰ インタラクティブ教材「データ探偵ラボ」</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans JP & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* ベースフォント設定 */
+    body {
+      font-family: 'Noto Sans JP', 'Inter', sans-serif;
+      background-color: #f0f5fa;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    /* タブ切り替え時のフェードインアニメーション */
+    .tab-panel {
+      display: none;
+      animation: fadeSlideIn 0.35s ease-out forwards;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ポップイン演出（代表値○×やバブル用） */
+    @keyframes popBounce {
+      0% { transform: scale(0.4); opacity: 0; }
+      65% { transform: scale(1.18); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* ゆらゆら浮遊（警告や？マーク用） */
+    @keyframes wobble {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-6deg); }
+      75% { transform: rotate(6deg); }
+    }
+    .animate-wobble {
+      animation: wobble 0.6s ease-in-out 2;
+    }
+
+    /* マーカーの滑らかな移動（外れ値シミュレーター） */
+    .smooth-marker {
+      transition: left 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    }
+    .smooth-width {
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .smooth-height {
+      transition: height 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* SNSキーワードハイライト演出 */
+    .kw-highlight {
+      transition: all 0.3s ease;
+      border-radius: 0.375rem;
+      padding: 0.05rem 0.3rem;
+      font-weight: 700;
+    }
+    .kw-pos {
+      background-color: #dcfce7;
+      color: #15803d;
+      box-shadow: 0 0 0 2px #86efac;
+    }
+    .kw-neg {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      box-shadow: 0 0 0 2px #fca5a5;
+    }
+    .kw-neu {
+      background-color: #fef3c7;
+      color: #b45309;
+      box-shadow: 0 0 0 2px #fcd34d;
+    }
+
+    /* 品詞分解ブロックのアニメーション */
+    .morpheme-block {
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ワードクラウドのバブル */
+    .wc-bubble {
+      position: absolute;
+      transform: translate(-50%, -50%) scale(0);
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-weight: 800;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease, filter 0.3s ease;
+      user-select: none;
+    }
+    .wc-bubble.visible {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .wc-bubble.visible:hover {
+      transform: translate(-50%, -50%) scale(1.12);
+      z-index: 30;
+    }
+    .wc-bubble.dimmed {
+      opacity: 0.15;
+      filter: grayscale(80%);
+      transform: translate(-50%, -50%) scale(0.85);
+    }
+
+    /* カスタムレンジスライダー */
+    input[type="range"] {
+      accent-color: #ef4444;
+    }
+
+    /* スクロールバー調整（横スクロールナビ用） */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shadow-inner shrink-0">
+            🔍
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold bg-amber-400 text-slate-900 px-2.5 py-0.5 rounded-full">高校 情報Ⅰ</span>
+              <span class="text-xs font-medium bg-white/20 px-2.5 py-0.5 rounded-full">教科書 p.124〜127 対応</span>
+            </div>
+            <h1 class="text-lg sm:text-2xl font-black tracking-tight mt-0.5">
+              インタラクティブ教材「データ探偵ラボ」
+            </h1>
+          </div>
+        </div>
+        <p class="text-xs sm:text-sm text-blue-100 font-medium">
+          〜 データの種類と分析をアニメーションで体験しよう 〜
+        </p>
+      </div>
+
+      <!-- ナビゲーションタブ（全5タブ） -->
+      <nav class="mt-3 -mb-3 flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-3" role="tablist">
+        <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-md">
+          <span>📊</span> ① データの種類と尺度
+        </button>
+        <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white/15 text-white hover:bg-white/25">
+          <span>⚡</span> ② 欠損値・外れ値シミュレーター
+        </button>
+        <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white/15 text-white hover:bg-white/25">
+          <span>📈</span> ③ データの可視化
+        </button>
+        <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white/15 text-white hover:bg-white/25">
+          <span>💬</span> ④ テキストデータの分析
+        </button>
+        <button onclick="switchTab(5)" id="tab-btn-5" class="tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white/15 text-white hover:bg-white/25">
+          <span>📖</span> ⑤ テキストマイニングの方法
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- ===================================================================== -->
+    <!-- タブ1：① データの種類と尺度（教科書 p.124〜125）                       -->
+    <!-- ===================================================================== -->
+    <section id="tab-panel-1" class="tab-panel active space-y-6">
+      <!-- セクションヘッダー -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-xl text-base">ミッション1</span>
+            データの種類と4つの尺度を見分けよう！
+          </h2>
+          <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">教科書 p.124〜125</span>
+        </div>
+
+        <!-- 質的 vs 量的 / 定性 vs 定量 比較カード -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="rounded-2xl bg-amber-50 border-2 border-amber-200 p-4">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xl">🏷️</span>
+              <h3 class="font-extrabold text-amber-900 text-lg">質的データ（文字や種類）</h3>
+              <span class="ml-auto text-xs font-bold bg-amber-200 text-amber-900 px-2.5 py-0.5 rounded-full">定性分析</span>
+            </div>
+            <p class="text-sm text-amber-900/80 leading-relaxed">
+              血液型やテストの順位など、<strong>種類を区別するデータ</strong>。数量で表すことができない。<br>
+              <span class="inline-block mt-1 font-bold text-amber-800">👉「名義尺度」「順序尺度」がこれにあたる</span>
+            </p>
+          </div>
+          <div class="rounded-2xl bg-sky-50 border-2 border-sky-200 p-4">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xl">📏</span>
+              <h3 class="font-extrabold text-sky-900 text-lg">量的データ（測れる数値）</h3>
+              <span class="ml-auto text-xs font-bold bg-sky-200 text-sky-900 px-2.5 py-0.5 rounded-full">定量分析</span>
+            </div>
+            <p class="text-sm text-sky-900/80 leading-relaxed">
+              気温や通学時間、体重など、<strong>数量で表すことができるデータ</strong>。計算に意味がある。<br>
+              <span class="inline-block mt-1 font-bold text-sky-800">👉「間隔尺度」「比例尺度」がこれにあたる</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4つの身近なデータカード選択エリア -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <p class="text-sm sm:text-base font-bold text-indigo-700 mb-3 flex items-center gap-2">
+          <span>👇</span> 下の4つのデータカードをクリックして、データの「性格（尺度）」を判定してみよう！
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button onclick="selectScaleCard('nominal')" id="scale-card-nominal" class="scale-card text-left p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer">
+            <div class="text-2xl mb-1">🚌</div>
+            <div class="font-extrabold text-slate-800 text-base">通学手段</div>
+            <div class="text-xs text-slate-600 mt-1 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+              1.徒歩　2.自転車　3.バス
+            </div>
+          </button>
+
+          <button onclick="selectScaleCard('ordinal')" id="scale-card-ordinal" class="scale-card text-left p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer">
+            <div class="text-2xl mb-1">🏆</div>
+            <div class="font-extrabold text-slate-800 text-base">学校行事の順位</div>
+            <div class="text-xs text-slate-600 mt-1 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+              好きな順に 1位 〜 6位
+            </div>
+          </button>
+
+          <button onclick="selectScaleCard('interval')" id="scale-card-interval" class="scale-card text-left p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer">
+            <div class="text-2xl mb-1">🌡️</div>
+            <div class="font-extrabold text-slate-800 text-base">気温（℃）</div>
+            <div class="text-xs text-slate-600 mt-1 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+              昨日 15℃ ／ 今日 30℃
+            </div>
+          </button>
+
+          <button onclick="selectScaleCard('ratio')" id="scale-card-ratio" class="scale-card text-left p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer">
+            <div class="text-2xl mb-1">⏱️</div>
+            <div class="font-extrabold text-slate-800 text-base">通学時間（分）</div>
+            <div class="text-xs text-slate-600 mt-1 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+              Aさん 15分 ／ Bさん 30分
+            </div>
+          </button>
+        </div>
+
+        <!-- 判定結果＆ビジュアル検証ステージ -->
+        <div id="scale-result-stage" class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- 左側：判定結果＆ビジュアル検証 -->
+          <div class="lg:col-span-7 rounded-2xl bg-slate-50 border-2 border-indigo-100 p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex flex-wrap items-center gap-2 mb-3">
+                <span id="res-scale-badge" class="text-lg sm:text-xl font-black px-4 py-1.5 rounded-xl bg-indigo-600 text-white shadow-sm">
+                  名義尺度
+                </span>
+                <span id="res-type-badge" class="text-sm font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  質的データ（定性分析）
+                </span>
+              </div>
+              <p id="res-desc" class="text-sm sm:text-base text-slate-700 font-medium leading-relaxed mb-4">
+                固有の番号を割り当てて区別するだけの尺度です。番号の大小や順番に意味はありません。
+              </p>
+
+              <!-- 差と比のチェックバッジ -->
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div id="check-diff-box" class="rounded-xl p-3 border-2 bg-white flex items-center justify-between">
+                  <span class="text-xs sm:text-sm font-bold text-slate-700">差（引き算）の意味</span>
+                  <span id="check-diff-val" class="text-lg font-black">❌ なし</span>
+                </div>
+                <div id="check-ratio-box" class="rounded-xl p-3 border-2 bg-white flex items-center justify-between">
+                  <span class="text-xs sm:text-sm font-bold text-slate-700">比（2倍など）の意味</span>
+                  <span id="check-ratio-val" class="text-lg font-black">❌ なし</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- インタラクティブ・ビジュアル検証エリア -->
+            <div id="scale-visual-demo" class="rounded-xl bg-white border border-slate-200 p-4 min-h-[160px] flex flex-col justify-center">
+              <!-- JSで動的描画 -->
+            </div>
+          </div>
+
+          <!-- 右側：比較に適する代表値（表2）アニメーション点灯 -->
+          <div class="lg:col-span-5 rounded-2xl bg-white border-2 border-slate-200 p-5 flex flex-col justify-between">
+            <div>
+              <h3 class="font-extrabold text-slate-800 text-base sm:text-lg mb-1 flex items-center gap-2">
+                <span>🎯</span> 比較に適する代表値（p.125 表2）
+              </h3>
+              <p class="text-xs text-slate-500 mb-4">選んだ尺度で「計算して意味がある代表値」が光ります！</p>
+
+              <div class="overflow-hidden rounded-xl border border-slate-200">
+                <table class="w-full text-center text-sm">
+                  <thead class="bg-slate-100 text-slate-700 font-bold">
+                    <tr>
+                      <th class="py-2.5 px-2 text-left">尺度</th>
+                      <th class="py-2.5 px-2">最頻値<br><span class="text-[10px] font-normal">最も多い値</span></th>
+                      <th class="py-2.5 px-2">中央値<br><span class="text-[10px] font-normal">真ん中の値</span></th>
+                      <th class="py-2.5 px-2">平均値<br><span class="text-[10px] font-normal">合計÷個数</span></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    <tr id="row-nominal" class="transition-colors duration-300">
+                      <td class="py-3 px-2 text-left font-bold">名義尺度</td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">×</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">×</span></td>
+                    </tr>
+                    <tr id="row-ordinal" class="transition-colors duration-300">
+                      <td class="py-3 px-2 text-left font-bold">順序尺度</td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">×</span></td>
+                    </tr>
+                    <tr id="row-interval" class="transition-colors duration-300">
+                      <td class="py-3 px-2 text-left font-bold">間隔尺度</td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                    </tr>
+                    <tr id="row-ratio" class="transition-colors duration-300">
+                      <td class="py-3 px-2 text-left font-bold">比例尺度</td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                      <td class="py-3 px-2"><span class="rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base">○</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="rep-tip" class="mt-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-xs sm:text-sm text-indigo-900 font-medium">
+              💡 ヒント：通学手段の平均が「2.3（自転車とバスの間？）」になっても意味が分かりませんよね！だから最頻値だけが使えます。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- タブ2：② 欠損値・外れ値シミュレーター（教科書 p.125・最重要）         -->
+    <!-- ===================================================================== -->
+    <section id="tab-panel-2" class="tab-panel space-y-6">
+
+      <!-- (A) 外れ値「あり／なし」シミュレーター -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-xl text-base">実験 A</span>
+            外れ値「あり／なし」シミュレーター（通学時間）
+          </h2>
+          <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">教科書 p.125</span>
+        </div>
+        <p class="text-sm text-slate-600 mb-4">
+          クラスの9人（10, 15, 15, 20, 20, 20, 25, 30, 35分）に、遠方から通う1人（外れ値）が加わると、<strong>平均値・中央値・最頻値</strong>はどう動くでしょうか？
+        </p>
+
+        <!-- 操作コントロール -->
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6">
+          <div class="flex gap-2 shrink-0">
+            <button onclick="setOutlierMode(false)" id="btn-outlier-off" class="px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm bg-indigo-600 text-white">
+              外れ値なし（9人）
+            </button>
+            <button onclick="setOutlierMode(true)" id="btn-outlier-on" class="px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm bg-white text-slate-700 border border-slate-300 hover:bg-rose-50">
+              外れ値あり（+1人追加！）
+            </button>
+          </div>
+
+          <!-- スライダー -->
+          <div id="outlier-slider-wrap" class="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 opacity-40 pointer-events-none transition-opacity">
+            <label for="outlier-slider" class="text-xs sm:text-sm font-bold text-rose-700 shrink-0">
+              外れ値の通学時間を動かす：
+            </label>
+            <input type="range" id="outlier-slider" min="50" max="200" step="5" value="150" oninput="updateOutlierValue(this.value)" class="flex-1 h-2 bg-rose-200 rounded-lg cursor-pointer">
+            <span id="outlier-val-display" class="text-lg font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-xl shrink-0 text-center min-w-[82px]">
+              150分
+            </span>
+          </div>
+        </div>
+
+        <!-- 数直線ドットプロット＆代表値マーカーアニメーション -->
+        <div class="relative bg-gradient-to-b from-slate-50 to-white rounded-2xl border-2 border-slate-200 p-4 sm:p-6 pt-24 pb-10 overflow-hidden">
+          <!-- マーカーエリア（上部） -->
+          <div class="relative w-full h-16 mb-2">
+            <!-- 平均値マーカー -->
+            <div id="marker-mean" class="smooth-marker absolute top-0 -translate-x-1/2 flex flex-col items-center z-20" style="left: 10%;">
+              <div class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">
+                平均値 <span id="marker-mean-val">21.1</span>分
+              </div>
+              <div class="w-0.5 h-6 bg-rose-500"></div>
+              <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-rose-600"></div>
+            </div>
+
+            <!-- 中央値マーカー -->
+            <div id="marker-median" class="smooth-marker absolute top-9 -translate-x-1/2 flex flex-col items-center z-10" style="left: 10%;">
+              <div class="bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-md shadow whitespace-nowrap">
+                中央値 <span id="marker-median-val">20.0</span>分
+              </div>
+              <div class="w-0.5 h-2 bg-emerald-500"></div>
+            </div>
+          </div>
+
+          <!-- ドットプロット描画エリア -->
+          <div id="dotplot-container" class="relative w-full h-24 border-b-4 border-slate-400">
+            <!-- JSでドットを描画 -->
+          </div>
+
+          <!-- 目盛り（0分〜200分） -->
+          <div class="relative w-full h-6 mt-1 text-xs font-bold text-slate-500">
+            <span class="absolute left-[0%] -translate-x-1/2">0分</span>
+            <span class="absolute left-[25%] -translate-x-1/2">50分</span>
+            <span class="absolute left-[50%] -translate-x-1/2">100分</span>
+            <span class="absolute left-[75%] -translate-x-1/2">150分</span>
+            <span class="absolute left-[100%] -translate-x-1/2">200分</span>
+          </div>
+        </div>
+
+        <!-- 3つの代表値スコアカード -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+          <div id="card-mean" class="rounded-2xl p-4 border-2 border-rose-200 bg-rose-50 transition-all">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-rose-800">平均値（Average）</span>
+              <span id="badge-mean-change" class="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-rose-600">通常</span>
+            </div>
+            <div class="text-3xl font-black text-rose-700 mt-1"><span id="stat-mean">21.1</span> <span class="text-base font-bold">分</span></div>
+            <p id="desc-mean" class="text-xs text-rose-900/80 mt-1">すべての値を足して人数で割るため、外れ値の影響を強く受けます。</p>
+          </div>
+
+          <div class="rounded-2xl p-4 border-2 border-emerald-200 bg-emerald-50">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-emerald-800">中央値（Median）</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">安定！</span>
+            </div>
+            <div class="text-3xl font-black text-emerald-700 mt-1"><span id="stat-median">20.0</span> <span class="text-base font-bold">分</span></div>
+            <p class="text-xs text-emerald-900/80 mt-1">大きさ順に並べた真ん中の値。極端な外れ値があってもビクともしません！</p>
+          </div>
+
+          <div class="rounded-2xl p-4 border-2 border-blue-200 bg-blue-50">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-blue-800">最頻値（Mode）</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-200 text-blue-900">不動！</span>
+            </div>
+            <div class="text-3xl font-black text-blue-700 mt-1"><span id="stat-mode">20</span> <span class="text-base font-bold">分</span></div>
+            <p class="text-xs text-blue-900/80 mt-1">最も人数が多い値（20分が3人）。外れ値が1人増えても変わりません。</p>
+          </div>
+        </div>
+
+        <!-- 外れ値 vs 異常値 トグル解説カード -->
+        <div class="mt-5 rounded-2xl border-2 border-amber-200 bg-amber-50/70 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="font-extrabold text-amber-900 text-sm sm:text-base flex items-center gap-2">
+              <span>🧐</span> 「外れ値」と「異常値」はどう違うの？（クリックで切り替え）
+            </h3>
+            <div class="flex gap-1.5 bg-white p-1 rounded-xl border border-amber-200">
+              <button onclick="toggleAnomalyCard('outlier')" id="btn-toggle-outlier" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-white transition-all">外れ値（150分）</button>
+              <button onclick="toggleAnomalyCard('anomaly')" id="btn-toggle-anomaly" class="px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 hover:bg-amber-100 transition-all">異常値（8位と入力）</button>
+            </div>
+          </div>
+          <div id="anomaly-explain-box" class="mt-3 text-sm text-slate-700 bg-white p-3.5 rounded-xl border border-amber-200 leading-relaxed">
+            <!-- JSで切り替え -->
+          </div>
+        </div>
+      </div>
+
+      <!-- (B) 欠損値「あり／なし」シミュレーター -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span class="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-xl text-base">実験 B</span>
+            欠損値「あり／なし」シミュレーター（10人の小テスト結果）
+          </h2>
+          <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">教科書 p.125</span>
+        </div>
+        <p class="text-sm text-slate-600 mb-4">
+          10人のうち2人が「無回答（欠損値）」だったとき、<strong>処理の仕方</strong>で平均点がどれほど変わってしまうか体験しよう！
+        </p>
+
+        <!-- 3つの状態切り替えボタン -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-6">
+          <button onclick="setMissingMode('none')" id="btn-miss-none" class="miss-btn p-3.5 rounded-xl border-2 font-bold text-sm text-left transition-all bg-indigo-600 text-white border-indigo-600 shadow-md">
+            <div class="text-xs opacity-80">パターン 1</div>
+            <div>✅ 欠損値なし（全員回答）</div>
+          </button>
+          <button onclick="setMissingMode('wrong')" id="btn-miss-wrong" class="miss-btn p-3.5 rounded-xl border-2 font-bold text-sm text-left transition-all bg-white text-slate-700 border-slate-200 hover:border-rose-400">
+            <div class="text-xs text-rose-500">パターン 2（NG例）</div>
+            <div>⚠️ 欠損値あり：0点として計算</div>
+          </button>
+          <button onclick="setMissingMode('correct')" id="btn-miss-correct" class="miss-btn p-3.5 rounded-xl border-2 font-bold text-sm text-left transition-all bg-white text-slate-700 border-slate-200 hover:border-emerald-400">
+            <div class="text-xs text-emerald-600">パターン 3（OK例）</div>
+            <div>✨ 欠損値あり：総数から除外</div>
+          </button>
+        </div>
+
+        <!-- 10人の生徒データカード群 -->
+        <div id="missing-students-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-5">
+          <!-- JSで生成 -->
+        </div>
+
+        <!-- 計算式＆平均値ゲージ -->
+        <div id="missing-result-box" class="rounded-2xl p-5 border-2 transition-all duration-300 bg-indigo-50 border-indigo-200">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div id="missing-status-badge" class="inline-block text-xs font-black px-3 py-1 rounded-full bg-indigo-600 text-white">
+                全員回答（基準となる平均点）
+              </div>
+              <div class="text-sm sm:text-base font-bold text-slate-700 mt-1">
+                計算式：合計 <span id="miss-sum" class="text-lg font-black text-indigo-700">760</span> 点 ÷ <span id="miss-denom" class="text-xl font-black px-2 py-0.5 rounded-lg bg-white border border-indigo-300 text-indigo-700">10</span> 人
+              </div>
+              <p id="miss-comment" class="text-xs sm:text-sm text-slate-600">
+                10人全員の回答がそろっている理想的な状態です。
+              </p>
+            </div>
+            <div class="flex items-center gap-4 shrink-0">
+              <div class="text-right">
+                <div class="text-xs font-bold text-slate-500">算出された平均点</div>
+                <div id="miss-avg-val" class="text-4xl font-black text-indigo-700">76.0<span class="text-lg font-bold ml-1">点</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 平均点バーメーター -->
+          <div class="mt-4">
+            <div class="w-full h-5 bg-white/80 rounded-full overflow-hidden border border-slate-300 p-0.5">
+              <div id="miss-avg-bar" class="smooth-width h-full rounded-full bg-indigo-500" style="width: 76%;"></div>
+            </div>
+            <div class="flex justify-between text-[11px] font-bold text-slate-400 mt-1">
+              <span>0点</span><span>50点</span><span>76点（本来の平均）</span><span>100点</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 無回答の理由ポイント -->
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-start gap-2">
+            <span class="text-lg">🤔</span>
+            <div><strong class="text-slate-800">回答不能：</strong>当てはまる選択肢がない・分からない</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-start gap-2">
+            <span class="text-lg">✏️</span>
+            <div><strong class="text-slate-800">記入忘れ：</strong>うっかり書き飛ばしてしまった</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-start gap-2">
+            <span class="text-lg">🙅</span>
+            <div><strong class="text-slate-800">拒否：</strong>プライバシーなどで答えたくない</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- タブ3：③ データの可視化（教科書 p.126）                               -->
+    <!-- ===================================================================== -->
+    <section id="tab-panel-3" class="tab-panel space-y-6">
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-xl text-base">ミッション3</span>
+            生データを「可視化」＆「クロス集計」しよう！
+          </h2>
+          <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">教科書 p.126</span>
+        </div>
+        <p class="text-sm text-slate-600 mb-5">
+          数字の羅列だけではピンとこないデータも、<strong>積み上げ棒グラフ</strong>にすると全体像が一瞬で見えます。さらに学年別の<strong>クロス集計</strong>で隠れた傾向を発見しよう！
+        </p>
+
+        <!-- 表示モード切り替え ＆ クロス集計ボタン -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 mb-5">
+          <div class="flex gap-2">
+            <button onclick="setVizMode('table')" id="btn-viz-table" class="px-4 py-2 rounded-xl font-bold text-sm transition-all bg-white text-slate-700 border border-slate-300 hover:bg-slate-100">
+              📋 生データ（表）を見る
+            </button>
+            <button onclick="setVizMode('chart')" id="btn-viz-chart" class="px-4 py-2 rounded-xl font-bold text-sm transition-all bg-emerald-600 text-white shadow-md">
+              📊 積み上げ棒グラフに変換！
+            </button>
+          </div>
+
+          <!-- クロス集計フィルター -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-xs font-extrabold text-indigo-700 mr-1">クロス集計（学年×行事）：</span>
+            <button onclick="setCrossGrade('all')" id="grade-btn-all" class="grade-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-sm">全体 (160人)</button>
+            <button onclick="setCrossGrade('g1')" id="grade-btn-g1" class="grade-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-600 border border-slate-300 hover:bg-indigo-50">1年生</button>
+            <button onclick="setCrossGrade('g2')" id="grade-btn-g2" class="grade-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-600 border border-slate-300 hover:bg-indigo-50">2年生</button>
+            <button onclick="setCrossGrade('g3')" id="grade-btn-g3" class="grade-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-600 border border-slate-300 hover:bg-indigo-50">3年生</button>
+          </div>
+        </div>
+
+        <!-- 生データ表ビュー -->
+        <div id="viz-table-view" class="hidden overflow-x-auto rounded-2xl border border-slate-200 mb-4">
+          <table class="w-full text-center text-sm">
+            <thead class="bg-slate-100 text-slate-700 font-bold">
+              <tr>
+                <th class="py-3 px-3 text-left">学校行事</th>
+                <th class="py-3 px-2">1位</th>
+                <th class="py-3 px-2">2位</th>
+                <th class="py-3 px-2">3位</th>
+                <th class="py-3 px-2">4位</th>
+                <th class="py-3 px-2">5位</th>
+                <th class="py-3 px-2">6位</th>
+                <th class="py-3 px-2">合計</th>
+              </tr>
+            </thead>
+            <tbody id="viz-table-body" class="divide-y divide-slate-200 bg-white font-medium">
+              <!-- JSで生成 -->
+            </tbody>
+          </table>
+          <div class="bg-amber-50 p-3 text-xs sm:text-sm text-amber-900 font-bold text-center border-t border-amber-200">
+            😵 数字だけだと「どれが一番人気で、どれが不人気か」パッと見では分かりにくいですね…！「積み上げ棒グラフに変換！」を押してみよう！
+          </div>
+        </div>
+
+        <!-- 積み上げ棒グラフビュー -->
+        <div id="viz-chart-view" class="relative bg-slate-50 rounded-2xl border-2 border-slate-200 p-4 sm:p-6">
+          <!-- 凡例 -->
+          <div class="flex flex-wrap items-center justify-center gap-3 mb-6 text-xs font-bold">
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-cyan-400 inline-block"></span>1位</span>
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-blue-600 inline-block"></span>2位</span>
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-purple-500 inline-block"></span>3位</span>
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-amber-300 inline-block"></span>4位</span>
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-orange-500 inline-block"></span>5位</span>
+            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span>6位（最下位）</span>
+          </div>
+
+          <!-- グラフ本体 -->
+          <div class="relative flex items-end justify-around gap-2 sm:gap-5 h-72 border-b-2 border-slate-400 pl-8 pr-2 pt-2">
+            <!-- Y軸ガイドライン -->
+            <div class="absolute inset-0 left-8 pointer-events-none flex flex-col justify-between text-[11px] font-bold text-slate-400">
+              <div class="border-t border-dashed border-slate-300 w-full relative"><span id="y-max" class="absolute -left-8 -top-2">160</span></div>
+              <div class="border-t border-dashed border-slate-300 w-full relative"><span id="y-75" class="absolute -left-8 -top-2">120</span></div>
+              <div class="border-t border-dashed border-slate-300 w-full relative"><span id="y-50" class="absolute -left-8 -top-2">80</span></div>
+              <div class="border-t border-dashed border-slate-300 w-full relative"><span id="y-25" class="absolute -left-8 -top-2">40</span></div>
+              <div class="w-full relative"><span class="absolute -left-6 -top-2">0</span></div>
+            </div>
+
+            <!-- 6本の積み上げ棒（JSで生成） -->
+            <div id="stacked-bars-area" class="relative z-10 w-full h-full flex items-end justify-around gap-2 sm:gap-5">
+              <!-- JSで描画 -->
+            </div>
+          </div>
+
+          <!-- X軸ラベル -->
+          <div class="flex justify-around gap-2 sm:gap-5 pl-8 pr-2 mt-2 text-center text-[11px] sm:text-xs font-extrabold text-slate-700">
+            <div class="w-1/6">体育祭</div>
+            <div class="w-1/6">文化祭</div>
+            <div class="w-1/6">修学旅行</div>
+            <div class="w-1/6">球技大会</div>
+            <div class="w-1/6">芸術鑑賞会</div>
+            <div class="w-1/6 text-rose-600">マラソン大会</div>
+          </div>
+
+          <!-- ホバー詳細ツールチップ表示バー -->
+          <div id="chart-hover-info" class="mt-4 text-center text-xs sm:text-sm font-bold text-slate-600 bg-white py-2 px-4 rounded-xl border border-slate-200">
+            👆 グラフの色の部分にマウスを合わせる（またはタップする）と、詳しい人数が表示されます！
+          </div>
+        </div>
+
+        <!-- 発見ポイントボックス -->
+        <div id="viz-insight-box" class="mt-4 rounded-2xl bg-indigo-50 border-2 border-indigo-200 p-4 flex items-start gap-3">
+          <div class="text-2xl shrink-0">💡</div>
+          <div>
+            <h3 id="viz-insight-title" class="font-extrabold text-indigo-900 text-sm sm:text-base">全体のグラフから分かる大発見！</h3>
+            <p id="viz-insight-text" class="text-xs sm:text-sm text-indigo-900/85 mt-1 leading-relaxed">
+              <strong>文化祭</strong>と<strong>体育祭</strong>は1位・2位（水色・青）が非常に多く大人気！一方で<strong>マラソン大会</strong>は「6位（緑）」が圧倒的に多く、多くの生徒が苦手意識を持っていることが一瞬で分かります。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- タブ4：④ テキストデータの分析（教科書 p.126）                         -->
+    <!-- ===================================================================== -->
+    <section id="tab-panel-4" class="tab-panel space-y-6">
+      <!-- データマイニングとテキストマイニングの関係図解 -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-xl text-base">ミッション4</span>
+            SNSのつぶやきから「本音」を発掘しよう！
+          </h2>
+          <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">教科書 p.126</span>
+        </div>
+
+        <div class="rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-100 p-4 flex flex-col md:flex-row items-center gap-4">
+          <div class="flex-1 bg-white rounded-xl p-3.5 border border-indigo-200 shadow-sm w-full">
+            <div class="text-xs font-bold text-indigo-600">親となる大きな技術</div>
+            <div class="text-base font-black text-slate-800 flex items-center gap-1.5 mt-0.5">
+              <span>⛏️</span> データマイニング（Data Mining）
+            </div>
+            <p class="text-xs text-slate-600 mt-1">大量のデータの中から、隠れたパターンや規則性を掘り出す（マイニングする）技術。</p>
+          </div>
+          <div class="text-2xl font-black text-purple-500 rotate-90 md:rotate-0">➔</div>
+          <div class="flex-1 bg-purple-600 text-white rounded-xl p-3.5 shadow-md w-full">
+            <div class="text-xs font-bold text-purple-200">その中でも「文章」に特化！</div>
+            <div class="text-base font-black flex items-center gap-1.5 mt-0.5">
+              <span>💬</span> テキストマイニング（Text Mining）
+            </div>
+            <p class="text-xs text-purple-100 mt-1">SNSの投稿や自由記述アンケートなど<strong>文章（文字列）</strong>から単語の出現回数や傾向を解析する！</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SNSコンビニスイーツ分析シミュレーター -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+              <span>🍰</span> 新発売「とろける苺プリン」SNS評判シミュレーター
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-500">10件のリアルなSNS投稿から、AIが自動でキーワードを抽出・集計します。</p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="runTextMining()" id="btn-run-tm" class="px-5 py-2.5 rounded-xl font-black text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md hover:brightness-110 active:scale-95 transition-all">
+              ✨ テキストマイニングを実行！
+            </button>
+            <button onclick="resetTextMining()" class="px-3.5 py-2.5 rounded-xl font-bold text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">
+              リセット
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- 左側：SNS投稿カード10件 -->
+          <div class="lg:col-span-7 space-y-2.5">
+            <div class="text-xs font-bold text-slate-500 mb-1">📱 集まったSNS投稿（10件）</div>
+            <div id="sns-posts-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <!-- JSで生成 -->
+            </div>
+          </div>
+
+          <!-- 右側：リアルタイム抽出カウント＆ポジネガ分析 -->
+          <div class="lg:col-span-5 flex flex-col gap-4">
+            <div class="rounded-2xl bg-slate-50 border-2 border-slate-200 p-4 flex-1">
+              <h4 class="font-extrabold text-slate-800 text-sm mb-3 flex items-center justify-between">
+                <span>📊 抽出キーワード出現回数</span>
+                <span id="tm-progress-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600">待機中</span>
+              </h4>
+              <div id="tm-bars-container" class="space-y-2.5">
+                <!-- JSで生成 -->
+              </div>
+            </div>
+
+            <!-- ポジティブ／ネガティブ傾向分析 -->
+            <div class="rounded-2xl bg-white border-2 border-purple-200 p-4">
+              <h4 class="font-extrabold text-purple-900 text-sm mb-2">🎭 評判の傾向（ポジティブ vs ネガティブ）</h4>
+              <div class="flex h-7 rounded-xl overflow-hidden bg-slate-200 text-xs font-black text-white">
+                <div id="bar-pos" class="smooth-width bg-emerald-500 flex items-center justify-center overflow-hidden" style="width: 0%;"></div>
+                <div id="bar-neg" class="smooth-width bg-rose-500 flex items-center justify-center overflow-hidden" style="width: 0%;"></div>
+              </div>
+              <div class="flex justify-between text-xs font-bold mt-1.5">
+                <span class="text-emerald-700">😊 ポジティブ：<span id="cnt-pos">0</span>件</span>
+                <span class="text-rose-600">😣 ネガティブ：<span id="cnt-neg">0</span>件</span>
+              </div>
+              <div id="tm-conclusion" class="mt-3 p-2.5 rounded-xl bg-purple-50 text-xs text-purple-900 font-medium hidden">
+                💡 <strong>分析結果：</strong>「美味しい」「リピ確」「映える」と味や見た目は大好評！ただし「高い」「甘い（甘すぎ）」という声もあるため、次は『甘さ控えめ＆プチサイズ』を出すとさらに売れそう！
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- タブ5：⑤ テキストマイニングの方法（教科書 p.127）                     -->
+    <!-- ===================================================================== -->
+    <section id="tab-panel-5" class="tab-panel space-y-6">
+
+      <!-- (A) 品詞分解（日本語の難しさ）アニメーション -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+            <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-xl text-base">ミッション5</span>
+            日本語の「品詞分解」と『走れメロス』を分析！
+          </h2>
+          <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">教科書 p.127</span>
+        </div>
+
+        <div class="rounded-2xl bg-slate-50 border-2 border-slate-200 p-5">
+          <h3 class="font-extrabold text-slate-800 text-base mb-1">✂️ 日本語は単語の区切りがない！品詞分解テスト</h3>
+          <p class="text-xs sm:text-sm text-slate-600 mb-4">
+            英語と違い、日本語にはスペースがないため機械には区切りが難しいとされてきました。ボタンを押して違いを比べてみよう！
+          </p>
+
+          <!-- 文字ブロック表示ステージ -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 min-h-[120px] flex flex-col items-center justify-center gap-3">
+            <div id="morpheme-stage" class="flex flex-wrap items-center justify-center gap-1 text-2xl sm:text-3xl font-black tracking-wider text-slate-800">
+              <span class="px-4 py-2 rounded-xl bg-slate-100 border-2 border-slate-300">農産物価格安定法</span>
+            </div>
+            <div id="morpheme-caption" class="text-xs sm:text-sm font-bold text-slate-500 text-center">
+              👆 下のボタンを押して、機械にこの言葉を分解させてみよう！
+            </div>
+          </div>
+
+          <div class="flex flex-wrap justify-center gap-2.5 mt-4">
+            <button onclick="runMorpheme('wrong')" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-rose-100 text-rose-700 border-2 border-rose-300 hover:bg-rose-200 transition-all">
+              🤖 誤った分解（昔の機械）
+            </button>
+            <button onclick="runMorpheme('correct')" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 text-white shadow-md hover:bg-emerald-700 transition-all">
+              ✨ 正しい分解（AIの発展後）
+            </button>
+            <button onclick="runMorpheme('reset')" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition-all">
+              元に戻す
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- (B) 『走れメロス』ワードクラウド＆出現回数グラフ体験 -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-lg sm:text-xl font-extrabold text-slate-800 flex items-center gap-2">
+              <span>📚</span> 『走れメロス』（太宰治）テキストマイニング体験
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-500">小説の文章から、よく出てくる言葉を「品詞別」に色分けして可視化します。</p>
+          </div>
+          <button onclick="startMelosAnalysis()" id="btn-melos-start" class="px-5 py-2.5 rounded-xl font-black text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:brightness-110 active:scale-95 transition-all shrink-0">
+            🚀 分析スタート！
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- 左側：『走れメロス』冒頭テキスト -->
+          <div class="lg:col-span-4 bg-amber-50/60 rounded-2xl border-2 border-amber-200 p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-0.5 rounded-full">青空文庫テキスト</span>
+                <span class="text-xs font-bold text-amber-800">太宰治『走れメロス』</span>
+              </div>
+              <div id="melos-text-box" class="text-xs sm:text-sm leading-7 text-slate-700 bg-white p-3.5 rounded-xl border border-amber-200 max-h-72 overflow-y-auto font-medium">
+                メロスは激怒した。必ず、かの邪智暴虐の王を除かなければならぬと決意した。メロスには政治がわからぬ。メロスは、村の牧人である。笛を吹き、羊と遊んで暮して来た。けれども邪悪に対しては、人一倍に敏感であった。きょう未明メロスは村を出発し、野を越え山越え、十里はなれた此のシラクスの市にやって来た。メロスには父も、母も無い。女房も無い。十六の、内気な妹と二人暮しだ。この妹は、村の或る律気な一牧人を、近々、花婿として迎える事になっていた。結婚式も間近かなのである。メロスは、それゆえ、花嫁の衣裳やら祝宴の御馳走やらを買いに、はるばる市にやって来たのだ。……メロスには竹馬の友があった。セリヌンティウスである。……
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-amber-900 font-medium bg-amber-100/80 p-2.5 rounded-xl">
+              🎨 <strong>色分けルール（p.127 図2）：</strong><br>
+              <span class="text-emerald-700 font-bold">● 緑＝名詞</span>　<span class="text-cyan-700 font-bold">● 青＝動詞</span>　<span class="text-orange-600 font-bold">● オレンジ＝形容詞</span>
+            </div>
+          </div>
+
+          <!-- 右側：ワードクラウド＆ランキング棒グラフ -->
+          <div class="lg:col-span-8 flex flex-col gap-4">
+            <!-- フィルターボタン -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-bold text-slate-500">品詞フィルター：</span>
+              <button onclick="filterMelos('all')" id="mf-all" class="mf-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white">すべて</button>
+              <button onclick="filterMelos('noun')" id="mf-noun" class="mf-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 hover:bg-emerald-200">緑：名詞</button>
+              <button onclick="filterMelos('verb')" id="mf-verb" class="mf-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-100 text-cyan-800 hover:bg-cyan-200">青：動詞</button>
+              <button onclick="filterMelos('adj')" id="mf-adj" class="mf-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-100 text-orange-800 hover:bg-orange-200">オレンジ：形容詞</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- 円形ワードクラウドエリア -->
+              <div class="relative bg-slate-50 rounded-2xl border-2 border-slate-200 h-72 overflow-hidden flex items-center justify-center">
+                <div id="wc-placeholder" class="text-center p-4 text-slate-400 font-bold text-sm">
+                  「🚀 分析スタート！」を押すと<br>ここにワードクラウドが出現します！
+                </div>
+                <div id="wc-canvas" class="relative w-full h-full hidden">
+                  <!-- JSでバブル配置 -->
+                </div>
+                <div id="wc-tooltip" class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 bg-slate-800/90 text-white text-xs font-bold px-3 py-1 rounded-full z-40 whitespace-nowrap">
+                </div>
+              </div>
+
+              <!-- 出現回数ランキング棒グラフ -->
+              <div class="bg-slate-50 rounded-2xl border-2 border-slate-200 p-4 h-72 overflow-y-auto">
+                <div class="text-xs font-extrabold text-slate-700 mb-2.5">📊 単語の出現回数ランキング（上位）</div>
+                <div id="melos-rank-bars" class="space-y-2 text-xs">
+                  <div class="text-slate-400 text-center py-16 font-bold">分析スタート待機中...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- (C) 歴史ミステリーコラム＆豆知識 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-7 bg-gradient-to-br from-slate-800 to-indigo-950 text-white rounded-2xl p-5 shadow-md">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="bg-amber-400 text-slate-900 text-xs font-black px-2.5 py-0.5 rounded-full">COLUMN 歴史ミステリー</span>
+            <span class="text-xs text-indigo-200 font-bold">p.127『ザ・フェデラリスト』</span>
+          </div>
+          <h3 class="text-lg font-black mb-2">🕵️ 176年間も謎だった「真の著者」を統計学が特定！</h3>
+          <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">
+            1787年、ニューヨークの新聞に3人の著者（ハミルトン、ジェイ、マディソン）が同じペンネームで発表した論文集『ザ・フェデラリスト』。誰がどの記事を書いたか176年間も謎のままでしたが、1963年に統計学者が<strong>「よく使う単語の出現頻度（文章のクセ）」</strong>を分析したことで、ついに真の著者を推論・解明しました！
+          </p>
+        </div>
+
+        <div class="lg:col-span-5 grid grid-cols-1 gap-3">
+          <div class="bg-white rounded-2xl p-4 border-2 border-sky-200 shadow-sm">
+            <div class="text-xs font-black text-sky-600">📖 著作権とデータ活用</div>
+            <div class="font-extrabold text-slate-800 text-sm mt-0.5">青空文庫（あおぞらぶんこ）</div>
+            <p class="text-xs text-slate-600 mt-1">著作権が切れたり公開許諾を得たりした文学作品のテキストデータを無料でダウンロードして分析に活用できるWebサイト。</p>
+          </div>
+          <div class="bg-white rounded-2xl p-4 border-2 border-purple-200 shadow-sm">
+            <div class="text-xs font-black text-purple-600">🤖 プラスワン 62</div>
+            <div class="font-extrabold text-slate-800 text-sm mt-0.5">機械学習（Machine Learning）</div>
+            <p class="text-xs text-slate-600 mt-1">データから規則性や判断基準をコンピュータが学習し、未知のものを予測・判断する技術。人工知能（AI）で用いられる手法の1つ。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 font-medium">
+      高校「情報Ⅰ」インタラクティブ教材「データ探偵ラボ」｜ 教科書 p.124〜127 対応
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- JavaScript：全5タブのインタラクティブアニメーション制御               -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 0. タブ切り替え制御
+    // =========================================================================
+    function switchTab(tabNum) {
+      try {
+        for (let i = 1; i <= 5; i++) {
+          const panel = document.getElementById(`tab-panel-${i}`);
+          const btn = document.getElementById(`tab-btn-${i}`);
+          if (i === tabNum) {
+            panel.classList.add('active');
+            btn.className = 'tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white text-indigo-700 shadow-md';
+          } else {
+            panel.classList.remove('active');
+            btn.className = 'tab-btn shrink-0 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-white/15 text-white hover:bg-white/25';
+          }
+        }
+        // タブ3に切り替えた際に棒グラフの高さを再アニメーション
+        if (tabNum === 3 && currentVizMode === 'chart') {
+          renderStackedChart();
+        }
+      } catch (e) {
+        console.error('タブ切り替えエラー:', e);
+      }
+    }
+
+    // =========================================================================
+    // 1. タブ1：データの種類と尺度
+    // =========================================================================
+    const scaleData = {
+      nominal: {
+        name: '名義尺度',
+        typeLabel: '質的データ（定性分析）',
+        typeColor: 'bg-amber-100 text-amber-800 border-amber-300',
+        badgeColor: 'bg-amber-500 text-white',
+        desc: '固有の番号を割り当てて「区別」するだけの尺度です。番号の大小や順番にはまったく意味がありません。',
+        diffOk: false,
+        ratioOk: false,
+        tip: '💡 通学手段の平均が「2.3（自転車とバスの間？）」になっても意味不明ですよね！だから「一番多い答え（最頻値）」だけが使えます。',
+        visualHtml: `
+          <div class="text-center space-y-2">
+            <div class="text-xs font-bold text-slate-500">ビジュアル検証：番号を足し算してみると…？</div>
+            <div class="flex items-center justify-center gap-2 sm:gap-4 text-base sm:text-lg font-black animate-pop">
+              <div class="bg-amber-50 border-2 border-amber-300 px-3 py-2 rounded-xl">🚶 1.徒歩</div>
+              <span class="text-slate-400">＋</span>
+              <div class="bg-amber-50 border-2 border-amber-300 px-3 py-2 rounded-xl">🚲 2.自転車</div>
+              <span class="text-rose-500 text-2xl">≠</span>
+              <div class="bg-rose-50 border-2 border-rose-300 px-3 py-2 rounded-xl text-rose-700">🚌 3.バス？</div>
+            </div>
+            <p class="text-xs text-rose-600 font-bold">徒歩(1)と自転車(2)を足してもバス(3)にはならない！番号はただの名札です。</p>
+          </div>
+        `
+      },
+      ordinal: {
+        name: '順序尺度',
+        typeLabel: '質的データ（定性分析）',
+        typeColor: 'bg-amber-100 text-amber-800 border-amber-300',
+        badgeColor: 'bg-orange-500 text-white',
+        desc: '数値の「大小（順番）」には意味がありますが、1位と2位の差と、2位と3位の差が同じとは限らず、足し算・引き算はできません。',
+        diffOk: false,
+        ratioOk: false,
+        tip: '💡 順番に並べられるので「真ん中の順位（中央値）」と「最頻値」が使えます。ただし順位の平均はあまり意味を持ちません。',
+        visualHtml: `
+          <div class="space-y-2.5">
+            <div class="text-xs font-bold text-slate-500 text-center">ビジュアル検証：順位の「間隔」はバラバラかも？</div>
+            <div class="relative h-14 bg-slate-100 rounded-xl px-4 flex items-center animate-pop">
+              <div class="w-full h-1.5 bg-slate-300 rounded-full relative">
+                <div class="absolute left-[8%] -top-3.5 text-center">
+                  <div class="w-8 h-8 rounded-full bg-amber-400 text-white font-black text-xs leading-8 shadow">1位</div>
+                </div>
+                <div class="absolute left-[22%] -top-3.5 text-center">
+                  <div class="w-8 h-8 rounded-full bg-slate-400 text-white font-black text-xs leading-8 shadow">2位</div>
+                </div>
+                <div class="absolute left-[82%] -top-3.5 text-center">
+                  <div class="w-8 h-8 rounded-full bg-orange-400 text-white font-black text-xs leading-8 shadow">3位</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-orange-700 font-bold text-center">1位と2位は僅差でも、3位とは大差かもしれない！だから間隔（差）の計算はできません。</p>
+          </div>
+        `
+      },
+      interval: {
+        name: '間隔尺度',
+        typeLabel: '量的データ（定量分析）',
+        typeColor: 'bg-sky-100 text-sky-800 border-sky-300',
+        badgeColor: 'bg-blue-600 text-white',
+        desc: '数値が等間隔になっており「差（+15℃）」や平均には意味がありますが、0℃は『熱が全くない状態』ではないため「2倍熱い」とは言えません。',
+        diffOk: true,
+        ratioOk: false,
+        tip: '💡 等間隔の数値なので「最頻値・中央値・平均値」のすべてが使えます！（例：1週間の平均気温など）',
+        visualHtml: `
+          <div class="space-y-2.5">
+            <div class="text-xs font-bold text-slate-500 text-center">ビジュアル検証：15℃と30℃、なぜ「2倍熱い」と言えない？</div>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs font-bold">
+                <span class="w-16 text-right text-sky-700">昨日 15℃</span>
+                <div class="flex-1 bg-slate-100 h-6 rounded-lg overflow-hidden relative flex items-center">
+                  <div class="bg-cyan-200 h-full w-[30%] flex items-center justify-center text-[10px] text-cyan-900 border-r-2 border-dashed border-cyan-600">0℃以下もある</div>
+                  <div class="smooth-width bg-sky-500 h-full text-white flex items-center justify-end pr-2" style="width: 25%;">15℃</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-bold">
+                <span class="w-16 text-right text-rose-700">今日 30℃</span>
+                <div class="flex-1 bg-slate-100 h-6 rounded-lg overflow-hidden relative flex items-center">
+                  <div class="bg-cyan-200 h-full w-[30%] flex items-center justify-center text-[10px] text-cyan-900 border-r-2 border-dashed border-cyan-600">0℃=氷る温度</div>
+                  <div class="smooth-width bg-rose-500 h-full text-white flex items-center justify-end pr-2" style="width: 50%;">+15℃高い！</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-blue-800 font-bold text-center">0℃は「無（絶対零度）」ではないため、比（2倍）には意味がないのです！</p>
+          </div>
+        `
+      },
+      ratio: {
+        name: '比例尺度',
+        typeLabel: '量的データ（定量分析）',
+        typeColor: 'bg-sky-100 text-sky-800 border-sky-300',
+        badgeColor: 'bg-emerald-600 text-white',
+        desc: '「0分＝時間が全く存在しない（絶対的な0）」が基準のため、15分の差があることも、「30分は15分の2倍！」という比も正しく言えます。',
+        diffOk: true,
+        ratioOk: true,
+        tip: '💡 最も情報量が多い尺度！「最頻値・中央値・平均値」のすべてが使え、何倍かという比較もOKです！',
+        visualHtml: `
+          <div class="space-y-2.5">
+            <div class="text-xs font-bold text-slate-500 text-center">ビジュアル検証：0分＝「無」だから棒の長さがそのまま2倍！</div>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs font-bold">
+                <span class="w-16 text-right text-emerald-700">Aさん</span>
+                <div class="flex-1 bg-slate-100 h-6 rounded-lg overflow-hidden border-l-4 border-slate-800">
+                  <div class="smooth-width bg-emerald-400 h-full text-emerald-950 flex items-center justify-end pr-2" style="width: 40%;">15分（×1）</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-bold">
+                <span class="w-16 text-right text-emerald-800">Bさん</span>
+                <div class="flex-1 bg-slate-100 h-6 rounded-lg overflow-hidden border-l-4 border-slate-800">
+                  <div class="smooth-width bg-emerald-600 h-full text-white flex items-center justify-end pr-2" style="width: 80%;">30分（ちょうど2倍！）</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-emerald-700 font-bold text-center">0分（無）からスタートするので、差（+15分）も比（2倍）もバッチリ意味あり！</p>
+          </div>
+        `
+      }
+    };
+
+    function selectScaleCard(key) {
+      const info = scaleData[key];
+      if (!info) return;
+
+      // カードの選択状態スタイル更新
+      ['nominal', 'ordinal', 'interval', 'ratio'].forEach(k => {
+        const el = document.getElementById(`scale-card-${k}`);
+        if (k === key) {
+          el.className = 'scale-card text-left p-4 rounded-2xl border-2 border-indigo-600 bg-indigo-50 shadow-md ring-2 ring-indigo-200 transition-all cursor-pointer';
+        } else {
+          el.className = 'scale-card text-left p-4 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer';
+        }
+      });
+
+      // 判定バッジ更新
+      const scaleBadge = document.getElementById('res-scale-badge');
+      scaleBadge.textContent = info.name;
+      scaleBadge.className = `text-lg sm:text-xl font-black px-4 py-1.5 rounded-xl shadow-sm animate-pop ${info.badgeColor}`;
+
+      const typeBadge = document.getElementById('res-type-badge');
+      typeBadge.textContent = info.typeLabel;
+      typeBadge.className = `text-sm font-bold px-3 py-1 rounded-full border ${info.typeColor}`;
+
+      document.getElementById('res-desc').textContent = info.desc;
+      document.getElementById('rep-tip').textContent = info.tip;
+
+      // 差と比のチェック
+      const diffBox = document.getElementById('check-diff-box');
+      const diffVal = document.getElementById('check-diff-val');
+      diffBox.className = `rounded-xl p-3 border-2 flex items-center justify-between ${info.diffOk ? 'bg-emerald-50 border-emerald-300' : 'bg-rose-50 border-rose-200'}`;
+      diffVal.textContent = info.diffOk ? '⭕ あり' : '❌ なし';
+      diffVal.className = `text-base sm:text-lg font-black ${info.diffOk ? 'text-emerald-700' : 'text-rose-600'}`;
+
+      const ratioBox = document.getElementById('check-ratio-box');
+      const ratioVal = document.getElementById('check-ratio-val');
+      ratioBox.className = `rounded-xl p-3 border-2 flex items-center justify-between ${info.ratioOk ? 'bg-emerald-50 border-emerald-300' : 'bg-rose-50 border-rose-200'}`;
+      ratioVal.textContent = info.ratioOk ? '⭕ あり' : '❌ なし';
+      ratioVal.className = `text-base sm:text-lg font-black ${info.ratioOk ? 'text-emerald-700' : 'text-rose-600'}`;
+
+      // ビジュアル検証エリア描画
+      document.getElementById('scale-visual-demo').innerHTML = info.visualHtml;
+
+      // 表2のハイライト＆ポンポン点灯アニメーション
+      ['nominal', 'ordinal', 'interval', 'ratio'].forEach(k => {
+        const row = document.getElementById(`row-${k}`);
+        const marks = row.querySelectorAll('.rep-mark');
+        if (k === key) {
+          row.className = 'bg-indigo-50 font-bold transition-colors duration-300';
+          marks.forEach((m, idx) => {
+            m.classList.remove('animate-pop');
+            const isOk = m.textContent.trim() === '○';
+            m.className = `rep-mark inline-block w-8 h-8 leading-8 rounded-full font-black text-base ${isOk ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-200 text-slate-400'}`;
+            setTimeout(() => {
+              m.classList.add('animate-pop');
+            }, idx * 120);
+          });
+        } else {
+          row.className = 'bg-white text-slate-400 transition-colors duration-300';
+          marks.forEach(m => {
+            m.className = 'rep-mark inline-block w-8 h-8 leading-8 rounded-full font-bold text-sm text-slate-300';
+          });
+        }
+      });
+    }
+
+    // =========================================================================
+    // 2. タブ2：(A) 外れ値シミュレーター
+    // =========================================================================
+    const baseCommuteData = [10, 15, 15, 20, 20, 20, 25, 30, 35];
+    let hasOutlier = false;
+    let outlierValue = 150;
+
+    function setOutlierMode(enabled) {
+      hasOutlier = enabled;
+      const btnOff = document.getElementById('btn-outlier-off');
+      const btnOn = document.getElementById('btn-outlier-on');
+      const sliderWrap = document.getElementById('outlier-slider-wrap');
+
+      if (enabled) {
+        btnOn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md bg-rose-600 text-white';
+        btnOff.className = 'px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm bg-white text-slate-700 border border-slate-300 hover:bg-indigo-50';
+        sliderWrap.classList.remove('opacity-40', 'pointer-events-none');
+      } else {
+        btnOff.className = 'px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md bg-indigo-600 text-white';
+        btnOn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm bg-white text-slate-700 border border-slate-300 hover:bg-rose-50';
+        sliderWrap.classList.add('opacity-40', 'pointer-events-none');
+      }
+      renderOutlierSim();
+    }
+
+    function updateOutlierValue(val) {
+      outlierValue = Number(val);
+      document.getElementById('outlier-val-display').textContent = `${outlierValue}分`;
+      if (hasOutlier) {
+        renderOutlierSim();
+      }
+    }
+
+    function renderOutlierSim() {
+      const data = hasOutlier ? [...baseCommuteData, outlierValue] : [...baseCommuteData];
+      const sorted = [...data].sort((a, b) => a - b);
+
+      // 平均値
+      const sum = data.reduce((acc, v) => acc + v, 0);
+      const mean = sum / data.length;
+
+      // 中央値
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+
+      // 最頻値
+      const freq = {};
+      let mode = sorted[0], maxF = 0;
+      sorted.forEach(v => {
+        freq[v] = (freq[v] || 0) + 1;
+        if (freq[v] > maxF) { maxF = freq[v]; mode = v; }
+      });
+
+      // 数値表示更新
+      document.getElementById('stat-mean').textContent = mean.toFixed(1);
+      document.getElementById('stat-median').textContent = median.toFixed(1);
+      document.getElementById('stat-mode').textContent = mode;
+      document.getElementById('marker-mean-val').textContent = mean.toFixed(1);
+      document.getElementById('marker-median-val').textContent = median.toFixed(1);
+
+      // マーカー位置更新（0〜200分を0%〜100%にマッピング）
+      const meanPct = Math.min(98, Math.max(2, (mean / 200) * 100));
+      const medianPct = Math.min(98, Math.max(2, (median / 200) * 100));
+      document.getElementById('marker-mean').style.left = `${meanPct}%`;
+      document.getElementById('marker-median').style.left = `${medianPct}%`;
+
+      // 変化バッジ更新
+      const meanBadge = document.getElementById('badge-mean-change');
+      const cardMean = document.getElementById('card-mean');
+      if (hasOutlier) {
+        const diff = (mean - 21.11).toFixed(1);
+        meanBadge.textContent = `+${diff}分も引っ張られた！`;
+        meanBadge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-600 text-white animate-pulse';
+        cardMean.className = 'rounded-2xl p-4 border-2 border-rose-500 bg-rose-50 shadow-md transition-all';
+      } else {
+        meanBadge.textContent = '通常データ';
+        meanBadge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-white text-rose-600';
+        cardMean.className = 'rounded-2xl p-4 border-2 border-rose-200 bg-rose-50 transition-all';
+      }
+
+      // ドットプロット描画（同じ値は縦に積む）
+      const container = document.getElementById('dotplot-container');
+      container.innerHTML = '';
+      const stackCounts = {};
+
+      baseCommuteData.forEach(val => {
+        stackCounts[val] = (stackCounts[val] || 0) + 1;
+        const leftPct = (val / 200) * 100;
+        const bottomPx = (stackCounts[val] - 1) * 22 + 6;
+        const dot = document.createElement('div');
+        dot.className = 'absolute w-4 h-4 rounded-full bg-indigo-500 border-2 border-white shadow -translate-x-1/2 cursor-pointer hover:scale-125 transition-transform';
+        dot.style.left = `${leftPct}%`;
+        dot.style.bottom = `${bottomPx}px`;
+        dot.title = `通学時間：${val}分`;
+        container.appendChild(dot);
+      });
+
+      if (hasOutlier) {
+        const leftPct = (outlierValue / 200) * 100;
+        const outDot = document.createElement('div');
+        outDot.className = 'smooth-marker absolute w-6 h-6 rounded-full bg-rose-600 border-2 border-white shadow-lg -translate-x-1/2 flex items-center justify-center text-[10px] text-white font-black ring-4 ring-rose-200';
+        outDot.style.left = `${leftPct}%`;
+        outDot.style.bottom = `6px`;
+        outDot.textContent = '!';
+        outDot.title = `外れ値：${outlierValue}分`;
+        container.appendChild(outDot);
+      }
+    }
+
+    function toggleAnomalyCard(type) {
+      const btnOut = document.getElementById('btn-toggle-outlier');
+      const btnAno = document.getElementById('btn-toggle-anomaly');
+      const box = document.getElementById('anomaly-explain-box');
+
+      if (type === 'outlier') {
+        btnOut.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-white transition-all';
+        btnAno.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 hover:bg-amber-100 transition-all';
+        box.innerHTML = `
+          <strong class="text-amber-800">【外れ値（Outlier）】通学時間「150分」の例：</strong><br>
+          他の生徒より極端に大きい値ですが、県外など遠方から電車で通っている<strong>正しいデータ</strong>かもしれません。むやみに消去せず、そこに課題解決の手がかりがないか確認するなどの適切な処置が必要です。
+        `;
+      } else {
+        btnAno.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white transition-all';
+        btnOut.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-amber-800 hover:bg-amber-100 transition-all';
+        box.innerHTML = `
+          <strong class="text-rose-700">【異常値（Anomaly）】行事の順位に「8位」と入力された例：</strong><br>
+          6つしか行事がないアンケートで「8位」となっていれば、明らかに<strong>入力ミス</strong>と判断できます。このように外れ値のうち原因がミス等とはっきり分かっているものを特に「異常値」と呼んで区別します。
+        `;
+      }
+    }
+
+    // =========================================================================
+    // 2. タブ2：(B) 欠損値シミュレーター
+    // =========================================================================
+    const studentsBase = [
+      { id: 1, name: 'Aさん', score: 70, missing: false },
+      { id: 2, name: 'Bさん', score: 80, missing: false },
+      { id: 3, name: 'Cさん', score: 65, missing: false },
+      { id: 4, name: 'Dさん', score: 90, missing: false },
+      { id: 5, name: 'Eさん', score: 75, missing: false },
+      { id: 6, name: 'Fさん', score: 85, missing: false },
+      { id: 7, name: 'Gさん', score: 60, missing: false },
+      { id: 8, name: 'Hさん', score: 80, missing: false },
+      { id: 9, name: 'Iさん', score: 75, missing: true },
+      { id: 10, name: 'Jさん', score: 80, missing: true }
+    ];
+
+    function setMissingMode(mode) {
+      // ボタンのスタイル切り替え
+      const btns = {
+        none: document.getElementById('btn-miss-none'),
+        wrong: document.getElementById('btn-miss-wrong'),
+        correct: document.getElementById('btn-miss-correct')
+      };
+      Object.keys(btns).forEach(k => {
+        if (k === mode) {
+          const activeColors = k === 'wrong' ? 'bg-rose-600 text-white border-rose-600' : (k === 'correct' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-indigo-600 text-white border-indigo-600');
+          btns[k].className = `miss-btn p-3.5 rounded-xl border-2 font-bold text-sm text-left transition-all shadow-md ${activeColors}`;
+          btns[k].querySelector('div:first-child').className = 'text-xs opacity-85';
+        } else {
+          btns[k].className = 'miss-btn p-3.5 rounded-xl border-2 font-bold text-sm text-left transition-all bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+          btns[k].querySelector('div:first-child').className = 'text-xs text-slate-400';
+        }
+      });
+
+      // 生徒カード描画
+      const grid = document.getElementById('missing-students-grid');
+      grid.innerHTML = '';
+      let sum = 0;
+      let count = 0;
+
+      studentsBase.forEach(st => {
+        const card = document.createElement('div');
+        if (!st.missing || mode === 'none') {
+          sum += st.score;
+          count++;
+          card.className = 'rounded-xl p-3 border border-slate-200 bg-slate-50 text-center transition-all';
+          card.innerHTML = `
+            <div class="text-xs font-bold text-slate-500">${st.name}</div>
+            <div class="text-xl font-black text-slate-800 mt-0.5">${st.score}<span class="text-xs font-bold">点</span></div>
+          `;
+        } else if (mode === 'wrong') {
+          sum += 0;
+          count++;
+          card.className = 'rounded-xl p-3 border-2 border-rose-400 bg-rose-50 text-center animate-wobble';
+          card.innerHTML = `
+            <div class="text-xs font-bold text-rose-600">${st.name}（無回答）</div>
+            <div class="text-xl font-black text-rose-600 mt-0.5">0<span class="text-xs font-bold">点扱い⚠️</span></div>
+          `;
+        } else if (mode === 'correct') {
+          card.className = 'rounded-xl p-3 border-2 border-dashed border-slate-300 bg-slate-100/70 text-center opacity-60';
+          card.innerHTML = `
+            <div class="text-xs font-bold text-slate-400 line-through">${st.name}</div>
+            <div class="text-sm font-black text-slate-500 mt-1.5">除外（欠損）</div>
+          `;
+        }
+        grid.appendChild(card);
+      });
+
+      const avg = sum / count;
+      document.getElementById('miss-sum').textContent = sum;
+      const denomEl = document.getElementById('miss-denom');
+      denomEl.textContent = count;
+      denomEl.classList.remove('animate-pop');
+      void denomEl.offsetWidth;
+      denomEl.classList.add('animate-pop');
+
+      const avgValEl = document.getElementById('miss-avg-val');
+      avgValEl.innerHTML = `${avg.toFixed(1)}<span class="text-lg font-bold ml-1">点</span>`;
+
+      const bar = document.getElementById('miss-avg-bar');
+      bar.style.width = `${avg}%`;
+
+      const resBox = document.getElementById('missing-result-box');
+      const statusBadge = document.getElementById('missing-status-badge');
+      const comment = document.getElementById('miss-comment');
+
+      if (mode === 'none') {
+        resBox.className = 'rounded-2xl p-5 border-2 transition-all duration-300 bg-indigo-50 border-indigo-200';
+        statusBadge.className = 'inline-block text-xs font-black px-3 py-1 rounded-full bg-indigo-600 text-white';
+        statusBadge.textContent = '✅ 全員回答（本来の平均点）';
+        avgValEl.className = 'text-4xl font-black text-indigo-700';
+        bar.className = 'smooth-width h-full rounded-full bg-indigo-500';
+        comment.textContent = '10人全員の回答がそろっている基準の状態です（平均76.0点）。';
+      } else if (mode === 'wrong') {
+        resBox.className = 'rounded-2xl p-5 border-2 transition-all duration-300 bg-rose-50 border-rose-400 shadow-md';
+        statusBadge.className = 'inline-block text-xs font-black px-3 py-1 rounded-full bg-rose-600 text-white animate-pulse';
+        statusBadge.textContent = '🚨 警告！平均点が不自然にガクッと下がった！';
+        avgValEl.className = 'text-4xl font-black text-rose-600';
+        bar.className = 'smooth-width h-full rounded-full bg-rose-500';
+        comment.textContent = '無回答の2人を「0点」として10人で割ったため、実態より15点以上も低く歪んでしまいました！';
+      } else {
+        resBox.className = 'rounded-2xl p-5 border-2 transition-all duration-300 bg-emerald-50 border-emerald-300';
+        statusBadge.className = 'inline-block text-xs font-black px-3 py-1 rounded-full bg-emerald-600 text-white';
+        statusBadge.textContent = '✨ 適切な処理！実態に近い妥当な平均点';
+        avgValEl.className = 'text-4xl font-black text-emerald-700';
+        bar.className = 'smooth-width h-full rounded-full bg-emerald-500';
+        comment.textContent = '無回答の2人をデータ総数から除き、回答した「8人」で割ることで、本来の平均（76.0点）に近い75.6点が得られました！';
+      }
+    }
+
+    // =========================================================================
+    // 3. タブ3：データの可視化 ＆ クロス集計
+    // =========================================================================
+    const vizEvents = ['体育祭', '文化祭', '修学旅行', '球技大会', '芸術鑑賞会', 'マラソン大会'];
+    const rankColors = [
+      'bg-cyan-400',    // 1位
+      'bg-blue-600',    // 2位
+      'bg-purple-500',  // 3位
+      'bg-amber-300',   // 4位
+      'bg-orange-500',  // 5位
+      'bg-emerald-500'  // 6位
+    ];
+
+    // 教科書p.126 図1に準拠した全体160人データ＋学年別クロス集計データ
+    const vizDatasets = {
+      all: {
+        total: 160,
+        title: '全体のグラフから分かる大発見！',
+        insight: '<strong>文化祭</strong>と<strong>体育祭</strong>は1位・2位（水色・青）が非常に多く大人気！一方で<strong>マラソン大会</strong>は「6位（緑）」が圧倒的に多く、多くの生徒が苦手意識を持っていることが一瞬で分かります。',
+        rows: [
+          [42, 36, 32, 22, 10, 18], // 体育祭
+          [58, 42, 32, 14, 10, 4],  // 文化祭
+          [28, 48, 40, 22, 16, 6],  // 修学旅行
+          [16, 18, 32, 40, 38, 16], // 球技大会
+          [12, 10, 18, 52, 48, 20], // 芸術鑑賞会
+          [4, 6, 6, 10, 38, 96]     // マラソン大会
+        ]
+      },
+      g1: {
+        total: 54,
+        title: '【クロス集計】1年生の特徴を発見！',
+        insight: '1年生はまだ修学旅行を経験していないこともあり、<strong>体育祭</strong>と<strong>文化祭</strong>に人気が集中！入学したてのフレッシュな傾向が見えます。',
+        rows: [
+          [19, 14, 10, 6, 2, 3],
+          [20, 15, 10, 5, 3, 1],
+          [5, 10, 14, 12, 9, 4],
+          [6, 7, 11, 14, 11, 5],
+          [3, 5, 7, 14, 17, 8],
+          [1, 3, 2, 3, 12, 33]
+        ]
+      },
+      g2: {
+        total: 54,
+        title: '【クロス集計】2年生の特徴を発見！',
+        insight: '修学旅行がある2年生は、なんと<strong>修学旅行</strong>の1位・2位が急増！全体グラフだけでは気づけなかった「学年ごとの違い」がクロス集計で浮かび上がります。',
+        rows: [
+          [11, 12, 12, 8, 5, 6],
+          [17, 13, 12, 6, 4, 2],
+          [17, 20, 11, 4, 2, 0],
+          [5, 5, 11, 14, 14, 5],
+          [3, 3, 6, 19, 16, 7],
+          [1, 1, 2, 3, 13, 34]
+        ]
+      },
+      g3: {
+        total: 52,
+        title: '【クロス集計】3年生の特徴を発見！',
+        insight: '高校最後の年となる3年生は、クラス一丸となって盛り上がる<strong>文化祭</strong>がダントツの1位！一方でマラソン大会はどの学年でも6位が最多です。',
+        rows: [
+          [12, 10, 10, 8, 3, 9],
+          [21, 14, 10, 3, 3, 1],
+          [6, 18, 15, 6, 5, 2],
+          [5, 6, 10, 12, 13, 6],
+          [6, 2, 5, 19, 15, 5],
+          [2, 2, 2, 4, 13, 29]
+        ]
+      }
+    };
+
+    let currentVizMode = 'chart';
+    let currentGrade = 'all';
+
+    function setVizMode(mode) {
+      currentVizMode = mode;
+      const btnT = document.getElementById('btn-viz-table');
+      const btnC = document.getElementById('btn-viz-chart');
+      const viewT = document.getElementById('viz-table-view');
+      const viewC = document.getElementById('viz-chart-view');
+
+      if (mode === 'table') {
+        btnT.className = 'px-4 py-2 rounded-xl font-bold text-sm transition-all bg-emerald-600 text-white shadow-md';
+        btnC.className = 'px-4 py-2 rounded-xl font-bold text-sm transition-all bg-white text-slate-700 border border-slate-300 hover:bg-slate-100';
+        viewT.classList.remove('hidden');
+        viewC.classList.add('hidden');
+        renderVizTable();
+      } else {
+        btnC.className = 'px-4 py-2 rounded-xl font-bold text-sm transition-all bg-emerald-600 text-white shadow-md';
+        btnT.className = 'px-4 py-2 rounded-xl font-bold text-sm transition-all bg-white text-slate-700 border border-slate-300 hover:bg-slate-100';
+        viewC.classList.remove('hidden');
+        viewT.classList.add('hidden');
+        renderStackedChart();
+      }
+    }
+
+    function setCrossGrade(grade) {
+      currentGrade = grade;
+      ['all', 'g1', 'g2', 'g3'].forEach(g => {
+        const b = document.getElementById(`grade-btn-${g}`);
+        if (g === grade) {
+          b.className = 'grade-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-sm';
+        } else {
+          b.className = 'grade-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-600 border border-slate-300 hover:bg-indigo-50';
+        }
+      });
+
+      const ds = vizDatasets[grade];
+      document.getElementById('viz-insight-title').textContent = ds.title;
+      document.getElementById('viz-insight-text').innerHTML = ds.insight;
+
+      if (currentVizMode === 'table') {
+        renderVizTable();
+      } else {
+        renderStackedChart();
+      }
+    }
+
+    function renderVizTable() {
+      const ds = vizDatasets[currentGrade];
+      const tbody = document.getElementById('viz-table-body');
+      tbody.innerHTML = '';
+      ds.rows.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        const sum = row.reduce((a, b) => a + b, 0);
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-left font-bold text-slate-800">${vizEvents[idx]}</td>
+          ${row.map(v => `<td class="py-2.5 px-2">${v}</td>`).join('')}
+          <td class="py-2.5 px-2 font-bold bg-slate-50">${sum}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderStackedChart() {
+      const ds = vizDatasets[currentGrade];
+      const maxVal = ds.total;
+      document.getElementById('y-max').textContent = maxVal;
+      document.getElementById('y-75').textContent = Math.round(maxVal * 0.75);
+      document.getElementById('y-50').textContent = Math.round(maxVal * 0.5);
+      document.getElementById('y-25').textContent = Math.round(maxVal * 0.25);
+
+      const area = document.getElementById('stacked-bars-area');
+      // 初回構築または更新
+      if (area.children.length === 0) {
+        vizEvents.forEach((evName, evIdx) => {
+          const col = document.createElement('div');
+          col.className = 'w-1/6 h-full flex flex-col-reverse items-center justify-start px-1 sm:px-3';
+          col.id = `bar-col-${evIdx}`;
+          for (let r = 0; r < 6; r++) {
+            const seg = document.createElement('div');
+            seg.className = `smooth-height w-full max-w-[68px] ${rankColors[r]} border-t border-white/50 cursor-pointer hover:brightness-110 transition-all relative`;
+            seg.style.height = '0%';
+            seg.id = `bar-seg-${evIdx}-${r}`;
+            seg.onmouseenter = () => showChartHover(evIdx, r);
+            seg.onclick = () => showChartHover(evIdx, r);
+            col.appendChild(seg);
+          }
+          area.appendChild(col);
+        });
+      }
+
+      // 少し遅延させてニョキッとアニメーションさせる
+      requestAnimationFrame(() => {
+        ds.rows.forEach((row, evIdx) => {
+          row.forEach((val, r) => {
+            const seg = document.getElementById(`bar-seg-${evIdx}-${r}`);
+            if (seg) {
+              const pct = (val / maxVal) * 100;
+              seg.style.height = `${pct}%`;
+            }
+          });
+        });
+      });
+    }
+
+    function showChartHover(evIdx, rankIdx) {
+      const ds = vizDatasets[currentGrade];
+      const val = ds.rows[evIdx][rankIdx];
+      const pct = ((val / ds.total) * 100).toFixed(1);
+      document.getElementById('chart-hover-info').innerHTML = `
+        <span class="text-indigo-700 font-black">【${vizEvents[evIdx]}】</span>
+        <strong>${rankIdx + 1}位</strong> に選んだ人：
+        <span class="text-lg font-black text-emerald-600">${val}人</span>（全体の ${pct}%）
+      `;
+    }
+
+    // =========================================================================
+    // 4. タブ4：テキストデータの分析（SNSコンビニスイーツ）
+    // =========================================================================
+    const snsPosts = [
+      { user: '@sweets_love', text: '新作プリンめっちゃ美味しい！絶対リピ確！', kws: ['美味しい', 'リピ確'] },
+      { user: '@kobe_jk', text: '見た目が映えるし美味しいけどちょっと高いかな…', kws: ['映える', '美味しい', '高い'] },
+      { user: '@choco_boy', text: '一口目から甘い！甘党にはたまらん美味しいやつ', kws: ['甘い', '美味しい'] },
+      { user: '@diet_mika', text: 'うーん、私にはちょっと甘い（甘すぎる）かも', kws: ['甘い'] },
+      { user: '@conveni_man', text: '400円は高いけど、ご褒美にリピ確するレベル！', kws: ['高い', 'リピ確'] },
+      { user: '@photo_riko', text: 'ピンクで映える！友達にもおすすめしたい美味しいさ', kws: ['映える', '美味しい'] },
+      { user: '@study_now', text: 'テスト勉強の合間に食べた。甘いし美味しい最高！', kws: ['甘い', '美味しい'] },
+      { user: '@honne_taro', text: '味は美味しいけど、学生には毎日買うのは高いね', kws: ['美味しい', '高い'] },
+      { user: '@berry_fan', text: '苺ソースが神！これはリピ確＆映えるスイーツ', kws: ['リピ確', '映える'] },
+      { user: '@coffee_time', text: 'ブラックコーヒーに合うくらい甘い。値段はやや高い', kws: ['甘い', '高い'] }
+    ];
+
+    const kwDefinitions = [
+      { word: '美味しい', type: 'pos', label: 'ポジティブ', color: 'bg-emerald-500' },
+      { word: '高い', type: 'neg', label: 'ネガティブ', color: 'bg-rose-500' },
+      { word: '甘い', type: 'neu', label: '味の特徴', color: 'bg-amber-500' },
+      { word: 'リピ確', type: 'pos', label: 'ポジティブ', color: 'bg-teal-500' },
+      { word: '映える', type: 'pos', label: 'ポジティブ', color: 'bg-indigo-500' }
+    ];
+
+    let tmTimerIds = [];
+
+    function initTextMiningUI() {
+      const list = document.getElementById('sns-posts-list');
+      list.innerHTML = '';
+      snsPosts.forEach((post, idx) => {
+        const card = document.createElement('div');
+        card.id = `sns-card-${idx}`;
+        card.className = 'p-3 rounded-xl bg-slate-50 border border-slate-200 transition-all duration-300';
+        card.innerHTML = `
+          <div class="text-[11px] font-bold text-slate-400 mb-1">${post.user}</div>
+          <div id="sns-text-${idx}" class="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">${post.text}</div>
+        `;
+        list.appendChild(card);
+      });
+
+      const bars = document.getElementById('tm-bars-container');
+      bars.innerHTML = '';
+      kwDefinitions.forEach(def => {
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span class="text-slate-700">「${def.word}」 <span class="text-[10px] text-slate-400">(${def.label})</span></span>
+            <span id="kw-cnt-${def.word}" class="text-slate-800">0回</span>
+          </div>
+          <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden">
+            <div id="kw-bar-${def.word}" class="smooth-width h-full ${def.color} rounded-full" style="width: 0%;"></div>
+          </div>
+        `;
+        bars.appendChild(row);
+      });
+
+      document.getElementById('bar-pos').style.width = '0%';
+      document.getElementById('bar-pos').textContent = '';
+      document.getElementById('bar-neg').style.width = '0%';
+      document.getElementById('bar-neg').textContent = '';
+      document.getElementById('cnt-pos').textContent = '0';
+      document.getElementById('cnt-neg').textContent = '0';
+      document.getElementById('tm-progress-badge').textContent = '待機中';
+      document.getElementById('tm-progress-badge').className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600';
+      document.getElementById('tm-conclusion').classList.add('hidden');
+    }
+
+    function resetTextMining() {
+      tmTimerIds.forEach(id => clearTimeout(id));
+      tmTimerIds = [];
+      initTextMiningUI();
+    }
+
+    function runTextMining() {
+      resetTextMining();
+      const counts = { '美味しい': 0, '高い': 0, '甘い': 0, 'リピ確': 0, '映える': 0 };
+      let posCnt = 0;
+      let negCnt = 0;
+
+      const badge = document.getElementById('tm-progress-badge');
+      badge.textContent = '解析中...';
+      badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-600 text-white animate-pulse';
+
+      snsPosts.forEach((post, idx) => {
+        const tid = setTimeout(() => {
+          const card = document.getElementById(`sns-card-${idx}`);
+          card.className = 'p-3 rounded-xl bg-white border-2 border-purple-400 shadow-md transition-all duration-300';
+
+          // キーワードをハイライト置換
+          let htmlText = post.text;
+          post.kws.forEach(kw => {
+            counts[kw]++;
+            const def = kwDefinitions.find(d => d.word === kw);
+            const cls = def.type === 'pos' ? 'kw-pos' : (def.type === 'neg' ? 'kw-neg' : 'kw-neu');
+            htmlText = htmlText.replace(kw, `<span class="kw-highlight ${cls}">${kw}</span>`);
+            if (def.type === 'pos') posCnt++;
+            if (def.type === 'neg') negCnt++;
+          });
+          document.getElementById(`sns-text-${idx}`).innerHTML = htmlText;
+
+          // 棒グラフ更新（最大7回を100%とする）
+          kwDefinitions.forEach(def => {
+            const c = counts[def.word];
+            document.getElementById(`kw-cnt-${def.word}`).textContent = `${c}回`;
+            document.getElementById(`kw-bar-${def.word}`).style.width = `${Math.min(100, (c / 7) * 100)}%`;
+          });
+
+          // ポジネガ更新
+          const totalPN = posCnt + negCnt;
+          if (totalPN > 0) {
+            const pPct = Math.round((posCnt / totalPN) * 100);
+            const nPct = 100 - pPct;
+            document.getElementById('bar-pos').style.width = `${pPct}%`;
+            document.getElementById('bar-pos').textContent = `${pPct}%`;
+            document.getElementById('bar-neg').style.width = `${nPct}%`;
+            document.getElementById('bar-neg').textContent = `${nPct}%`;
+            document.getElementById('cnt-pos').textContent = posCnt;
+            document.getElementById('cnt-neg').textContent = negCnt;
+          }
+
+          // 最後が完了したら完了表示
+          if (idx === snsPosts.length - 1) {
+            badge.textContent = '解析完了！';
+            badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-600 text-white';
+            document.getElementById('tm-conclusion').classList.remove('hidden');
+            document.getElementById('tm-conclusion').classList.add('animate-pop');
+          }
+        }, idx * 220);
+        tmTimerIds.push(tid);
+      });
+    }
+
+    // =========================================================================
+    // 5. タブ5：(A) 品詞分解アニメーション
+    // =========================================================================
+    function runMorpheme(mode) {
+      const stage = document.getElementById('morpheme-stage');
+      const caption = document.getElementById('morpheme-caption');
+
+      if (mode === 'reset') {
+        stage.innerHTML = `<span class="px-4 py-2 rounded-xl bg-slate-100 border-2 border-slate-300">農産物価格安定法</span>`;
+        caption.innerHTML = '👆 下のボタンを押して、機械にこの言葉を分解させてみよう！';
+        caption.className = 'text-xs sm:text-sm font-bold text-slate-500 text-center';
+      } else if (mode === 'wrong') {
+        const parts = ['農産', '物価', '格安', '定法'];
+        stage.innerHTML = parts.map((p, i) => `
+          <span class="morpheme-block animate-wobble px-3.5 py-2 rounded-xl bg-rose-100 border-2 border-rose-400 text-rose-700 shadow-sm relative">
+            ${p}
+            ${i === 2 ? '<span class="absolute -top-3 -right-2 bg-amber-400 text-slate-900 text-xs px-1.5 py-0.5 rounded-full font-black">？</span>' : ''}
+          </span>
+        `).join('<span class="text-rose-400 font-black text-xl">/</span>');
+        caption.innerHTML = '😱 「物価」「格安」！？ 意味が通じない変な区切り方になってしまいました…（昔の機械はここが苦手でした）';
+        caption.className = 'text-xs sm:text-sm font-bold text-rose-600 text-center';
+      } else if (mode === 'correct') {
+        const parts = ['農産物', '価格', '安定', '法'];
+        stage.innerHTML = parts.map(p => `
+          <span class="morpheme-block animate-pop px-3.5 py-2 rounded-xl bg-emerald-100 border-2 border-emerald-500 text-emerald-800 shadow-sm">
+            ${p}
+          </span>
+        `).join('<span class="text-emerald-500 font-black text-xl">/</span>');
+        caption.innerHTML = '✨ パチッと大正解！AI（人工知能）の発展によって、日本語でも正確に品詞分解できるようになりました！';
+        caption.className = 'text-xs sm:text-sm font-bold text-emerald-700 text-center';
+      }
+    }
+
+    // =========================================================================
+    // 5. タブ5：(B) 『走れメロス』ワードクラウド＆出現回数グラフ
+    // =========================================================================
+    const melosWords = [
+      { word: 'メロス', count: 76, pos: 'noun', x: 50, y: 50, size: 92 },
+      { word: '走る', count: 24, pos: 'verb', x: 22, y: 74, size: 62 },
+      { word: '無い', count: 23, pos: 'adj',  x: 82, y: 30, size: 60 },
+      { word: 'くれる', count: 21, pos: 'verb', x: 64, y: 16, size: 54 },
+      { word: '王', count: 18, pos: 'noun', x: 17, y: 46, size: 52 },
+      { word: '殺す', count: 17, pos: 'verb', x: 76, y: 78, size: 52 },
+      { word: 'セリヌンティウス', count: 15, pos: 'noun', x: 82, y: 56, size: 50 },
+      { word: 'おまえ', count: 15, pos: 'noun', x: 58, y: 84, size: 48 },
+      { word: '友', count: 15, pos: 'noun', x: 24, y: 22, size: 48 },
+      { word: '言う', count: 13, pos: 'verb', x: 40, y: 18, size: 44 },
+      { word: '行く', count: 13, pos: 'verb', x: 88, y: 15, size: 42 },
+      { word: '妹', count: 12, pos: 'noun', x: 40, y: 83, size: 42 },
+      { word: '信じる', count: 11, pos: 'verb', x: 14, y: 26, size: 42 },
+      { word: '良い', count: 9,  pos: 'adj',  x: 88, y: 72, size: 38 },
+      { word: '早い', count: 8,  pos: 'adj',  x: 34, y: 34, size: 36 },
+      { word: '大きい', count: 7, pos: 'adj', x: 28, y: 60, size: 36 }
+    ];
+
+    let melosAnalyzed = false;
+    let currentMelosFilter = 'all';
+
+    function getPosColor(pos) {
+      if (pos === 'noun') return { bg: '#16a34a', bar: 'bg-emerald-500', label: '名詞' };
+      if (pos === 'verb') return { bg: '#0891b2', bar: 'bg-cyan-600', label: '動詞' };
+      return { bg: '#ea580c', bar: 'bg-orange-500', label: '形容詞' };
+    }
+
+    function startMelosAnalysis() {
+      melosAnalyzed = true;
+      document.getElementById('wc-placeholder').classList.add('hidden');
+      const canvas = document.getElementById('wc-canvas');
+      canvas.classList.remove('hidden');
+      canvas.innerHTML = '';
+
+      // バブル生成＆順次ポップイン
+      melosWords.forEach((item, idx) => {
+        const col = getPosColor(item.pos);
+        const b = document.createElement('div');
+        b.className = 'wc-bubble';
+        b.dataset.pos = item.pos;
+        b.style.left = `${item.x}%`;
+        b.style.top = `${item.y}%`;
+        b.style.width = `${item.size}px`;
+        b.style.height = `${item.size}px`;
+        b.style.backgroundColor = col.bg;
+        // 文字サイズ調整
+        const fSize = item.word.length >= 6 ? '9px' : (item.size >= 80 ? '20px' : (item.size >= 50 ? '14px' : '11px'));
+        b.style.fontSize = fSize;
+        b.textContent = item.word;
+
+        b.onmouseenter = () => showWcTooltip(item, col.label);
+        b.onclick = () => showWcTooltip(item, col.label);
+        b.onmouseleave = () => document.getElementById('wc-tooltip').classList.add('hidden');
+
+        canvas.appendChild(b);
+
+        setTimeout(() => {
+          b.classList.add('visible');
+          if (currentMelosFilter !== 'all' && item.pos !== currentMelosFilter) {
+            b.classList.add('dimmed');
+          }
+        }, idx * 55);
+      });
+
+      renderMelosRankBars();
+    }
+
+    function showWcTooltip(item, posLabel) {
+      const tip = document.getElementById('wc-tooltip');
+      tip.textContent = `「${item.word}」（${posLabel}）：${item.count}回出現`;
+      tip.classList.remove('hidden');
+    }
+
+    function renderMelosRankBars() {
+      const container = document.getElementById('melos-rank-bars');
+      container.innerHTML = '';
+      const filtered = currentMelosFilter === 'all'
+        ? melosWords
+        : melosWords.filter(w => w.pos === currentMelosFilter);
+
+      filtered.slice(0, 10).forEach(item => {
+        const col = getPosColor(item.pos);
+        const pct = Math.max(12, (item.count / 76) * 100);
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.innerHTML = `
+          <div class="w-24 text-right font-bold text-slate-700 truncate">${item.word}</div>
+          <div class="flex-1 bg-slate-200 h-4 rounded-full overflow-hidden">
+            <div class="smooth-width h-full ${col.bar} rounded-full" style="width: 0%;"></div>
+          </div>
+          <div class="w-10 font-black text-slate-700">${item.count}回</div>
+        `;
+        container.appendChild(row);
+        requestAnimationFrame(() => {
+          row.querySelector('.smooth-width').style.width = `${pct}%`;
+        });
+      });
+    }
+
+    function filterMelos(pos) {
+      currentMelosFilter = pos;
+      ['all', 'noun', 'verb', 'adj'].forEach(k => {
+        const btn = document.getElementById(`mf-${k}`);
+        if (k === pos) {
+          btn.classList.add('ring-2', 'ring-offset-1', 'ring-slate-700');
+        } else {
+          btn.classList.remove('ring-2', 'ring-offset-1', 'ring-slate-700');
+        }
+      });
+
+      if (!melosAnalyzed) return;
+
+      const bubbles = document.querySelectorAll('#wc-canvas .wc-bubble');
+      bubbles.forEach(b => {
+        if (pos === 'all' || b.dataset.pos === pos) {
+          b.classList.remove('dimmed');
+        } else {
+          b.classList.add('dimmed');
+        }
+      });
+      renderMelosRankBars();
+    }
+
+    // =========================================================================
+    // 初期ロード時のセットアップ
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      selectScaleCard('nominal');
+      renderOutlierSim();
+      toggleAnomalyCard('outlier');
+      setMissingMode('none');
+      renderStackedChart();
+      initTextMiningUI();
+    });
+  </script>
+</body>
+</html>
