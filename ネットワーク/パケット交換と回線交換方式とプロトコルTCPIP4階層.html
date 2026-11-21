@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>デジタル通信の仕組み - 情報I インタラクティブ教材</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      background-color: #f0f9ff;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    /* 教科書のカラーテーマ */
+    .bg-textbook-cyan { background-color: #e0f6fa; }
+    .border-textbook-cyan { border-color: #4dd0e1; }
+    .bg-textbook-pink { background-color: #fce4ec; }
+    .border-textbook-pink { border-color: #f48fb1; }
+    .bg-textbook-yellow { background-color: #fffde7; }
+    .border-textbook-yellow { border-color: #fff176; }
+
+    /* パケット・アニメーション用のトランジション */
+    .packet-smooth {
+      transition: all 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .step-card {
+      transition: all 0.3s ease;
+    }
+    .step-card.active-step {
+      background-color: #fef08a;
+      border-color: #eab308;
+      transform: scale(1.03);
+      box-shadow: 0 6px 16px rgba(234, 179, 8, 0.25);
+      font-weight: 800;
+    }
+
+    /* 音声パルスアニメーション */
+    @keyframes flowDash {
+      to {
+        stroke-dashoffset: -24;
+      }
+    }
+    .flowing-line {
+      stroke-dasharray: 8, 4;
+      animation: flowDash 0.6s linear infinite;
+    }
+
+    /* 浮き上がりアニメーション */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    .animate-float {
+      animation: floatSlow 2.5s ease-in-out infinite;
+    }
+
+    /* 点滅ハイライト */
+    @keyframes pulseRing {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .pulse-red {
+      animation: pulseRing 1.5s infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ヘッダー -->
+  <header class="bg-white border-b-4 border-cyan-400 shadow-sm sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="bg-cyan-500 text-white font-extrabold px-3 py-1.5 rounded-xl text-sm shadow">理論編 42</span>
+        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">
+          デジタル通信の仕組み <span class="text-sm font-bold text-cyan-600 bg-cyan-50 px-2.5 py-1 rounded-full ml-1">高校「情報I」視覚化アニメーション</span>
+        </h1>
+      </div>
+
+      <!-- 大きなタブ切り替えボタン -->
+      <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-full md:w-auto">
+        <button id="tabBtn1" onclick="switchTab(1)" class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-extrabold text-sm md:text-base transition-all flex items-center justify-center gap-2 bg-cyan-500 text-white shadow-md">
+          <span>📞 ① 通信方式（図1）</span>
+        </button>
+        <button id="tabBtn2" onclick="switchTab(2)" class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-extrabold text-sm md:text-base transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-white/60">
+          <span>📦 ② プロトコルとTCP/IP（図2・表1）</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+
+    <!-- ==========================================
+         タブ1： ① 通信方式（図1：回線交換とパケット交換）
+         ========================================== -->
+    <section id="tabContent1" class="space-y-6">
+      
+      <!-- 導入：教科書の問いかけ＆先生の例え話 -->
+      <div class="bg-white rounded-3xl p-5 shadow-md border-2 border-cyan-200 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 text-xs font-extrabold px-3 py-1 rounded-full">
+            💡 教科書の問いかけ
+          </div>
+          <h2 class="text-lg md:text-xl font-extrabold text-slate-800">
+            「異なるネットワークをつないでも混線しない理由は何だろうか？」
+          </h2>
+          <p class="text-sm text-slate-600">
+            昔の電話のような<strong class="text-pink-600">「回線交換方式」</strong>と、今のインターネットやLINEで使われる<strong class="text-blue-600">「パケット交換方式」</strong>を動かして比べてみよう！
+          </p>
+        </div>
+        <div class="bg-cyan-50 border-l-4 border-cyan-500 p-3.5 rounded-2xl text-xs md:text-sm text-slate-700 max-w-xl shrink-0">
+          <p class="font-extrabold text-cyan-800 mb-1">👨‍🏫 先生のわかりやすい例え話：</p>
+          <p>・<strong>回線交換</strong> ＝ <strong>「1本の専用道路を貸し切るVIPパレード」</strong>（繋がれば快適だけど、他の人は通れない！）<br>
+          ・<strong>パケット交換</strong> ＝ <strong>「荷物を小包（パケット）に分けて走る宅配便」</strong>（みんなで道路を譲り合って別々の道でも届く！）</p>
+        </div>
+      </div>
+
+      <!-- 図1：左右比較キャンバス -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- 左：回線交換方式 -->
+        <div class="bg-white rounded-3xl shadow-lg border-2 border-pink-200 overflow-hidden flex flex-col">
+          <!-- パネルヘッダー -->
+          <div class="bg-pink-50 px-5 py-4 border-b border-pink-200 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="text-xs font-bold text-pink-600 bg-white px-2.5 py-0.5 rounded-full border border-pink-200">図1（左）</span>
+              <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">回線交換方式 <span class="text-sm font-normal text-slate-500">（固定電話・音声通話など）</span></h3>
+            </div>
+            <span id="circuitStatusBadge" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1.5 rounded-full">待機中</span>
+          </div>
+
+          <!-- 操作ボタンバー -->
+          <div class="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-2 justify-center">
+            <button onclick="startCircuitNormal()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 active:scale-95 text-white font-bold text-sm rounded-xl shadow transition flex items-center gap-1.5">
+              <span>📞 1. 通信スタート（2組が通話）</span>
+            </button>
+            <button onclick="triggerCircuitBusy()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-sm rounded-xl shadow transition flex items-center gap-1.5">
+              <span>😰 2. もし3人目が電話したら？（混雑）</span>
+            </button>
+            <button onclick="triggerCircuitBroken()" class="px-3 py-2 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-bold text-sm rounded-xl shadow transition flex items-center gap-1.5">
+              <span>⚡ 3. 回線障害！</span>
+            </button>
+            <button onclick="resetCircuit()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm rounded-xl transition">
+              <span>↺ リセット</span>
+            </button>
+          </div>
+
+          <!-- 図1(左) SVGアニメーション領域 -->
+          <div class="relative bg-white flex-1 flex flex-col items-center justify-center p-2 min-h-[340px]">
+            <svg id="circuitSvg" viewBox="0 0 500 320" class="w-full h-auto max-h-[340px] select-none">
+              <!-- 背景グリッド装飾 -->
+              <rect x="10" y="10" width="480" height="300" rx="16" fill="#fff9fb" stroke="#fce4ec" stroke-width="2"/>
+
+              <!-- 点線（未接続の基本ルート） -->
+              <g stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="5,5" fill="none">
+                <!-- 左3人から左中継局へ -->
+                <line x1="95" y1="65" x2="165" y2="165" />
+                <line x1="95" y1="165" x2="165" y2="185" />
+                <line x1="95" y1="265" x2="165" y2="205" />
+                <!-- 右中継局から右3人へ -->
+                <line x1="335" y1="165" x2="405" y2="65" />
+                <line x1="335" y1="185" x2="405" y2="165" />
+                <line x1="335" y1="205" x2="405" y2="265" />
+              </g>
+
+              <!-- 立体的な中継局（左） -->
+              <g transform="translate(150, 125)">
+                <text x="35" y="-10" text-anchor="middle" fill="#db2777" font-weight="800" font-size="15">中継局</text>
+                <!-- 上面 -->
+                <polygon points="0,15 20,0 80,0 60,15" fill="#fbcfe8" stroke="#f472b6" stroke-width="1.5"/>
+                <!-- 側面 -->
+                <polygon points="60,15 80,0 80,75 60,90" fill="#f472b6" stroke="#db2777" stroke-width="1.5"/>
+                <!-- 正面 -->
+                <rect x="0" y="15" width="60" height="75" fill="#f9a8d4" stroke="#ec4899" stroke-width="1.5"/>
+              </g>
+
+              <!-- 立体的な中継局（右） -->
+              <g transform="translate(275, 125)">
+                <text x="35" y="-10" text-anchor="middle" fill="#db2777" font-weight="800" font-size="15">中継局</text>
+                <!-- 上面 -->
+                <polygon points="0,15 20,0 80,0 60,15" fill="#fbcfe8" stroke="#f472b6" stroke-width="1.5"/>
+                <!-- 側面 -->
+                <polygon points="60,15 80,0 80,75 60,90" fill="#f472b6" stroke="#db2777" stroke-width="1.5"/>
+                <!-- 正面 -->
+                <rect x="0" y="15" width="60" height="75" fill="#f9a8d4" stroke="#ec4899" stroke-width="1.5"/>
+              </g>
+
+              <!-- 確立された回線パス（アニメーション用） -->
+              <!-- ルート1（赤：左上 → 右中） -->
+              <path id="circuitPathRed" d="M 95,65 L 165,165 L 195,175 L 290,175 L 320,185 L 405,165" fill="none" stroke="#e11d48" stroke-width="4" class=" opacity-0 transition-opacity duration-500"/>
+              <path id="circuitPulseRed" d="M 95,65 L 165,165 L 195,175 L 290,175 L 320,185 L 405,165" fill="none" stroke="#fda4af" stroke-width="4" class="flowing-line opacity-0"/>
+
+              <!-- ルート2（水色：左中 → 右上） -->
+              <path id="circuitPathCyan" d="M 95,165 L 165,185 L 195,192 L 290,192 L 320,165 L 405,65" fill="none" stroke="#0891b2" stroke-width="4" class="opacity-0 transition-opacity duration-500"/>
+              <path id="circuitPulseCyan" d="M 95,165 L 165,185 L 195,192 L 290,192 L 320,165 L 405,65" fill="none" stroke="#67e8f9" stroke-width="4" class="flowing-line opacity-0"/>
+
+              <!-- ルート3（左下の人：話し中エラー線） -->
+              <path id="circuitPathBlocked" d="M 95,265 L 165,205" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="6,4" class="opacity-0"/>
+
+              <!-- 中継局内のスイッチ端子（青い丸） -->
+              <g fill="#0284c7">
+                <!-- 左中継局の端子 -->
+                <circle cx="165" cy="165" r="5"/><circle cx="195" cy="175" r="5"/>
+                <circle cx="165" cy="185" r="5"/><circle cx="195" cy="192" r="5"/>
+                <circle cx="165" cy="205" r="5"/>
+                <!-- 右中継局の端子 -->
+                <circle cx="290" cy="175" r="5"/><circle cx="320" cy="165" r="5"/>
+                <circle cx="290" cy="192" r="5"/><circle cx="320" cy="185" r="5"/>
+                <circle cx="320" cy="205" r="5"/>
+              </g>
+
+              <!-- 障害・パンク表示アイコン -->
+              <g id="circuitBusyAlert" class="hidden">
+                <rect x="115" y="220" width="150" height="44" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                <text x="190" y="239" text-anchor="middle" fill="#b45309" font-size="11" font-weight="800">⚠️ 回線がすべて使用中！</text>
+                <text x="190" y="255" text-anchor="middle" fill="#d97706" font-size="10" font-weight="700">（ツーツー… 繋がりません）</text>
+              </g>
+
+              <g id="circuitBrokenAlert" class="hidden">
+                <circle cx="242" cy="182" r="24" fill="#fee2e2" stroke="#ef4444" stroke-width="3"/>
+                <text x="242" y="190" text-anchor="middle" fill="#dc2626" font-size="24" font-weight="900">×</text>
+                <rect x="160" y="75" width="165" height="36" rx="8" fill="#dc2626"/>
+                <text x="242" y="98" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="800">⚡ 回線障害！通信ストップ</text>
+              </g>
+
+              <!-- 左側の通話者3人（教科書の水色アイコン＋電話機） -->
+              <!-- 左上 Aさん -->
+              <g transform="translate(25, 25)">
+                <circle cx="22" cy="18" r="14" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <path d="M5,55 C5,38 39,38 39,55 Z" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <circle cx="18" cy="15" r="2" fill="#0e7490"/><circle cx="26" cy="15" r="2" fill="#0e7490"/>
+                <path d="M17,22 Q22,26 27,22" fill="none" stroke="#0e7490" stroke-width="2"/>
+                <!-- 電話機 -->
+                <rect x="38" y="32" width="30" height="22" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <rect x="43" y="36" width="20" height="14" fill="#bae6fd"/>
+                <text x="35" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#be123c">発信者①</text>
+              </g>
+
+              <!-- 左中 Bさん -->
+              <g transform="translate(25, 125)">
+                <circle cx="22" cy="18" r="14" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <path d="M5,55 C5,38 39,38 39,55 Z" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <circle cx="18" cy="15" r="2" fill="#0e7490"/><circle cx="26" cy="15" r="2" fill="#0e7490"/>
+                <path d="M17,22 Q22,26 27,22" fill="none" stroke="#0e7490" stroke-width="2"/>
+                <rect x="38" y="32" width="30" height="22" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <rect x="43" y="36" width="20" height="14" fill="#bae6fd"/>
+                <text x="35" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#0e7490">発信者②</text>
+              </g>
+
+              <!-- 左下 Cさん -->
+              <g transform="translate(25, 225)">
+                <circle cx="22" cy="18" r="14" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <path d="M5,55 C5,38 39,38 39,55 Z" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <circle cx="18" cy="15" r="2" fill="#0e7490"/><circle cx="26" cy="15" r="2" fill="#0e7490"/>
+                <path id="caller3Mouth" d="M17,22 Q22,26 27,22" fill="none" stroke="#0e7490" stroke-width="2"/>
+                <rect x="38" y="32" width="30" height="22" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <rect x="43" y="36" width="20" height="14" fill="#bae6fd"/>
+                <text x="35" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#64748b">発信者③</text>
+              </g>
+
+              <!-- 右側の通話者3人 -->
+              <!-- 右上 -->
+              <g transform="translate(405, 25)">
+                <circle cx="48" cy="18" r="14" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <path d="M31,55 C31,38 65,38 65,55 Z" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <circle cx="44" cy="15" r="2" fill="#0e7490"/><circle cx="52" cy="15" r="2" fill="#0e7490"/>
+                <path d="M43,22 Q48,26 53,22" fill="none" stroke="#0e7490" stroke-width="2"/>
+                <rect x="2" y="32" width="30" height="22" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <rect x="7" y="36" width="20" height="14" fill="#bae6fd"/>
+                <text x="35" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#0e7490">相手②</text>
+              </g>
+
+              <!-- 右中 -->
+              <g transform="translate(405, 125)">
+                <circle cx="48" cy="18" r="14" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <path d="M31,55 C31,38 65,38 65,55 Z" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <circle cx="44" cy="15" r="2" fill="#0e7490"/><circle cx="52" cy="15" r="2" fill="#0e7490"/>
+                <path d="M43,22 Q48,26 53,22" fill="none" stroke="#0e7490" stroke-width="2"/>
+                <rect x="2" y="32" width="30" height="22" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <rect x="7" y="36" width="20" height="14" fill="#bae6fd"/>
+                <text x="35" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#be123c">相手①</text>
+              </g>
+
+              <!-- 右下 -->
+              <g transform="translate(405, 225)">
+                <circle cx="48" cy="18" r="14" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <path d="M31,55 C31,38 65,38 65,55 Z" fill="#67e8f9" stroke="#06b6d4" stroke-width="2"/>
+                <circle cx="44" cy="15" r="2" fill="#0e7490"/><circle cx="52" cy="15" r="2" fill="#0e7490"/>
+                <path d="M43,22 Q48,26 53,22" fill="none" stroke="#0e7490" stroke-width="2"/>
+                <rect x="2" y="32" width="30" height="22" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                <rect x="7" y="36" width="20" height="14" fill="#bae6fd"/>
+                <text x="35" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#64748b">相手③</text>
+              </g>
+            </svg>
+
+            <!-- リアルタイム吹き出し解説 -->
+            <div id="circuitExplanationBox" class="w-full px-4 py-2.5 bg-pink-50/90 border-t border-pink-200 text-xs md:text-sm font-bold text-pink-900 text-center">
+              👆 上の「1. 通信スタート」ボタンを押して、中継局の線がつながる様子を見てみよう！
+            </div>
+          </div>
+
+          <!-- 教科書のまとめ＆災害メモ -->
+          <div class="p-4 bg-white border-t border-slate-100 space-y-2 text-xs md:text-sm">
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg">⭕ メリット：一度つながれば安定して通信できる！</span>
+              <span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg">❌ デメリット：回線を独占するので混雑や故障に弱い</span>
+            </div>
+            <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-slate-700">
+              <span class="font-extrabold text-amber-800">📌 教科書 memo（災害時の電話規制）：</span>
+              大地震などの災害時、電話が殺到して回線がパンクするのを防ぐため、電話の発信が規制（制限）されることがあります。
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：パケット交換方式 -->
+        <div class="bg-white rounded-3xl shadow-lg border-2 border-cyan-300 overflow-hidden flex flex-col">
+          <!-- パネルヘッダー -->
+          <div class="bg-cyan-50 px-5 py-4 border-b border-cyan-200 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="text-xs font-bold text-cyan-700 bg-white px-2.5 py-0.5 rounded-full border border-cyan-200">図1（右）</span>
+              <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">パケット交換方式 <span class="text-sm font-normal text-slate-500">（ネット・メール・SNSなど）</span></h3>
+            </div>
+            <span id="packetStatusBadge" class="bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1.5 rounded-full">待機中</span>
+          </div>
+
+          <!-- 操作ボタンバー -->
+          <div class="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-2 justify-center">
+            <button onclick="sendPacketsSimulation(false)" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow transition flex items-center gap-1.5">
+              <span>📦 1. パケット送信！（小分けにして送る）</span>
+            </button>
+            <button onclick="sendPacketsSimulation(true)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow transition flex items-center gap-1.5">
+              <span>🚧 2. もし途中で道が故障・混雑したら？（迂回ルート）</span>
+            </button>
+            <button onclick="resetPacketSim()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm rounded-xl transition">
+              <span>↺ リセット</span>
+            </button>
+          </div>
+
+          <!-- 図1(右) SVGアニメーション領域 -->
+          <div class="relative bg-white flex-1 flex flex-col items-center justify-center p-2 min-h-[340px]">
+            <svg id="packetSvg" viewBox="0 0 500 320" class="w-full h-auto max-h-[340px] select-none">
+              <rect x="10" y="10" width="480" height="300" rx="16" fill="#f8fafc" stroke="#e0f2fe" stroke-width="2"/>
+
+              <!-- ISP間のメッシュ点線ネットワーク -->
+              <g stroke="#0284c7" stroke-width="2" stroke-dasharray="4,4" fill="none">
+                <!-- PCからISPへ -->
+                <line x1="115" y1="55" x2="185" y2="55" />
+                <line x1="315" y1="55" x2="385" y2="55" />
+                <line x1="315" y1="265" x2="385" y2="265" />
+
+                <!-- 7つのISP間の網目接続（図1右を忠実に再現） -->
+                <!-- ISP1(185,55), ISP2(315,55), ISP3(250,120), ISP4(115,170), ISP5(385,170), ISP6(185,265), ISP7(315,265) -->
+                <line x1="185" y1="55" x2="250" y2="120" />
+                <line x1="185" y1="55" x2="115" y2="170" />
+                <line x1="185" y1="55" x2="315" y2="55" />
+                <line x1="315" y1="55" x2="250" y2="120" />
+                <line x1="315" y1="55" x2="385" y2="170" />
+                <line x1="250" y1="120" x2="115" y2="170" />
+                <line x1="250" y1="120" x2="385" y2="170" />
+                <line x1="250" y1="120" x2="185" y2="265" />
+                <line x1="250" y1="120" x2="315" y2="265" />
+                <line x1="115" y1="170" x2="385" y2="170" />
+                <line x1="115" y1="170" x2="185" y2="265" />
+                <line x1="115" y1="170" x2="315" y2="265" />
+                <line x1="385" y1="170" x2="315" y2="265" />
+                <line x1="185" y1="265" x2="315" y2="265" />
+              </g>
+
+              <!-- 左上：送信ノートPC -->
+              <g transform="translate(25, 22)">
+                <rect x="8" y="0" width="74" height="48" rx="4" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2.5"/>
+                <rect x="13" y="5" width="64" height="38" fill="#ffffff"/>
+                <polygon points="0,56 8,48 82,48 90,56" fill="#7dd3fc" stroke="#0284c7" stroke-width="1.5"/>
+                <!-- 画面内のピンクブロックと黄色ブロック -->
+                <g id="senderPinkBlocks" transform="translate(22, 10)">
+                  <rect x="0" y="0" width="14" height="10" fill="#e11d48" stroke="#fff" stroke-width="1"/>
+                  <rect x="15" y="0" width="14" height="10" fill="#e11d48" stroke="#fff" stroke-width="1"/>
+                  <rect x="30" y="0" width="14" height="10" fill="#e11d48" stroke="#fff" stroke-width="1"/>
+                </g>
+                <g id="senderYellowBlocks" transform="translate(22, 24)">
+                  <rect x="0" y="0" width="14" height="10" fill="#facc15" stroke="#fff" stroke-width="1"/>
+                  <rect x="15" y="0" width="14" height="10" fill="#facc15" stroke="#fff" stroke-width="1"/>
+                  <rect x="30" y="0" width="14" height="10" fill="#facc15" stroke="#fff" stroke-width="1"/>
+                </g>
+                <text x="45" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#0369a1">送信PC</text>
+              </g>
+
+              <!-- 右上：受信ノートPC（ピンクデータ宛先） -->
+              <g transform="translate(385, 22)">
+                <rect x="8" y="0" width="74" height="48" rx="4" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2.5"/>
+                <rect x="13" y="5" width="64" height="38" fill="#ffffff"/>
+                <polygon points="0,56 8,48 82,48 90,56" fill="#7dd3fc" stroke="#0284c7" stroke-width="1.5"/>
+                <g id="receiverPinkBlocks" transform="translate(22, 16)" class="opacity-20 transition-opacity duration-500">
+                  <rect x="0" y="0" width="14" height="12" fill="#e11d48" stroke="#fff" stroke-width="1"/>
+                  <rect x="15" y="0" width="14" height="12" fill="#e11d48" stroke="#fff" stroke-width="1"/>
+                  <rect x="30" y="0" width="14" height="12" fill="#e11d48" stroke="#fff" stroke-width="1"/>
+                </g>
+                <text x="45" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#be123c">受信PC①（赤データ）</text>
+              </g>
+
+              <!-- 右下：受信ノートPC（黄色データ宛先） -->
+              <g transform="translate(385, 232)">
+                <rect x="8" y="0" width="74" height="48" rx="4" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2.5"/>
+                <rect x="13" y="5" width="64" height="38" fill="#ffffff"/>
+                <polygon points="0,56 8,48 82,48 90,56" fill="#7dd3fc" stroke="#0284c7" stroke-width="1.5"/>
+                <g id="receiverYellowBlocks" transform="translate(22, 16)" class="opacity-20 transition-opacity duration-500">
+                  <rect x="0" y="0" width="14" height="12" fill="#facc15" stroke="#ca8a04" stroke-width="0.5"/>
+                  <rect x="15" y="0" width="14" height="12" fill="#facc15" stroke="#ca8a04" stroke-width="0.5"/>
+                  <rect x="30" y="0" width="14" height="12" fill="#facc15" stroke="#ca8a04" stroke-width="0.5"/>
+                </g>
+                <text x="45" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#a16207">受信PC②（黄データ）</text>
+              </g>
+
+              <!-- 7つのISP丸アイコン -->
+              <g font-size="12" font-weight="800" fill="#ffffff" text-anchor="middle">
+                <g transform="translate(185,55)"><circle r="19" fill="#0284c7"/><text y="4">ISP</text></g>
+                <g transform="translate(315,55)"><circle r="19" fill="#0284c7"/><text y="4">ISP</text></g>
+                <g id="centerIspNode" transform="translate(250,120)">
+                  <circle r="19" fill="#0284c7"/>
+                  <text y="4">ISP</text>
+                </g>
+                <g transform="translate(115,170)"><circle r="19" fill="#0284c7"/><text y="4">ISP</text></g>
+                <g transform="translate(385,170)"><circle r="19" fill="#0284c7"/><text y="4">ISP</text></g>
+                <g transform="translate(185,265)"><circle r="19" fill="#0284c7"/><text y="4">ISP</text></g>
+                <g transform="translate(315,265)"><circle r="19" fill="#0284c7"/><text y="4">ISP</text></g>
+              </g>
+
+              <!-- 中央ISPの通行止めマーク（迂回モード時） -->
+              <g id="ispBlockedOverlay" class="hidden" transform="translate(250,120)">
+                <circle r="22" fill="#fee2e2" stroke="#dc2626" stroke-width="3"/>
+                <text y="8" text-anchor="middle" fill="#dc2626" font-size="24" font-weight="900">×</text>
+                <rect x="-55" y="-42" width="110" height="20" rx="5" fill="#dc2626"/>
+                <text x="0" y="-28" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">混雑・故障中！</text>
+              </g>
+
+              <!-- 動くパケット（小包キューブ）レイヤー -->
+              <g id="movingPacketsLayer"></g>
+            </svg>
+
+            <!-- リアルタイム吹き出し解説 -->
+            <div id="packetExplanationBox" class="w-full px-4 py-2.5 bg-cyan-50/90 border-t border-cyan-200 text-xs md:text-sm font-bold text-cyan-900 text-center">
+              👆 上の「1. パケット送信！」ボタンを押して、データが小包（パケット）に分かれて進む様子を見よう！
+            </div>
+          </div>
+
+          <!-- 教科書のまとめ＆災害メモ -->
+          <div class="p-4 bg-white border-t border-slate-100 space-y-2 text-xs md:text-sm">
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg">⭕ メリット：道を独占せず、故障しても別ルートで送れる！</span>
+              <span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg">❌ デメリット：順番がバラバラになったり途中で消えることも</span>
+            </div>
+            <div class="bg-cyan-50 p-3 rounded-xl border border-cyan-200 text-slate-700">
+              <span class="font-extrabold text-cyan-800">📌 教科書 memo（災害時にSNSやLINEが活躍する理由）：</span>
+              回線を独占しないパケット交換方式は規制されにくいため、災害時の安否確認で電子メールやSNSが活躍します！
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 教科書下部：通信速度 bps と 5G/6G ミニ解説カード -->
+      <div class="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-3xl p-5 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="bg-white/20 p-3.5 rounded-2xl text-center shrink-0">
+            <span class="block text-xs font-bold text-cyan-100">通信速度の単位</span>
+            <span class="text-2xl md:text-3xl font-extrabold tracking-wider">bps</span>
+            <span class="block text-[10px] text-cyan-100">[bits per second]</span>
+          </div>
+          <div class="space-y-1">
+            <h4 class="font-extrabold text-base md:text-lg">1秒あたりに送信できるデータ量 ＝ 「bps（ビーピーエス）」</h4>
+            <p class="text-xs md:text-sm text-cyan-50">
+              数字が大きいほど、1秒間にたくさんの小包（ビット）を送れます！<br>
+              通信が速くなったことで、<strong>遠隔医療（離れた場所の手術支援）</strong>や<strong>自動運転</strong>、高画質な動画配信が実現しています。
+            </p>
+          </div>
+        </div>
+        <div class="bg-white text-slate-800 px-4 py-3 rounded-2xl shrink-0 shadow text-xs md:text-sm font-bold border-2 border-yellow-300">
+          <div class="text-cyan-700 font-extrabold">📱 教科書 memo：第5世代「5G」の速度は？</div>
+          <div>およそ <strong class="text-lg text-pink-600">10 Gbps</strong> （＝1秒間に100億ビット！）</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">※ <code class="bg-slate-100 px-1 rounded">1 Gbps = 10⁹ bps</code> （次はさらに速い 6G へ！）</div>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ==========================================
+         タブ2： ② プロトコルとTCP/IP（図2・表1）
+         ========================================== -->
+    <section id="tabContent2" class="hidden space-y-6">
+
+      <!-- プロトコルとは？ 導入バナー -->
+      <div class="bg-white rounded-3xl p-5 shadow-md border-2 border-cyan-200 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 bg-cyan-100 text-cyan-800 text-xs font-extrabold px-3 py-1 rounded-full">
+            🤝 2. プロトコル [Protocol] ＝ 通信の「約束事（ルール）」
+          </div>
+          <h2 class="text-lg md:text-xl font-extrabold text-slate-800">
+            なぜパケットがバラバラに届いても、元のデータに戻せるの？
+          </h2>
+          <p class="text-sm text-slate-600">
+            世界中で使われている約束事<strong class="text-cyan-700">「TCP/IP（ティーシーピー・アイピー）」</strong>が、パケット交換の弱点（順番バラバラ・途中紛失）を完璧にカバーしているよ！
+          </p>
+        </div>
+        <div class="bg-amber-50 border-l-4 border-amber-400 p-3.5 rounded-2xl text-xs md:text-sm text-slate-700 max-w-xl shrink-0">
+          <p class="font-extrabold text-amber-900 mb-1">👨‍🏫 先生のわかりやすい例え話：</p>
+          <p>・<strong class="text-cyan-700">TCPの役割</strong> ＝ <strong>「丁寧な箱詰め＆中身チェック係」</strong>（データを分割して<span class="underline">連番シール</span>を貼り、届いたら順番通りに並べて欠損を確認！）<br>
+          ・<strong class="text-pink-600">IPの役割</strong> ＝ <strong>「宛先シールを貼って届ける配達係」</strong>（<span class="underline">相手の住所＝IPヘッダ</span>を貼ってネットの道へ送り出す！）</p>
+        </div>
+      </div>
+
+      <!-- 図2：TCP/IPの仕組み ステップ実行シミュレーター -->
+      <div class="bg-white rounded-3xl shadow-lg border-2 border-cyan-300 overflow-hidden">
+        
+        <!-- コントロールパネル -->
+        <div class="bg-slate-800 text-white p-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="bg-cyan-400 text-slate-900 font-extrabold text-xs px-2.5 py-1 rounded-lg">図2 完全再現</span>
+            <h3 class="font-extrabold text-base md:text-lg">TCP/IPの仕組み ステップ体験アニメーション</h3>
+          </div>
+
+          <!-- ステップ操作ボタン群 -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="prevTcpStep()" id="btnPrevStep" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 rounded-xl font-bold text-xs md:text-sm transition">
+              ◀ 前のステップ
+            </button>
+            <button onclick="nextTcpStep()" id="btnNextStep" class="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-sm md:text-base rounded-xl shadow-md transition transform active:scale-95">
+              次のステップへ進む ▶
+            </button>
+            <button onclick="toggleAutoPlayTcp()" id="btnAutoTcp" class="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs md:text-sm rounded-xl transition">
+              ⏯ 自動再生
+            </button>
+            <button onclick="resetTcpStep()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs md:text-sm rounded-xl transition">
+              ↺ 最初から
+            </button>
+          </div>
+
+          <!-- 欠損シミュレーション切り替えトグル -->
+          <div class="flex items-center gap-2 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-rose-400/50">
+            <input type="checkbox" id="lossSimToggle" onchange="onLossToggleChange()" class="w-4 h-4 accent-rose-500 rounded cursor-pointer">
+            <label for="lossSimToggle" class="text-xs md:text-sm font-extrabold text-rose-300 cursor-pointer select-none">
+              💥 途中で「2番のパケット」が消えたら？（TCPの再送を体験）
+            </label>
+          </div>
+        </div>
+
+        <!-- 現在のステップ解説バナー -->
+        <div class="bg-amber-50 border-b-2 border-amber-200 px-5 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span id="tcpStepBadge" class="bg-amber-500 text-white font-extrabold px-3.5 py-1.5 rounded-xl text-sm shrink-0 shadow-sm">
+              Step 1 / 8
+            </span>
+            <div>
+              <h4 id="tcpStepTitle" class="font-extrabold text-slate-800 text-base md:text-lg">
+                【コンピュータA】元のデータを用意する
+              </h4>
+              <p id="tcpStepDesc" class="text-xs md:text-sm text-slate-700 font-medium">
+                コンピュータAからコンピュータBへ、大きな水色のデータ（写真やメッセージ）を送りたい！まずはそのままの状態です。
+              </p>
+            </div>
+          </div>
+          <!-- TCP / UDP ミニ比較ポップ -->
+          <div class="bg-white px-3.5 py-2 rounded-xl border border-amber-300 text-xs shrink-0 max-w-xs">
+            <span class="font-extrabold text-indigo-700">💡 教科書コラム（TCPとUDPの違い）：</span><br>
+            ・<strong>TCP</strong>：消えたパケットを<span class="text-rose-600 font-bold">再送する</span>（確実・Webやメール向き）<br>
+            ・<strong>UDP</strong>：再送しない代わりに<span class="text-emerald-600 font-bold">超スピード重視！</span>（通話や生配信向き）
+          </div>
+        </div>
+
+        <!-- 教科書の図2 再現メインステージ -->
+        <div class="p-4 md:p-6 bg-slate-50 relative">
+          
+          <div class="grid grid-cols-1 lg:grid-cols-11 gap-4 items-stretch relative">
+
+            <!-- 左枠：コンピュータA（送信側） -->
+            <div class="lg:col-span-4 bg-white rounded-2xl border-2 border-cyan-500/60 shadow-sm p-4 flex flex-col justify-between relative z-10">
+              <!-- PCアイコンヘッダー -->
+              <div class="flex items-center justify-center gap-3 pb-3 border-b border-slate-100">
+                <svg class="w-12 h-10 text-cyan-500" viewBox="0 0 64 52" fill="none">
+                  <rect x="2" y="4" width="38" height="28" rx="3" fill="#e0f2fe" stroke="#06b6d4" stroke-width="3"/>
+                  <rect x="15" y="32" width="12" height="8" fill="#06b6d4"/>
+                  <rect x="8" y="40" width="26" height="4" rx="2" fill="#06b6d4"/>
+                  <rect x="44" y="4" width="16" height="40" rx="2" fill="#67e8f9" stroke="#06b6d4" stroke-width="3"/>
+                  <line x1="48" y1="12" x2="56" y2="12" stroke="#0e7490" stroke-width="2"/>
+                  <circle cx="52" cy="34" r="2.5" fill="#0e7490"/>
+                </svg>
+                <div>
+                  <span class="text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded">送信側</span>
+                  <h4 class="text-lg font-extrabold text-slate-800">コンピュータA</h4>
+                </div>
+              </div>
+
+              <!-- 上段（水色背景）：TCPの役割エリア -->
+              <div class="bg-textbook-cyan/80 rounded-xl p-3 my-2 space-y-3 border border-cyan-200">
+                <div class="text-xs font-extrabold text-cyan-800 flex items-center justify-between">
+                  <span>▼ 上から下へ処理が進みます</span>
+                  <span class="bg-cyan-600 text-white px-2 py-0.5 rounded text-[10px]">3層：TCPの働き</span>
+                </div>
+
+                <!-- Step 1: 元のデータ -->
+                <div id="stepCard1" onclick="jumpToTcpStep(1)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center gap-3">
+                  <!-- 図：1つの四角い水色データ -->
+                  <div class="w-20 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center shrink-0 p-1">
+                    <div class="w-14 h-10 bg-cyan-400 rounded border border-cyan-500 flex items-center justify-center text-[10px] font-extrabold text-white shadow-inner">
+                      DATA
+                    </div>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">① 元のデータ</div>
+                    <div class="text-[11px] text-slate-600">送りたい大きなデータ</div>
+                  </div>
+                </div>
+
+                <div class="text-center text-amber-500 font-black text-sm leading-none">⬇</div>
+
+                <!-- Step 2: データを分割 -->
+                <div id="stepCard2" onclick="jumpToTcpStep(2)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center gap-3">
+                  <!-- 図：3分割された水色バー -->
+                  <div class="w-20 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center gap-1.5 shrink-0 p-1">
+                    <div class="w-3.5 h-10 bg-cyan-400 border border-cyan-500 rounded-xs"></div>
+                    <div class="w-3.5 h-10 bg-cyan-400 border border-cyan-500 rounded-xs"></div>
+                    <div class="w-3.5 h-10 bg-cyan-400 border border-cyan-500 rounded-xs"></div>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">② データを分割</div>
+                    <div class="text-[11px] text-slate-600">送りやすいように小分けにする</div>
+                  </div>
+                </div>
+
+                <div class="text-center text-amber-500 font-black text-sm leading-none">⬇</div>
+
+                <!-- Step 3: 連番を振る（TCPヘッダ） -->
+                <div id="stepCard3" onclick="jumpToTcpStep(3)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center gap-3">
+                  <!-- 図：下に濃い青色のTCPヘッダがついた3本のバー -->
+                  <div class="w-20 h-16 bg-white rounded-lg border border-slate-200 flex items-end justify-center gap-1.5 shrink-0 p-1.5">
+                    <div class="flex flex-col items-center">
+                      <div class="w-4 h-8 bg-cyan-400"></div>
+                      <div class="w-4 h-3.5 bg-blue-700 text-[8px] text-white font-bold flex items-center justify-center">1</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="w-4 h-8 bg-cyan-400"></div>
+                      <div class="w-4 h-3.5 bg-blue-700 text-[8px] text-white font-bold flex items-center justify-center">2</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="w-4 h-8 bg-cyan-400"></div>
+                      <div class="w-4 h-3.5 bg-blue-700 text-[8px] text-white font-bold flex items-center justify-center">3</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">③ 連番を振る (TCPヘッダ)</div>
+                    <div class="text-[11px] text-slate-600">順番(1,2,3)とポート番号を記録</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 下段（ピンク背景）：IPの役割エリア -->
+              <div class="bg-textbook-pink/80 rounded-xl p-3 border border-pink-200">
+                <div class="text-xs font-extrabold text-pink-800 flex items-center justify-between mb-2">
+                  <span>▼ 宛先シールを貼る</span>
+                  <span class="bg-pink-600 text-white px-2 py-0.5 rounded text-[10px]">2層：IPの働き</span>
+                </div>
+
+                <!-- Step 4: 送信先の情報などを付加（IPヘッダ） -->
+                <div id="stepCard4" onclick="jumpToTcpStep(4)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center gap-3">
+                  <!-- 図：水色＋青(TCP)＋赤(IP) -->
+                  <div class="w-20 h-16 bg-white rounded-lg border border-slate-200 flex items-center justify-center shrink-0 p-1">
+                    <div class="flex flex-col items-center shadow-sm">
+                      <div class="w-5 h-7 bg-cyan-400 text-[7px] text-cyan-950 font-bold flex items-center justify-center">データ</div>
+                      <div class="w-5 h-3.5 bg-blue-700 text-[7px] text-white font-bold flex items-center justify-center">TCP</div>
+                      <div class="w-5 h-3.5 bg-red-600 text-[7px] text-white font-bold flex items-center justify-center">IP宛先</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">④ 送信先の情報を付加 (IPヘッダ)</div>
+                    <div class="text-[11px] text-slate-600">相手の住所(IPアドレス)を貼る</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 中央：TCPの役割・IPの役割ピル＆動的パケットアニメーション空間 -->
+            <div class="lg:col-span-3 flex flex-col justify-between items-center py-4 relative">
+              
+              <!-- 中央上：TCPの役割ラベル -->
+              <div class="w-full bg-textbook-cyan/70 rounded-2xl p-4 border-2 border-cyan-200 flex flex-col items-center justify-center text-center min-h-[220px]">
+                <div class="bg-cyan-500 text-white font-extrabold px-6 py-2 rounded-full shadow-md text-base tracking-wide mb-2">
+                  TCP の役割
+                </div>
+                <p class="text-xs text-slate-700 font-bold leading-relaxed">
+                  📦 データを小分けにして<br>
+                  <span class="text-blue-700 underline">青い「TCPヘッダ（連番1・2・3）」</span><br>
+                  をつけ、届いたら番号順に並べて<br>
+                  <strong>欠損（抜け）がないか確認</strong>する！
+                </p>
+
+                <!-- 動的ステージ（今起きていることの拡大アニメーション） -->
+                <div id="centerLiveVisualizer" class="mt-3 w-full bg-white rounded-xl p-3 border border-cyan-300 shadow-inner min-h-[115px] flex flex-col items-center justify-center">
+                  <!-- JSでステップごとの拡大イラストを描画 -->
+                </div>
+              </div>
+
+              <!-- 中央下：IPの役割ラベル ＆ 3台のパケットトラック（図2最下部） -->
+              <div class="w-full bg-textbook-pink/70 rounded-2xl p-4 border-2 border-pink-200 flex flex-col items-center justify-center text-center mt-3">
+                <div class="bg-pink-500 text-white font-extrabold px-6 py-1.5 rounded-full shadow-md text-base tracking-wide mb-2">
+                  IP の役割
+                </div>
+                <p class="text-xs text-slate-700 font-bold leading-relaxed mb-3">
+                  🚚 <span class="text-red-600 underline">赤い「IPヘッダ（宛先住所）」</span>を見て<br>
+                  コンピュータAからBへパケットを運ぶ！
+                </p>
+
+                <!-- Step 5: ネットワーク移動トラック（教科書の斜めパケット＋矢印を再現） -->
+                <div id="stepCard5" onclick="jumpToTcpStep(5)" class="step-card cursor-pointer w-full bg-white rounded-xl p-2.5 border-2 border-pink-300">
+                  <div class="text-[11px] font-extrabold text-pink-700 mb-1">⑤ インターネットを移動！（クリックで再生）</div>
+                  <div id="networkTransitBox" class="flex items-center justify-around py-1">
+                    <!-- パケット1号 -->
+                    <div id="transitPkt1" class="flex flex-col items-center transition-all duration-500">
+                      <div class="flex transform -rotate-45 mb-1">
+                        <div class="w-4 h-3 bg-cyan-400"></div>
+                        <div class="w-2.5 h-3 bg-blue-700 text-[7px] text-white font-bold flex items-center justify-center">1</div>
+                        <div class="w-2.5 h-3 bg-red-600"></div>
+                      </div>
+                      <span class="bg-orange-400 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">1番 ➔</span>
+                    </div>
+                    <!-- パケット2号（欠損対象） -->
+                    <div id="transitPkt2" class="flex flex-col items-center transition-all duration-500">
+                      <div class="flex transform -rotate-45 mb-1">
+                        <div class="w-4 h-3 bg-cyan-400"></div>
+                        <div class="w-2.5 h-3 bg-blue-700 text-[7px] text-white font-bold flex items-center justify-center">2</div>
+                        <div class="w-2.5 h-3 bg-red-600"></div>
+                      </div>
+                      <span id="transitPkt2Label" class="bg-pink-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">2番 ➔</span>
+                    </div>
+                    <!-- パケット3号 -->
+                    <div id="transitPkt3" class="flex flex-col items-center transition-all duration-500">
+                      <div class="flex transform -rotate-45 mb-1">
+                        <div class="w-4 h-3 bg-cyan-400"></div>
+                        <div class="w-2.5 h-3 bg-blue-700 text-[7px] text-white font-bold flex items-center justify-center">3</div>
+                        <div class="w-2.5 h-3 bg-red-600"></div>
+                      </div>
+                      <span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">3番 ➔</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 右枠：コンピュータB（受信側） -->
+            <div class="lg:col-span-4 bg-white rounded-2xl border-2 border-cyan-500/60 shadow-sm p-4 flex flex-col justify-between relative z-10">
+              <!-- PCアイコンヘッダー -->
+              <div class="flex items-center justify-center gap-3 pb-3 border-b border-slate-100">
+                <div>
+                  <span class="text-[11px] font-bold text-pink-700 bg-pink-50 px-2 py-0.5 rounded">受信側</span>
+                  <h4 class="text-lg font-extrabold text-slate-800">コンピュータB</h4>
+                </div>
+                <svg class="w-12 h-10 text-cyan-500" viewBox="0 0 64 52" fill="none">
+                  <rect x="2" y="4" width="38" height="28" rx="3" fill="#e0f2fe" stroke="#06b6d4" stroke-width="3"/>
+                  <rect x="15" y="32" width="12" height="8" fill="#06b6d4"/>
+                  <rect x="8" y="40" width="26" height="4" rx="2" fill="#06b6d4"/>
+                  <rect x="44" y="4" width="16" height="40" rx="2" fill="#67e8f9" stroke="#06b6d4" stroke-width="3"/>
+                  <line x1="48" y1="12" x2="56" y2="12" stroke="#0e7490" stroke-width="2"/>
+                  <circle cx="52" cy="34" r="2.5" fill="#0e7490"/>
+                </svg>
+              </div>
+
+              <!-- 上段（水色背景）：TCPの役割エリア（下から上へ復元！） -->
+              <div class="bg-textbook-cyan/80 rounded-xl p-3 my-2 space-y-2.5 border border-cyan-200">
+                <div class="text-xs font-extrabold text-cyan-800 flex items-center justify-between">
+                  <span>▲ 下から上へ復元されます！</span>
+                  <span class="bg-cyan-600 text-white px-2 py-0.5 rounded text-[10px]">3層：TCPの働き</span>
+                </div>
+
+                <!-- Step 8: 元のデータに戻す -->
+                <div id="stepCard8" onclick="jumpToTcpStep(8)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">⑧ 元のデータに戻す</div>
+                    <div class="text-[11px] text-slate-600">3つを合体させて完全復元！🎉</div>
+                  </div>
+                  <div class="w-20 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center shrink-0 p-1">
+                    <div class="w-14 h-10 bg-cyan-400 rounded border border-cyan-500 flex items-center justify-center text-[10px] font-extrabold text-white shadow-inner">
+                      DATA
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-center text-amber-500 font-black text-sm leading-none">⬆</div>
+
+                <!-- Step 7B: TCPヘッダを除去 -->
+                <div id="stepCard7b" onclick="jumpToTcpStep(7)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">⑦-2 TCPヘッダを除去</div>
+                    <div class="text-[11px] text-slate-600">役目を終えた連番タグを外す</div>
+                  </div>
+                  <!-- 図：下が点線になった3本の水色バー -->
+                  <div class="w-20 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center gap-1.5 shrink-0 p-1">
+                    <div class="flex flex-col items-center">
+                      <div class="w-3.5 h-7 bg-cyan-400"></div>
+                      <div class="w-3.5 h-3 border border-dashed border-slate-400"></div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="w-3.5 h-7 bg-cyan-400"></div>
+                      <div class="w-3.5 h-3 border border-dashed border-slate-400"></div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="w-3.5 h-7 bg-cyan-400"></div>
+                      <div class="w-3.5 h-3 border border-dashed border-slate-400"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-center text-amber-500 font-black text-sm leading-none">⬆</div>
+
+                <!-- Step 7A: 連番を基に並べて欠損がないか確認 -->
+                <div id="stepCard7" onclick="jumpToTcpStep(7)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">⑦-1 連番を基に並べて欠損確認</div>
+                    <div class="text-[11px] text-slate-600">1・2・3の順に並べ、抜けがあれば再送要求！</div>
+                  </div>
+                  <div class="w-20 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center gap-1.5 shrink-0 p-1">
+                    <div class="flex flex-col items-center">
+                      <div class="w-3.5 h-7 bg-cyan-400"></div>
+                      <div class="w-3.5 h-3.5 bg-blue-700 text-[8px] text-white font-bold flex items-center justify-center">1</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="w-3.5 h-7 bg-cyan-400"></div>
+                      <div class="w-3.5 h-3.5 bg-blue-700 text-[8px] text-white font-bold flex items-center justify-center">2</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="w-3.5 h-7 bg-cyan-400"></div>
+                      <div class="w-3.5 h-3.5 bg-blue-700 text-[8px] text-white font-bold flex items-center justify-center">3</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 下段（ピンク背景）：IPの役割エリア -->
+              <div class="bg-textbook-pink/80 rounded-xl p-3 border border-pink-200">
+                <div class="text-xs font-extrabold text-pink-800 flex items-center justify-between mb-2">
+                  <span>▲ 最初にここで受け取る！</span>
+                  <span class="bg-pink-600 text-white px-2 py-0.5 rounded text-[10px]">2層：IPの働き</span>
+                </div>
+
+                <!-- Step 6: パケット受け取り IPヘッダを除去 -->
+                <div id="stepCard6" onclick="jumpToTcpStep(6)" class="step-card cursor-pointer bg-textbook-yellow border-2 border-amber-300 rounded-xl p-2.5 flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-extrabold text-sm text-slate-800">⑥ パケット受け取り・IPヘッダ除去</div>
+                    <div class="text-[11px] text-slate-600">宛先を確認して赤いIPヘッダを外しTCPへ渡す</div>
+                  </div>
+                  <!-- 図：一番下が点線（除去）になったバー -->
+                  <div class="w-20 h-16 bg-white rounded-lg border border-slate-200 flex items-center justify-center shrink-0 p-1">
+                    <div class="flex flex-col items-center">
+                      <div class="w-5 h-7 bg-cyan-400"></div>
+                      <div class="w-5 h-3.5 bg-blue-700 text-[7px] text-white font-bold flex items-center justify-center">TCP</div>
+                      <div class="w-5 h-3.5 border border-dashed border-rose-400 text-[7px] text-rose-500 flex items-center justify-center">外す</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           表1：ネットワークの階層構造（4層モデル）と3つのアドレス連動解説
+           ========================================== -->
+      <div class="bg-white rounded-3xl shadow-lg border-2 border-cyan-200 p-5 md:p-6 space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+          <div>
+            <span class="bg-cyan-100 text-cyan-800 text-xs font-extrabold px-3 py-1 rounded-full">▼ 表1 ネットワークの階層構造</span>
+            <h3 class="text-xl font-extrabold text-slate-800 mt-1">
+              4つの階層（役割分担）と 3つの「アドレス（番号）」
+            </h3>
+            <p class="text-xs md:text-sm text-slate-600">
+              各層をクリックすると、教科書の解説と「宅配便に例えたわかりやすいイメージ」が切り替わります！
+            </p>
+          </div>
+          <div class="bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs font-bold text-amber-900">
+            💡 <strong>テスト頻出ポイント：</strong><br>
+            3層＝<span class="text-blue-700 underline">ポート番号</span> ／ 2層＝<span class="text-pink-600 underline">IPアドレス</span> ／ 1層＝<span class="text-emerald-700 underline">MACアドレス</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          
+          <!-- 左：教科書の「表1」インタラクティブテーブル -->
+          <div class="lg:col-span-8 overflow-x-auto">
+            <table class="w-full text-left border-collapse rounded-2xl overflow-hidden shadow-sm border border-slate-200 text-xs md:text-sm">
+              <thead>
+                <tr class="bg-cyan-600 text-white font-extrabold">
+                  <th class="p-3 w-16 text-center">階層</th>
+                  <th class="p-3 w-44">名称</th>
+                  <th class="p-3">機能（役割）</th>
+                  <th class="p-3 w-36">プロトコルの例</th>
+                  <th class="p-3 w-32 text-center">使うアドレス</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 font-medium">
+                <!-- 4層 -->
+                <tr id="layerRow4" onclick="selectLayer(4)" class="cursor-pointer hover:bg-amber-50/70 transition bg-amber-50/90 border-l-4 border-l-amber-500">
+                  <td class="p-3 text-center font-extrabold text-amber-900 bg-amber-100/60">4層</td>
+                  <td class="p-3 font-extrabold text-slate-800">アプリケーション層</td>
+                  <td class="p-3 text-slate-700">アプリケーションに応じて、通信の形式や手順を定める。</td>
+                  <td class="p-3 font-bold text-cyan-800">HTTPS, SMTP, DNS</td>
+                  <td class="p-3 text-center text-slate-400 text-xs">―</td>
+                </tr>
+                <!-- 3層 -->
+                <tr id="layerRow3" onclick="selectLayer(3)" class="cursor-pointer hover:bg-cyan-50/70 transition">
+                  <td class="p-3 text-center font-extrabold text-cyan-900 bg-cyan-100/60">3層</td>
+                  <td class="p-3 font-extrabold text-slate-800">トランスポート層</td>
+                  <td class="p-3 text-slate-700">データをパケットに分割して送受信し、パケットからデータを復元する方法を決める。</td>
+                  <td class="p-3 font-bold text-blue-700">TCP, UDP, QUIC</td>
+                  <td class="p-3 text-center"><span class="bg-blue-100 text-blue-800 font-extrabold px-2 py-1 rounded-lg text-xs">ポート番号</span></td>
+                </tr>
+                <!-- 2層 -->
+                <tr id="layerRow2" onclick="selectLayer(2)" class="cursor-pointer hover:bg-pink-50/70 transition">
+                  <td class="p-3 text-center font-extrabold text-pink-900 bg-pink-100/60">2層</td>
+                  <td class="p-3 font-extrabold text-slate-800">インターネット層</td>
+                  <td class="p-3 text-slate-700">データの行き先と経路を決める。</td>
+                  <td class="p-3 font-bold text-pink-600">IP</td>
+                  <td class="p-3 text-center"><span class="bg-pink-100 text-pink-800 font-extrabold px-2 py-1 rounded-lg text-xs">IPアドレス</span></td>
+                </tr>
+                <!-- 1層 -->
+                <tr id="layerRow1" onclick="selectLayer(1)" class="cursor-pointer hover:bg-emerald-50/70 transition">
+                  <td class="p-3 text-center font-extrabold text-emerald-900 bg-emerald-100/60">1層</td>
+                  <td class="p-3 font-extrabold text-slate-800">ネットワーク<br>インタフェース層</td>
+                  <td class="p-3 text-slate-700">接続されたコンピュータどうしが誤りなくデータ転送するための機能や手順を提供する。</td>
+                  <td class="p-3 font-bold text-emerald-700">イーサネット,<br>Wi-Fi</td>
+                  <td class="p-3 text-center"><span class="bg-emerald-100 text-emerald-800 font-extrabold px-2 py-1 rounded-lg text-xs">MACアドレス</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 右：教科書の「データは4層から入り1層を通って4層に戻る」U字図＋選択層の詳細 -->
+          <div class="lg:col-span-4 flex flex-col gap-4">
+            <!-- 教科書のU字フロー図再現 -->
+            <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200">
+              <div class="text-xs font-extrabold text-slate-700 mb-2 text-center">
+                ● データは4層から入り1層でケーブルや無線を通って、また4層に戻る
+              </div>
+              <div class="flex items-center justify-around text-xs font-extrabold">
+                <!-- 送信側 -->
+                <div class="flex flex-col items-center gap-1">
+                  <span class="text-[10px] text-cyan-700 font-bold">送信PC</span>
+                  <div class="w-14 py-1 text-center bg-amber-100 border border-amber-300 rounded">4層 ↓</div>
+                  <div class="w-14 py-1 text-center bg-cyan-100 border border-cyan-300 rounded">3層 ↓</div>
+                  <div class="w-14 py-1 text-center bg-pink-100 border border-pink-300 rounded">2層 ↓</div>
+                  <div class="w-14 py-1 text-center bg-emerald-100 border border-emerald-300 rounded">1層 ↓</div>
+                </div>
+
+                <!-- 下部ケーブル・無線 -->
+                <div class="flex flex-col items-center justify-end h-32 pb-1">
+                  <div class="text-[10px] text-slate-500 mb-1">LANケーブル / Wi-Fi</div>
+                  <div class="px-3 py-1 bg-pink-500 text-white rounded-full text-xs shadow animate-pulse">
+                    ➔ ➔ ➔
+                  </div>
+                </div>
+
+                <!-- 受信側 -->
+                <div class="flex flex-col items-center gap-1">
+                  <span class="text-[10px] text-pink-700 font-bold">受信PC</span>
+                  <div class="w-14 py-1 text-center bg-amber-100 border border-amber-300 rounded">↑ 4層</div>
+                  <div class="w-14 py-1 text-center bg-cyan-100 border border-cyan-300 rounded">↑ 3層</div>
+                  <div class="w-14 py-1 text-center bg-pink-100 border border-pink-300 rounded">↑ 2層</div>
+                  <div class="w-14 py-1 text-center bg-emerald-100 border border-emerald-300 rounded">↑ 1層</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- クリックした層のやさしい解説カード -->
+            <div id="layerDetailCard" class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 space-y-2 shadow-sm">
+              <!-- JSで初期表示・更新 -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 教科書右下のmemo：グローバルIP / プライベートIP / NAT / NAPT の図解カード -->
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm">
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
+            <div class="font-extrabold text-pink-700 flex items-center gap-1.5">
+              <span>🏠 2種類のIPアドレス（住所）</span>
+            </div>
+            <p class="text-slate-700">
+              ・<strong>プライベートIPアドレス</strong>：家や学校のLANの中だけで使える内線番号のような住所。<br>
+              ・<strong>グローバルIPアドレス</strong>：インターネット上で世界に1つだけの公式な住所。
+            </p>
+          </div>
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
+            <div class="font-extrabold text-cyan-800 flex items-center gap-1.5">
+              <span>🔄 NAT（ナット）と NAPT（ナプト）</span>
+            </div>
+            <p class="text-slate-700">
+              ・<strong>NAT</strong>：プライベートIPとグローバルIPを相互に変換する仕組み。<br>
+              ・<strong>NAPT</strong>：IPアドレスと<strong>ポート番号</strong>を使い、家の中の複数のスマホやPCで<strong>1つのグローバルIPを共有して同時通信</strong>できるようにする仕組み！
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-8">
+    高校「情報I」 デジタル通信の仕組み（①通信方式 図1 ／ ②プロトコル 図2・表1）インタラクティブ学習教材
+  </footer>
+
+  <!-- ==========================================
+       JavaScript ロジック
+       ========================================== -->
+  <script>
+    /* --------------------------------------------------
+       タブ切り替え制御
+    -------------------------------------------------- */
+    function switchTab(tabNum) {
+      const tab1 = document.getElementById('tabContent1');
+      const tab2 = document.getElementById('tabContent2');
+      const btn1 = document.getElementById('tabBtn1');
+      const btn2 = document.getElementById('tabBtn2');
+
+      if (tabNum === 1) {
+        tab1.classList.remove('hidden');
+        tab2.classList.add('hidden');
+        btn1.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-extrabold text-sm md:text-base transition-all flex items-center justify-center gap-2 bg-cyan-500 text-white shadow-md";
+        btn2.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-extrabold text-sm md:text-base transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-white/60";
+      } else {
+        tab1.classList.add('hidden');
+        tab2.classList.remove('hidden');
+        btn2.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-extrabold text-sm md:text-base transition-all flex items-center justify-center gap-2 bg-cyan-500 text-white shadow-md";
+        btn1.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-extrabold text-sm md:text-base transition-all flex items-center justify-center gap-2 text-slate-600 hover:bg-white/60";
+        renderTcpStep();
+      }
+    }
+
+    /* --------------------------------------------------
+       タブ1（左）：回線交換方式のアニメーション制御
+    -------------------------------------------------- */
+    function startCircuitNormal() {
+      resetCircuit(false);
+      const badge = document.getElementById('circuitStatusBadge');
+      const exp = document.getElementById('circuitExplanationBox');
+
+      badge.textContent = "📞 経路確立・通話中！";
+      badge.className = "bg-pink-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm";
+
+      // 赤ルートと水色ルートを点灯＋音声パルス表示
+      document.getElementById('circuitPathRed').classList.remove('opacity-0');
+      document.getElementById('circuitPulseRed').classList.remove('opacity-0');
+      document.getElementById('circuitPathCyan').classList.remove('opacity-0');
+      document.getElementById('circuitPulseCyan').classList.remove('opacity-0');
+
+      exp.innerHTML = "✅ <strong>通信を始める前に「専用ルート」がカチッと繋がりました！</strong><br>繋がっている間は、他の人に邪魔されず安定した通話ができます。";
+    }
+
+    function triggerCircuitBusy() {
+      // まず2組を通話状態にする
+      startCircuitNormal();
+      const badge = document.getElementById('circuitStatusBadge');
+      const exp = document.getElementById('circuitExplanationBox');
+
+      badge.textContent = "⚠️ 3人目は話し中（回線占有）";
+      badge.className = "bg-amber-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm";
+
+      document.getElementById('circuitPathBlocked').classList.remove('opacity-0');
+      document.getElementById('circuitBusyAlert').classList.remove('hidden');
+      // 3人目の口を困り顔にする
+      document.getElementById('caller3Mouth').setAttribute('d', 'M17,25 Q22,20 27,25');
+
+      exp.innerHTML = "😰 <strong>発信者③が電話をかけましたが、中継局の回線がすでに2組に独占されています！</strong><br>空いている道がないため、通信を始めることができません（災害時に電話が規制される理由です）。";
+    }
+
+    function triggerCircuitBroken() {
+      startCircuitNormal();
+      const badge = document.getElementById('circuitStatusBadge');
+      const exp = document.getElementById('circuitExplanationBox');
+
+      badge.textContent = "⚡ 回線障害で切断！";
+      badge.className = "bg-red-600 text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm";
+
+      // 音声パルスを停止
+      document.getElementById('circuitPulseRed').classList.add('opacity-0');
+      document.getElementById('circuitPulseCyan').classList.add('opacity-0');
+      document.getElementById('circuitBrokenAlert').classList.remove('hidden');
+
+      exp.innerHTML = "⚡ <strong>中継局の間の回線に障害（故障）が発生！</strong><br>1本の決まった経路しか使えないため、途中で切れると通話がストップしてしまいます。";
+    }
+
+    function resetCircuit(resetText = true) {
+      document.getElementById('circuitPathRed').classList.add('opacity-0');
+      document.getElementById('circuitPulseRed').classList.add('opacity-0');
+      document.getElementById('circuitPathCyan').classList.add('opacity-0');
+      document.getElementById('circuitPulseCyan').classList.add('opacity-0');
+      document.getElementById('circuitPathBlocked').classList.add('opacity-0');
+      document.getElementById('circuitBusyAlert').classList.add('hidden');
+      document.getElementById('circuitBrokenAlert').classList.add('hidden');
+      document.getElementById('caller3Mouth').setAttribute('d', 'M17,22 Q22,26 27,22');
+
+      if (resetText) {
+        const badge = document.getElementById('circuitStatusBadge');
+        badge.textContent = "待機中";
+        badge.className = "bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1.5 rounded-full";
+        document.getElementById('circuitExplanationBox').innerHTML =
+          "👆 上の「1. 通信スタート」ボタンを押して、中継局の線がつながる様子を見てみよう！";
+      }
+    }
+
+    /* --------------------------------------------------
+       タブ1（右）：パケット交換方式のアニメーション制御
+    -------------------------------------------------- */
+    let packetAnimTimers = [];
+
+    function clearPacketTimers() {
+      packetAnimTimers.forEach(t => clearTimeout(t));
+      packetAnimTimers = [];
+    }
+
+    function resetPacketSim() {
+      clearPacketTimers();
+      const layer = document.getElementById('movingPacketsLayer');
+      layer.innerHTML = '';
+      document.getElementById('ispBlockedOverlay').classList.add('hidden');
+      document.getElementById('receiverPinkBlocks').classList.add('opacity-20');
+      document.getElementById('receiverYellowBlocks').classList.add('opacity-20');
+
+      const badge = document.getElementById('packetStatusBadge');
+      badge.textContent = "待機中";
+      badge.className = "bg-slate-200 text-slate-700 text-xs font-extrabold px-3 py-1.5 rounded-full";
+      document.getElementById('packetExplanationBox').innerHTML =
+        "👆 上の「1. パケット送信！」ボタンを押して、データが小包（パケット）に分かれて進む様子を見よう！";
+    }
+
+    // パケット小包SVG要素を生成
+    function createPacketCube(id, colorHex, labelText, x, y) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("id", id);
+      g.setAttribute("class", "packet-smooth");
+      g.style.transform = `translate(${x}px, ${y}px)`;
+
+      // 立体的な小包キューブ
+      g.innerHTML = `
+        <rect x="-9" y="-9" width="18" height="18" rx="3" fill="${colorHex}" stroke="#ffffff" stroke-width="2"/>
+        <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="900">${labelText}</text>
+      `;
+      return g;
+    }
+
+    function sendPacketsSimulation(isDetourMode) {
+      resetPacketSim();
+      const layer = document.getElementById('movingPacketsLayer');
+      const badge = document.getElementById('packetStatusBadge');
+      const exp = document.getElementById('packetExplanationBox');
+
+      if (isDetourMode) {
+        document.getElementById('ispBlockedOverlay').classList.remove('hidden');
+        badge.textContent = "🚧 障害発生 → 自動で別ルートへ迂回中！";
+        badge.className = "bg-indigo-600 text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm";
+        exp.innerHTML = "🚧 <strong>真ん中のISPが故障・混雑して通れません！</strong><br>でもパケット交換方式なら、空いている周り（上や下）のISPを自動的に通ってゴールへ届きます！";
+      } else {
+        badge.textContent = "📦 パケットをバラバラの経路で送信中！";
+        badge.className = "bg-cyan-600 text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm";
+        exp.innerHTML = "📦 <strong>データを小さな「パケット」に分けて送信！</strong><br>1本の道を独占せず、網目状のISPをバラバラに通って右上・右下のPCへ次々に届きます！";
+      }
+
+      // 6個のパケット定義（赤3個は右上PCへ、黄3個は右下PCへ）
+      const packets = [
+        {
+          id: 'pkt_r1', color: '#e11d48', label: '1',
+          path: isDetourMode
+            ? [[85,55], [185,55], [315,55], [415,55]]
+            : [[85,55], [185,55], [250,120], [315,55], [415,55]],
+          delay: 0
+        },
+        {
+          id: 'pkt_r2', color: '#e11d48', label: '2',
+          path: [[85,55], [185,55], [315,55], [415,55]],
+          delay: 250
+        },
+        {
+          id: 'pkt_r3', color: '#e11d48', label: '3',
+          path: isDetourMode
+            ? [[85,55], [185,55], [115,170], [385,170], [315,55], [415,55]]
+            : [[85,55], [185,55], [250,120], [385,170], [315,55], [415,55]],
+          delay: 500
+        },
+        {
+          id: 'pkt_y1', color: '#eab308', label: '1',
+          path: isDetourMode
+            ? [[85,55], [185,55], [115,170], [185,265], [315,265], [415,265]]
+            : [[85,55], [185,55], [250,120], [315,265], [415,265]],
+          delay: 150
+        },
+        {
+          id: 'pkt_y2', color: '#eab308', label: '2',
+          path: [[85,55], [185,55], [115,170], [315,265], [415,265]],
+          delay: 400
+        },
+        {
+          id: 'pkt_y3', color: '#eab308', label: '3',
+          path: isDetourMode
+            ? [[85,55], [185,55], [315,55], [385,170], [315,265], [415,265]]
+            : [[85,55], [185,55], [250,120], [185,265], [315,265], [415,265]],
+          delay: 650
+        }
+      ];
+
+      packets.forEach(pkt => {
+        const el = createPacketCube(pkt.id, pkt.color, pkt.label, pkt.path[0][0], pkt.path[0][1]);
+        layer.appendChild(el);
+
+        pkt.path.forEach((coord, stepIdx) => {
+          if (stepIdx === 0) return;
+          const t = setTimeout(() => {
+            el.style.transform = `translate(${coord[0]}px, ${coord[1]}px)`;
+          }, pkt.delay + stepIdx * 620);
+          packetAnimTimers.push(t);
+        });
+      });
+
+      // 全パケット到着後に受信PCの画面を点灯
+      const finishTimer = setTimeout(() => {
+        document.getElementById('receiverPinkBlocks').classList.remove('opacity-20');
+        document.getElementById('receiverYellowBlocks').classList.remove('opacity-20');
+        badge.textContent = "✅ すべてのパケットが到着！";
+        badge.className = "bg-emerald-600 text-white text-xs font-extrabold px-3 py-1.5 rounded-full shadow-sm";
+      }, 3600);
+      packetAnimTimers.push(finishTimer);
+    }
+
+
+    /* --------------------------------------------------
+       タブ2：図2 TCP/IPの仕組み 8ステップ制御
+    -------------------------------------------------- */
+    let currentTcpStep = 1;
+    let tcpAutoInterval = null;
+
+    const tcpStepData = {
+      1: {
+        title: "【Step 1】コンピュータA：元のデータを用意する",
+        desc: "コンピュータAからコンピュータBへ、大きな水色のデータ（写真やWebページなど）を送ります。まだ1つの大きな塊です。",
+        layer: 4
+      },
+      2: {
+        title: "【Step 2】TCPの役割：データを小さく分割する",
+        desc: "大きなデータのままだと通りにくいので、TCPが3つの小さなブロック（パケットの元）にパカッと分割します。",
+        layer: 3
+      },
+      3: {
+        title: "【Step 3】TCPの役割：連番を振る（TCPヘッダを付加）",
+        desc: "届いたあとに順番がわからなくならないよう、下に濃い青色の「TCPヘッダ（連番 1・2・3 とアプリのポート番号）」をくっつけます！",
+        layer: 3
+      },
+      4: {
+        title: "【Step 4】IPの役割：送信先の情報などを付加（IPヘッダ）",
+        desc: "下のピンク色の部屋（IP）へ降りて、一番下に赤色の「IPヘッダ（相手Bの住所＝IPアドレス）」をくっつけます。これで発送準備完了！",
+        layer: 2
+      },
+      5: {
+        title: "【Step 5】インターネットを移動！（パケット交換）",
+        desc: "赤いIPヘッダ（宛先）を見て、3つのパケットがコンピュータBへ出発！別々の道を通るので順番がバラバラになることもあります。",
+        layer: 1
+      },
+      6: {
+        title: "【Step 6】IPの役割：パケット受け取り・IPヘッダを除去",
+        desc: "コンピュータBのピンクの部屋（IP）に到着！「確かに自分宛てだ！」と確認したら、赤い「IPヘッダ」を外して上のTCPに渡します。",
+        layer: 2
+      },
+      7: {
+        title: "【Step 7】TCPの役割：連番を基に並べて欠損確認＆TCPヘッダ除去",
+        desc: "青い「TCPヘッダ」の番号を見て【1・2・3】の順番通りに並べます！全部揃っているのを確認したら、青い「TCPヘッダ」も外します。",
+        layer: 3
+      },
+      8: {
+        title: "【Step 8】TCPの役割：元のデータに戻す（復元完了！）",
+        desc: "3つの水色ブロックをピタッと合体させて、元の1つの大きなデータに復元！コンピュータBの画面に無事表示されました🎉",
+        layer: 4
+      }
+    };
+
+    function renderTcpStep() {
+      const isLossMode = document.getElementById('lossSimToggle').checked;
+      const stepInfo = tcpStepData[currentTcpStep];
+
+      // バッジとタイトル更新
+      document.getElementById('tcpStepBadge').textContent = `Step ${currentTcpStep} / 8`;
+      document.getElementById('tcpStepTitle').textContent = stepInfo.title;
+      document.getElementById('tcpStepDesc').textContent = stepInfo.desc;
+
+      // ステップ5または7で欠損モードがONのときの特別テキスト
+      if (isLossMode && currentTcpStep === 5) {
+        document.getElementById('tcpStepTitle').textContent = "💥【Step 5：欠損発生！】途中で「2番」のパケットが消えてしまった！";
+        document.getElementById('tcpStepDesc').textContent = "ネットワークの混雑で、2番のパケットが途中で失われました！1番と3番だけがコンピュータBへ向かいます…。";
+      } else if (isLossMode && currentTcpStep === 7) {
+        document.getElementById('tcpStepTitle').textContent = "🔄【Step 7：TCPの真骨頂！】連番で「2番がない！」と気づき、2番だけ再送！";
+        document.getElementById('tcpStepDesc').textContent = "番号順に並べると「1・？・3」で2番が欠損していると判明！全部送り直すのではなく『欠損した2番だけを再送』して効率よく復元します！";
+      }
+
+      // ボタンの活性状態
+      document.getElementById('btnPrevStep').disabled = (currentTcpStep === 1);
+
+      // 全カードのハイライト解除
+      const cardIds = ['stepCard1','stepCard2','stepCard3','stepCard4','stepCard5','stepCard6','stepCard7','stepCard7b','stepCard8'];
+      cardIds.forEach(id => {
+        document.getElementById(id).classList.remove('active-step');
+      });
+
+      // 現在のステップカードをハイライト
+      if (currentTcpStep === 7) {
+        document.getElementById('stepCard7').classList.add('active-step');
+        document.getElementById('stepCard7b').classList.add('active-step');
+      } else {
+        const activeEl = document.getElementById(`stepCard${currentTcpStep}`);
+        if (activeEl) activeEl.classList.add('active-step');
+      }
+
+      // 中央下のパケットトラック演出
+      const pkt2 = document.getElementById('transitPkt2');
+      const pkt2Label = document.getElementById('transitPkt2Label');
+      if (isLossMode && (currentTcpStep === 5 || currentTcpStep === 6)) {
+        pkt2.classList.add('opacity-25', 'scale-75');
+        pkt2Label.textContent = "× 消失！";
+        pkt2Label.className = "bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+      } else if (isLossMode && currentTcpStep === 7) {
+        pkt2.classList.remove('opacity-25', 'scale-75');
+        pkt2Label.textContent = "🔄2番再送!";
+        pkt2Label.className = "bg-blue-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full pulse-red";
+      } else {
+        pkt2.classList.remove('opacity-25', 'scale-75');
+        pkt2Label.textContent = "2番 ➔";
+        pkt2Label.className = "bg-pink-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+      }
+
+      // 中央ライブビジュアライザーの描画
+      updateCenterVisualizer(currentTcpStep, isLossMode);
+
+      // 表1の階層と連動ハイライト
+      selectLayer(stepInfo.layer, false);
+    }
+
+    function updateCenterVisualizer(step, isLossMode) {
+      const box = document.getElementById('centerLiveVisualizer');
+      let html = '';
+
+      if (step === 1) {
+        html = `
+          <div class="text-[11px] font-extrabold text-cyan-800 mb-1">【拡大図】送信前の大きなデータ</div>
+          <div class="w-28 h-14 bg-cyan-400 rounded-lg border-2 border-cyan-600 flex items-center justify-center text-white font-extrabold shadow animate-float">
+            元のデータ
+          </div>
+        `;
+      } else if (step === 2) {
+        html = `
+          <div class="text-[11px] font-extrabold text-cyan-800 mb-1">【拡大図】3つにパカッと分割！</div>
+          <div class="flex gap-3 items-center justify-center animate-float">
+            <div class="w-8 h-14 bg-cyan-400 rounded border-2 border-cyan-600 flex items-center justify-center text-white text-xs font-bold">A</div>
+            <div class="w-8 h-14 bg-cyan-400 rounded border-2 border-cyan-600 flex items-center justify-center text-white text-xs font-bold">B</div>
+            <div class="w-8 h-14 bg-cyan-400 rounded border-2 border-cyan-600 flex items-center justify-center text-white text-xs font-bold">C</div>
+          </div>
+        `;
+      } else if (step === 3) {
+        html = `
+          <div class="text-[11px] font-extrabold text-blue-800 mb-1">【拡大図】青い「TCPヘッダ(連番)」を付加</div>
+          <div class="flex gap-3 items-end justify-center animate-float">
+            <div class="flex flex-col"><div class="w-8 h-10 bg-cyan-400 rounded-t"></div><div class="w-8 h-5 bg-blue-700 text-white text-[10px] font-extrabold flex items-center justify-center rounded-b">連番1</div></div>
+            <div class="flex flex-col"><div class="w-8 h-10 bg-cyan-400 rounded-t"></div><div class="w-8 h-5 bg-blue-700 text-white text-[10px] font-extrabold flex items-center justify-center rounded-b">連番2</div></div>
+            <div class="flex flex-col"><div class="w-8 h-10 bg-cyan-400 rounded-t"></div><div class="w-8 h-5 bg-blue-700 text-white text-[10px] font-extrabold flex items-center justify-center rounded-b">連番3</div></div>
+          </div>
+        `;
+      } else if (step === 4) {
+        html = `
+          <div class="text-[11px] font-extrabold text-rose-700 mb-1">【拡大図】さらに赤い「IPヘッダ(住所)」を付加</div>
+          <div class="flex gap-3 items-end justify-center animate-float">
+            <div class="flex flex-col shadow"><div class="w-9 h-8 bg-cyan-400 rounded-t text-[8px] font-bold text-center pt-1">データ</div><div class="w-9 h-4 bg-blue-700 text-white text-[8px] font-bold text-center">TCP:1</div><div class="w-9 h-4 bg-red-600 text-white text-[8px] font-bold text-center rounded-b">IP宛先</div></div>
+            <div class="flex flex-col shadow"><div class="w-9 h-8 bg-cyan-400 rounded-t text-[8px] font-bold text-center pt-1">データ</div><div class="w-9 h-4 bg-blue-700 text-white text-[8px] font-bold text-center">TCP:2</div><div class="w-9 h-4 bg-red-600 text-white text-[8px] font-bold text-center rounded-b">IP宛先</div></div>
+            <div class="flex flex-col shadow"><div class="w-9 h-8 bg-cyan-400 rounded-t text-[8px] font-bold text-center pt-1">データ</div><div class="w-9 h-4 bg-blue-700 text-white text-[8px] font-bold text-center">TCP:3</div><div class="w-9 h-4 bg-red-600 text-white text-[8px] font-bold text-center rounded-b">IP宛先</div></div>
+          </div>
+        `;
+      } else if (step === 5) {
+        if (isLossMode) {
+          html = `
+            <div class="text-[11px] font-extrabold text-red-600 mb-1">💥 2番のパケットが途中で消失！</div>
+            <div class="flex gap-3 items-center justify-center">
+              <span class="bg-blue-700 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">1番 ➔</span>
+              <span class="bg-red-100 text-red-600 border border-red-400 text-xs font-extrabold px-2.5 py-1 rounded-lg line-through">2番(消失)</span>
+              <span class="bg-blue-700 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">3番 ➔</span>
+            </div>
+          `;
+        } else {
+          html = `
+            <div class="text-[11px] font-extrabold text-pink-700 mb-1">🚚 バラバラの順番（3→1→2）で移動中！</div>
+            <div class="flex gap-2 items-center justify-center animate-pulse">
+              <span class="bg-blue-700 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">3番 ➔</span>
+              <span class="bg-blue-700 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">1番 ➔</span>
+              <span class="bg-blue-700 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">2番 ➔</span>
+            </div>
+          `;
+        }
+      } else if (step === 6) {
+        html = `
+          <div class="text-[11px] font-extrabold text-pink-700 mb-1">【拡大図】到着！赤いIPヘッダを取り外す</div>
+          <div class="flex gap-3 items-end justify-center">
+            <div class="flex flex-col"><div class="w-9 h-8 bg-cyan-400 rounded-t"></div><div class="w-9 h-4 bg-blue-700 text-white text-[8px] font-bold text-center">TCP:3</div><div class="w-9 h-4 border border-dashed border-red-400 text-[8px] text-red-500 text-center">除去</div></div>
+            <div class="flex flex-col"><div class="w-9 h-8 bg-cyan-400 rounded-t"></div><div class="w-9 h-4 bg-blue-700 text-white text-[8px] font-bold text-center">TCP:1</div><div class="w-9 h-4 border border-dashed border-red-400 text-[8px] text-red-500 text-center">除去</div></div>
+            ${isLossMode
+              ? `<div class="flex flex-col items-center justify-center w-9 h-16 border-2 border-dashed border-red-400 rounded bg-red-50 text-[9px] font-extrabold text-red-600">2番<br>未着!</div>`
+              : `<div class="flex flex-col"><div class="w-9 h-8 bg-cyan-400 rounded-t"></div><div class="w-9 h-4 bg-blue-700 text-white text-[8px] font-bold text-center">TCP:2</div><div class="w-9 h-4 border border-dashed border-red-400 text-[8px] text-red-500 text-center">除去</div></div>`
+            }
+          </div>
+        `;
+      } else if (step === 7) {
+        if (isLossMode) {
+          html = `
+            <div class="text-[11px] font-extrabold text-blue-700 mb-1">🔄 欠損していた「2番だけ」を再送して1・2・3整列！</div>
+            <div class="flex gap-2 items-end justify-center">
+              <div class="flex flex-col"><div class="w-8 h-8 bg-cyan-400"></div><div class="w-8 h-4 bg-blue-700 text-white text-[9px] font-bold text-center">1</div></div>
+              <div class="flex flex-col pulse-red"><div class="w-8 h-8 bg-cyan-400"></div><div class="w-8 h-4 bg-rose-600 text-white text-[8px] font-bold text-center">2(再送)</div></div>
+              <div class="flex flex-col"><div class="w-8 h-8 bg-cyan-400"></div><div class="w-8 h-4 bg-blue-700 text-white text-[9px] font-bold text-center">3</div></div>
+            </div>
+          `;
+        } else {
+          html = `
+            <div class="text-[11px] font-extrabold text-blue-800 mb-1">✨ 連番順に「1・2・3」へ並び替えてタグ除去！</div>
+            <div class="flex gap-3 items-end justify-center">
+              <div class="flex flex-col"><div class="w-8 h-9 bg-cyan-400"></div><div class="w-8 h-4 border border-dashed border-blue-500 text-[9px] text-blue-700 font-bold text-center">1外す</div></div>
+              <div class="flex flex-col"><div class="w-8 h-9 bg-cyan-400"></div><div class="w-8 h-4 border border-dashed border-blue-500 text-[9px] text-blue-700 font-bold text-center">2外す</div></div>
+              <div class="flex flex-col"><div class="w-8 h-9 bg-cyan-400"></div><div class="w-8 h-4 border border-dashed border-blue-500 text-[9px] text-blue-700 font-bold text-center">3外す</div></div>
+            </div>
+          `;
+        }
+      } else if (step === 8) {
+        html = `
+          <div class="text-[11px] font-extrabold text-emerald-700 mb-1">🎉 ピタッと合体！元のデータに完全復元！</div>
+          <div class="w-28 h-14 bg-cyan-400 rounded-lg border-2 border-emerald-500 flex items-center justify-center text-white font-extrabold shadow-md animate-bounce">
+            元のデータ✨
+          </div>
+        `;
+      }
+
+      box.innerHTML = html;
+    }
+
+    function nextTcpStep() {
+      if (currentTcpStep < 8) {
+        currentTcpStep++;
+      } else {
+        currentTcpStep = 1;
+      }
+      renderTcpStep();
+    }
+
+    function prevTcpStep() {
+      if (currentTcpStep > 1) {
+        currentTcpStep--;
+        renderTcpStep();
+      }
+    }
+
+    function jumpToTcpStep(stepNum) {
+      stopAutoPlayTcp();
+      currentTcpStep = stepNum;
+      renderTcpStep();
+    }
+
+    function resetTcpStep() {
+      stopAutoPlayTcp();
+      currentTcpStep = 1;
+      renderTcpStep();
+    }
+
+    function onLossToggleChange() {
+      // トグル切り替え時は一番わかりやすいStep 5へジャンプまたは再描画
+      if (document.getElementById('lossSimToggle').checked && currentTcpStep < 5) {
+        currentTcpStep = 5;
+      }
+      renderTcpStep();
+    }
+
+    function toggleAutoPlayTcp() {
+      const btn = document.getElementById('btnAutoTcp');
+      if (tcpAutoInterval) {
+        stopAutoPlayTcp();
+      } else {
+        btn.textContent = "⏸ 一時停止";
+        btn.classList.replace('bg-cyan-600', 'bg-rose-600');
+        tcpAutoInterval = setInterval(() => {
+          if (currentTcpStep < 8) {
+            currentTcpStep++;
+            renderTcpStep();
+          } else {
+            stopAutoPlayTcp();
+          }
+        }, 2200);
+      }
+    }
+
+    function stopAutoPlayTcp() {
+      if (tcpAutoInterval) {
+        clearInterval(tcpAutoInterval);
+        tcpAutoInterval = null;
+      }
+      const btn = document.getElementById('btnAutoTcp');
+      btn.textContent = "⏯ 自動再生";
+      btn.classList.replace('bg-rose-600', 'bg-cyan-600');
+    }
+
+    /* --------------------------------------------------
+       表1：4層モデルのクリック連動詳細表示
+    -------------------------------------------------- */
+    const layerDetails = {
+      4: {
+        badge: "4層：アプリケーション層",
+        colorClass: "bg-amber-50 border-amber-300 text-amber-900",
+        analogy: "📝 宅配便の例え：「手紙の中身を書く・読む係」",
+        address: "特定のアドレスなし（データそのもの）",
+        desc: "Webを見るなら「HTTPS」、メールを送るなら「SMTP」、ドメイン名を調べるなら「DNS」など、アプリに応じたルールを決めます。"
+      },
+      3: {
+        badge: "3層：トランスポート層",
+        colorClass: "bg-cyan-50 border-cyan-300 text-cyan-900",
+        analogy: "📦 宅配便の例え：「小包に連番を振って箱詰め・確認する係」",
+        address: "🔑 使う番号：ポート番号（どのアプリ宛てかを表す「部屋番号」）",
+        desc: "信頼性重視の「TCP（消えたら再送する）」や、スピード重視の「UDP（再送しない）」を使ってデータを分割・復元します。"
+      },
+      2: {
+        badge: "2層：インターネット層",
+        colorClass: "bg-pink-50 border-pink-300 text-pink-900",
+        analogy: "🗺️ 宅配便の例え：「宛先シールを貼ってルートを決める配送係」",
+        address: "🔑 使う番号：IPアドレス（ネット上の「相手の住所」）",
+        desc: "プロトコル「IP」を使い、世界中の異なるネットワークを超えて相手のコンピュータまで届けるための経路を決めます。"
+      },
+      1: {
+        badge: "1層：ネットワークインタフェース層",
+        colorClass: "bg-emerald-50 border-emerald-300 text-emerald-900",
+        analogy: "🚚 宅配便の例え：「実際にトラック（ケーブル・電波）で運ぶ配達員」",
+        address: "🔑 使う番号：MACアドレス（機器1台ごとに決まっている固有番号）",
+        desc: "LANケーブル（イーサネット）や無線（Wi-Fi）を使って、直接つながった隣の機器へ0と1の電気・電波信号を送ります。"
+      }
+    };
+
+    function selectLayer(layerNum) {
+      [1, 2, 3, 4].forEach(n => {
+        const row = document.getElementById(`layerRow${n}`);
+        row.className = "cursor-pointer hover:bg-slate-50 transition";
+      });
+
+      const activeRow = document.getElementById(`layerRow${layerNum}`);
+      if (layerNum === 4) activeRow.className = "cursor-pointer transition bg-amber-50/90 border-l-4 border-l-amber-500 font-bold";
+      if (layerNum === 3) activeRow.className = "cursor-pointer transition bg-cyan-50/90 border-l-4 border-l-cyan-500 font-bold";
+      if (layerNum === 2) activeRow.className = "cursor-pointer transition bg-pink-50/90 border-l-4 border-l-pink-500 font-bold";
+      if (layerNum === 1) activeRow.className = "cursor-pointer transition bg-emerald-50/90 border-l-4 border-l-emerald-500 font-bold";
+
+      const info = layerDetails[layerNum];
+      const card = document.getElementById('layerDetailCard');
+      card.className = `border-2 rounded-2xl p-4 space-y-2 shadow-sm transition-all ${info.colorClass}`;
+      card.innerHTML = `
+        <div class="font-extrabold text-sm md:text-base">${info.badge}</div>
+        <div class="bg-white/80 px-3 py-1.5 rounded-xl font-extrabold text-xs md:text-sm shadow-2xs">
+          ${info.analogy}
+        </div>
+        <div class="text-xs font-extrabold underline">${info.address}</div>
+        <p class="text-xs leading-relaxed text-slate-700 font-medium">${info.desc}</p>
+      `;
+    }
+
+    // 初期描画
+    window.onload = function() {
+      selectLayer(4);
+      renderTcpStep();
+    };
+  </script>
+</body>
+</html>
