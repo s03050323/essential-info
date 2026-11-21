@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>情報I 楽しくわかる！「情報システム」体験ラボ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0f9ff;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        ruby rt {
+            font-size: 0.65em;
+            color: #64748b;
+            font-weight: normal;
+        }
+        /* カスタムアニメーション */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.9; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes packet-move {
+            0% { stroke-dashoffset: 24; }
+            100% { stroke-dashoffset: 0; }
+        }
+        @keyframes shake-hard {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-4px, 2px) rotate(-2deg); }
+            40% { transform: translate(4px, -2px) rotate(2deg); }
+            60% { transform: translate(-4px, -2px) rotate(-1deg); }
+            80% { transform: translate(4px, 2px) rotate(1deg); }
+        }
+        .animate-float {
+            animation: float-slow 3s ease-in-out infinite;
+        }
+        .animate-shake {
+            animation: shake-hard 0.4s ease-in-out infinite;
+        }
+        .dashed-flow {
+            stroke-dasharray: 8 4;
+            animation: packet-move 0.6s linear infinite;
+        }
+        .node-active {
+            box-shadow: 0 0 0 4px #fbbf24, 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+            transform: scale(1.04);
+            transition: all 0.3s ease;
+        }
+        .node-box {
+            transition: all 0.3s ease;
+        }
+        /* 紙吹雪用キャンバス */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- 紙吹雪エフェクト用 -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ヘッダー -->
+    <header class="bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-600 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="bg-white text-teal-600 font-extrabold px-3 py-1 rounded-full text-sm shadow">理論編 44 (p.114-115)</span>
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-wide flex items-center gap-2">
+                    <span>🌐</span> 見て・触ってわかる！「情報システム」体験ラボ
+                </h1>
+            </div>
+            <!-- ナビゲーションタブ -->
+            <nav class="flex flex-wrap justify-center gap-1.5 md:gap-2 w-full md:w-auto">
+                <button onclick="switchMainTab(1)" id="tab-btn-1" class="tab-btn bg-white text-teal-700 font-bold px-3 py-2 rounded-xl text-xs md:text-sm shadow-md transition transform hover:scale-105 flex items-center gap-1">
+                    <span>①</span> サービスの仕組み＆図1
+                </button>
+                <button onclick="switchMainTab(2)" id="tab-btn-2" class="tab-btn bg-teal-700/60 hover:bg-teal-700 text-white font-bold px-3 py-2 rounded-xl text-xs md:text-sm transition transform hover:scale-105 flex items-center gap-1">
+                    <span>②</span> システムの種別(図2・3・4)
+                </button>
+                <button onclick="switchMainTab(3)" id="tab-btn-3" class="tab-btn bg-teal-700/60 hover:bg-teal-700 text-white font-bold px-3 py-2 rounded-xl text-xs md:text-sm transition transform hover:scale-105 flex items-center gap-1">
+                    <span>③</span> サーバ図鑑(表1)
+                </button>
+                <button onclick="switchMainTab(4)" id="tab-btn-4" class="tab-btn bg-teal-700/60 hover:bg-teal-700 text-white font-bold px-3 py-2 rounded-xl text-xs md:text-sm transition transform hover:scale-105 flex items-center gap-1">
+                    <span>④</span> 問題＆クイズ
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 py-6">
+
+        <!-- ==========================================
+             タブ1：① 情報システムのサービス ＆ 図1アニメーション
+             ========================================== -->
+        <section id="section-1" class="space-y-8">
+            
+            <!-- 導入：情報システムってなに？ -->
+            <div class="bg-white rounded-3xl p-5 md:p-7 shadow-md border-2 border-teal-200">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b-2 border-dashed border-slate-200 pb-4 mb-5">
+                    <div>
+                        <span class="bg-teal-100 text-teal-800 text-xs font-extrabold px-3 py-1 rounded-full">最初にこれだけ押さえよう！</span>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mt-2">
+                            1. <ruby>情報<rt>じょうほう</rt></ruby>システムのサービスってなに？
+                        </h2>
+                    </div>
+                    <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl px-4 py-2 text-xs md:text-sm text-amber-900 font-bold">
+                        💡 ひとことで言うと…<br>
+                        <span class="text-base text-rose-600 font-extrabold">「集めたデータを、使える形に加工して、必要な場所へ届ける仕組み」</span>！
+                    </div>
+                </div>
+
+                <!-- 3ステップ図解 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="text-4xl bg-white p-3 rounded-2xl shadow-sm">📥</div>
+                        <div>
+                            <div class="text-xs font-bold text-sky-600">STEP 1：収集</div>
+                            <div class="font-extrabold text-slate-800 text-base">データを集める</div>
+                            <p class="text-xs text-slate-600 mt-1">バーコード読み取り、センサ、スマホ入力など</p>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="text-4xl bg-white p-3 rounded-2xl shadow-sm">⚙️</div>
+                        <div>
+                            <div class="text-xs font-bold text-amber-600">STEP 2：処理</div>
+                            <div class="font-extrabold text-slate-800 text-base">使える形に計算・加工</div>
+                            <p class="text-xs text-slate-600 mt-1">売上の合計、在庫の引き算、天気の予測など</p>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="text-4xl bg-white p-3 rounded-2xl shadow-sm">🚀</div>
+                        <div>
+                            <div class="text-xs font-bold text-emerald-600">STEP 3：伝達</div>
+                            <div class="font-extrabold text-slate-800 text-base">必要な場所へ届ける</div>
+                            <p class="text-xs text-slate-600 mt-1">本部のPC、工場の機械、みんなのスマホへ送信！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3つの種類＆身近な3大キーワード（クリックで切り替え） -->
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    <p class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <span>👆</span> 気になるカードをタップして、教科書の重要キーワードを見てみよう！
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                        <button onclick="showKeywordDetail('calc')" class="kw-btn bg-white hover:bg-teal-50 border-2 border-teal-400 rounded-xl p-3 text-center transition shadow-sm">
+                            <div class="text-2xl mb-1">🧮</div>
+                            <div class="font-extrabold text-xs md:text-sm text-slate-800">計算システム</div>
+                            <span class="text-[10px] text-teal-600 font-bold">システムの種類①</span>
+                        </button>
+                        <button onclick="showKeywordDetail('comm')" class="kw-btn bg-white hover:bg-teal-50 border-2 border-slate-200 rounded-xl p-3 text-center transition shadow-sm">
+                            <div class="text-2xl mb-1">📡</div>
+                            <div class="font-extrabold text-xs md:text-sm text-slate-800">通信システム</div>
+                            <span class="text-[10px] text-teal-600 font-bold">システムの種類②</span>
+                        </button>
+                        <button onclick="showKeywordDetail('ctrl')" class="kw-btn bg-white hover:bg-teal-50 border-2 border-slate-200 rounded-xl p-3 text-center transition shadow-sm">
+                            <div class="text-2xl mb-1">🤖</div>
+                            <div class="font-extrabold text-xs md:text-sm text-slate-800">制御システム</div>
+                            <span class="text-[10px] text-teal-600 font-bold">システムの種類③</span>
+                        </button>
+                        <button onclick="showKeywordDetail('pos')" class="kw-btn bg-white hover:bg-amber-50 border-2 border-slate-200 rounded-xl p-3 text-center transition shadow-sm">
+                            <div class="text-2xl mb-1">🏪</div>
+                            <div class="font-extrabold text-xs md:text-sm text-slate-800">POSシステム</div>
+                            <span class="text-[10px] text-amber-600 font-bold">重要キーワード</span>
+                        </button>
+                        <button onclick="showKeywordDetail('gps')" class="kw-btn bg-white hover:bg-amber-50 border-2 border-slate-200 rounded-xl p-3 text-center transition shadow-sm">
+                            <div class="text-2xl mb-1">🛰️</div>
+                            <div class="font-extrabold text-xs md:text-sm text-slate-800">GPS</div>
+                            <span class="text-[10px] text-amber-600 font-bold">重要キーワード</span>
+                        </button>
+                        <button onclick="showKeywordDetail('trace')" class="kw-btn bg-white hover:bg-amber-50 border-2 border-slate-200 rounded-xl p-3 text-center transition shadow-sm">
+                            <div class="text-2xl mb-1">🏷️</div>
+                            <div class="font-extrabold text-xs md:text-sm text-slate-800">トレーサビリティ</div>
+                            <span class="text-[10px] text-amber-600 font-bold">重要キーワード</span>
+                        </button>
+                    </div>
+                    <!-- キーワード詳細表示エリア -->
+                    <div id="keyword-detail-box" class="mt-3 bg-white border-l-4 border-teal-500 p-4 rounded-xl shadow-inner text-sm md:text-base">
+                        <span class="font-extrabold text-teal-700">🧮 【計算システム】</span>：お金の出し入れ（<ruby>出納<rt>すいとう</rt></ruby>）の集計や、気象データの解析など、<b>「計算処理」を中心にしたお仕事</b>で使われるシステムだよ！実際の社会では、計算・通信・制御を複数組み合わせて使うことが多いんだ。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 図1：POSシステムを例に見た情報システムのつながり（メインインタラクティブ図解） -->
+            <div class="bg-white rounded-3xl p-4 md:p-7 shadow-lg border-4 border-emerald-400">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-emerald-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">教科書 p.114 図1 完全再現アニメ</span>
+                            <span class="text-xs font-bold text-emerald-700">★ティッシュ1箱（98円）を買うと、日本中のコンピュータがどう動く？</span>
+                        </div>
+                        <h3 class="text-lg md:text-2xl font-extrabold text-slate-800 mt-1">
+                            ▲図1 POSシステムを例に見た情報システムのつながり
+                        </h3>
+                    </div>
+
+                    <!-- コントロールボタン群 -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="nextFig1Step()" id="btn-fig1-next" class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1.5 text-sm">
+                            <span>▶</span> 1ステップ進める (<span id="fig1-step-counter">0/6</span>)
+                        </button>
+                        <button onclick="toggleFig1Auto()" id="btn-fig1-auto" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1.5 text-sm">
+                            <span>⏩</span> 自動再生
+                        </button>
+                        <button onclick="playFig1SubRoute('weather')" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl shadow text-xs md:text-sm transition">
+                            🛰️ 気象衛星＆標準時電波を見る
+                        </button>
+                        <button onclick="playFig1SubRoute('credit')" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-3 py-2 rounded-xl shadow text-xs md:text-sm transition">
+                            💳 クレジット決済の流れを見る
+                        </button>
+                        <button onclick="resetFig1()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs md:text-sm transition">
+                            🔄 リセット
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 現在のステップ解説バナー（大きくわかりやすい吹き出し） -->
+                <div id="fig1-narration" class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 rounded-2xl p-4 mb-5 shadow-sm flex items-center gap-4">
+                    <div id="fig1-narrator-icon" class="text-4xl md:text-5xl shrink-0 animate-bounce">👆</div>
+                    <div class="flex-grow">
+                        <div id="fig1-step-title" class="text-xs md:text-sm font-extrabold text-amber-700 uppercase tracking-wider">
+                            スタート前：上の「▶ 1ステップ進める」または図の中のアイコンを押してみよう！
+                        </div>
+                        <p id="fig1-step-desc" class="text-sm md:text-lg font-extrabold text-slate-800 mt-0.5 leading-snug">
+                            コンビニやスーパーで「○△ティッシュ（98円）」をピッ！とレジに通した瞬間、裏側でどんな情報システムが動くか追いかけてみよう！
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 図1 ビジュアルボード（教科書レイアウト準拠） -->
+                <div class="relative bg-gradient-to-b from-sky-50/70 via-white to-emerald-50/40 rounded-2xl border-2 border-slate-200 p-4 md:p-6 overflow-hidden">
+                    
+                    <!-- 上段：気象衛星ひまわり・気象庁 ＆ おおたかどや山・はがね山 -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-8 relative z-10">
+                        
+                        <!-- 気象衛星ひまわり -->
+                        <div id="f1-node-satellite" onclick="focusFig1Node('satellite')" class="node-box md:col-span-4 bg-white/95 border-2 border-sky-300 rounded-2xl p-3 shadow-sm cursor-pointer hover:border-sky-500 flex items-center gap-3">
+                            <div class="text-4xl shrink-0 animate-float">🛰️</div>
+                            <div class="text-xs">
+                                <div class="font-extrabold text-sky-800 text-sm">気象衛星ひまわり</div>
+                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-1.5 mt-1 text-[11px] text-slate-700">
+                                    ・<b><ruby>可視<rt>かし</rt></ruby>センサ</b>（雲の形・明るさ）<br>
+                                    ・<b><ruby>熱赤外線<rt>ねつせきがいせん</rt></ruby>センサ</b>（雲・陸・海の温度）
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 気象庁 -->
+                        <div id="f1-node-jma" onclick="focusFig1Node('jma')" class="node-box md:col-span-3 bg-white/95 border-2 border-emerald-300 rounded-2xl p-3 shadow-sm cursor-pointer hover:border-emerald-500 flex flex-col justify-center items-center text-center relative">
+                            <span class="bg-yellow-100 border border-yellow-400 text-yellow-900 text-[11px] font-bold px-2 py-0.5 rounded-full mb-1">🌤️ 天候、予報</span>
+                            <div class="text-3xl">🏢</div>
+                            <div class="font-extrabold text-emerald-800 text-sm mt-1">気象庁</div>
+                            <div class="text-[11px] text-amber-600 font-bold mt-0.5">⚡ 電波でお店へ予報配信！</div>
+                        </div>
+
+                        <!-- おおたかどや山・はがね山（日本標準時） -->
+                        <div id="f1-node-clock" onclick="focusFig1Node('clock')" class="node-box md:col-span-5 bg-white/95 border-2 border-teal-300 rounded-2xl p-3 shadow-sm cursor-pointer hover:border-teal-500 flex items-center gap-3 relative overflow-hidden">
+                            <div class="text-4xl shrink-0">🗼</div>
+                            <div class="text-xs">
+                                <div class="font-extrabold text-slate-800 text-sm">
+                                    おおたかどや山（福島県）・はがね山（佐賀県）<span class="text-rose-600 font-bold text-xs">❷</span>
+                                </div>
+                                <div class="inline-block bg-teal-50 border border-teal-300 rounded px-2 py-0.5 font-bold text-teal-900 mt-1">
+                                    ⏱️ 原子時計による日本標準時
+                                </div>
+                                <p class="text-[11px] text-slate-600 mt-1">
+                                    誤差<b>3000万年に1秒</b>！正確な時刻の電波を全国のレジやPCへ送信中📡
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 電波アニメーション表示バー（普段は控えめ、気象・時刻ルート時に光る） -->
+                    <div id="f1-wave-banner" class="hidden mb-6 bg-sky-100 border-2 border-sky-400 rounded-xl p-2.5 text-center text-xs md:text-sm font-extrabold text-sky-900 animate-pulse">
+                        ⚡📡 ピピピ…！気象庁から「明日は雨・気温低下」の予報データと、電波塔から「1秒の狂いもない正確な時刻」がお店のPOS・コンピュータに届いたよ！
+                    </div>
+
+                    <!-- 中段：メインのPOS〜ストアコンピュータ〜本部〜メーカー〜配送センター -->
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-4 items-stretch relative z-10">
+                        
+                        <!-- ① POS端末（お店・レジ） -->
+                        <div id="f1-node-pos" onclick="focusFig1Node('pos')" class="node-box bg-white border-2 border-teal-500 rounded-2xl p-3 flex flex-col justify-between shadow-sm cursor-pointer relative">
+                            <div>
+                                <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-2 text-xs font-bold text-slate-800 mb-2 shadow-inner">
+                                    💬「このバーコードは<br><span class="text-rose-600 font-extrabold">○△ティッシュ</span>で<br>値段は<span class="text-rose-600 font-extrabold">98円</span>」
+                                </div>
+                                <div class="text-center py-2">
+                                    <div class="text-4xl mb-1">🧑‍🤝‍🧑📠</div>
+                                    <span class="bg-sky-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs shadow">POS端末</span>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-300 rounded-xl p-2 text-xs font-bold text-center text-slate-800 mt-2">
+                                💳 支払いは<br><span class="text-indigo-700 font-extrabold">クレジットカード</span>
+                            </div>
+                        </div>
+
+                        <!-- ② ストアコンピュータ -->
+                        <div id="f1-node-storepc" onclick="focusFig1Node('storepc')" class="node-box bg-white border-2 border-teal-500 rounded-2xl p-3 flex flex-col justify-between shadow-sm cursor-pointer relative">
+                            <div class="space-y-1.5">
+                                <div class="text-center font-extrabold text-xs text-slate-700">【販売管理】【在庫管理】</div>
+                                <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-2 text-[11px] font-bold text-slate-800">
+                                    📈 ○△ティッシュ1個<br><span class="text-emerald-700 font-extrabold">98円売上</span>！
+                                </div>
+                                <div class="bg-orange-50 border border-orange-300 rounded-xl p-2 text-[11px] font-bold text-slate-800">
+                                    📦 ○△ティッシュ<br><span class="text-rose-600 font-extrabold">残りあとわずかだ！</span>
+                                </div>
+                            </div>
+                            <div class="text-center py-2">
+                                <div class="text-4xl mb-1">🖥️</div>
+                                <span class="bg-sky-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs shadow">ストアコンピュータ</span>
+                            </div>
+                            <div class="text-[10px] text-center text-slate-500 font-bold">お店のデータをまとめる頭脳</div>
+                        </div>
+
+                        <!-- ③ 本部 -->
+                        <div id="f1-node-hq" onclick="focusFig1Node('hq')" class="node-box bg-white border-2 border-teal-500 rounded-2xl p-3 flex flex-col justify-between shadow-sm cursor-pointer relative">
+                            <div class="bg-teal-50 border border-teal-200 rounded-xl p-2 text-[11px] font-bold text-teal-900 text-center">
+                                🚚 配送センターへ<br>「<b>配送手配</b>」を指示！
+                            </div>
+                            <div class="text-center py-2">
+                                <div class="text-4xl mb-1">🏢</div>
+                                <span class="bg-sky-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs shadow">本部</span>
+                            </div>
+                            <div class="bg-slate-100 rounded-xl p-2 text-center text-xs font-extrabold text-slate-800 space-y-0.5">
+                                <div>【<ruby>財務<rt>ざいむ</rt></ruby>管理】</div>
+                                <div>【<ruby>顧客<rt>こきゃく</rt></ruby>管理】</div>
+                            </div>
+                        </div>
+
+                        <!-- ④ メーカー（工場） -->
+                        <div id="f1-node-maker" onclick="focusFig1Node('maker')" class="node-box bg-white border-2 border-teal-500 rounded-2xl p-3 flex flex-col justify-between shadow-sm cursor-pointer relative">
+                            <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-2 text-xs font-bold text-center text-slate-800">
+                                📩 本部から<br>「<span class="text-rose-600 font-extrabold">○△ティッシュ発注</span>」
+                            </div>
+                            <div class="text-center py-2">
+                                <div class="text-4xl mb-1">🏭📦</div>
+                                <span class="bg-sky-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs shadow">メーカー</span>
+                            </div>
+                            <div class="bg-slate-100 rounded-xl p-2 text-center text-xs font-extrabold text-slate-800">
+                                【生産管理】<br>
+                                <span class="text-[11px] text-emerald-700 font-bold">➔ 配送センターへ「納品」</span>
+                            </div>
+                        </div>
+
+                        <!-- ⑤ 配送センター -->
+                        <div id="f1-node-delivery" onclick="focusFig1Node('delivery')" class="node-box bg-white border-2 border-teal-500 rounded-2xl p-3 flex flex-col justify-between shadow-sm cursor-pointer relative">
+                            <div class="bg-emerald-50 border border-emerald-300 rounded-xl p-2 text-[11px] font-bold text-emerald-900 text-center">
+                                📥 本部から「配送手配」<br>📥 メーカーから「納品」
+                            </div>
+                            <div class="text-center py-2">
+                                <div class="text-4xl mb-1">🏬🚚</div>
+                                <span class="bg-sky-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs shadow">配送センター</span>
+                            </div>
+                            <div class="bg-slate-100 rounded-xl p-2 text-center text-xs font-extrabold text-slate-800">
+                                【配送管理】<br>
+                                <span class="text-[11px] text-amber-700 font-bold">➔ お店へ商品を「配送」！</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 下段：お金・決済の流れ（クレジットカード会社 ＆ 銀行）＋ 配送トラックレーン -->
+                    <div class="mt-6 pt-4 border-t-2 border-dashed border-slate-300 grid grid-cols-1 md:grid-cols-12 gap-4 items-center relative z-10">
+                        
+                        <!-- 配送トラックのアニメーション表示ボックス -->
+                        <div id="f1-node-truck" class="md:col-span-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+                            <div id="truck-icon" class="text-4xl transition-transform duration-700">🚚📦</div>
+                            <div class="text-xs">
+                                <span class="bg-amber-500 text-white font-extrabold px-2 py-0.5 rounded-full">商品の「配送」ルート</span>
+                                <p class="font-bold text-slate-700 mt-1">
+                                    配送センターからお店のPOS（売り場）へ、新しい○△ティッシュが補充されるよ！
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- クレジットカード会社 -->
+                        <div id="f1-node-credit" onclick="focusFig1Node('credit')" class="node-box md:col-span-4 bg-white border-2 border-indigo-400 rounded-2xl p-3 shadow-sm cursor-pointer">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-indigo-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs">クレジットカード会社</span>
+                                <span class="text-2xl">💳🏢</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1.5 text-[11px] mt-2">
+                                <div class="bg-yellow-50 border border-yellow-300 p-1.5 rounded-lg font-bold">
+                                    ⬆ お店から：<br>「売上連絡」「売上手数料」
+                                </div>
+                                <div class="bg-emerald-50 border border-emerald-300 p-1.5 rounded-lg font-bold">
+                                    ⬆ お店へ：<br>代金の「<ruby>立替払<rt>たてかえばら</rt></ruby>い」
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 銀行（金融管理） -->
+                        <div id="f1-node-bank" onclick="focusFig1Node('bank')" class="node-box md:col-span-4 bg-white border-2 border-indigo-400 rounded-2xl p-3 shadow-sm cursor-pointer">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="bg-indigo-600 text-white font-extrabold px-3 py-0.5 rounded-full text-xs">銀行</span>
+                                <span class="text-xs font-extrabold text-slate-700">【<ruby>金融<rt>きんゆう</rt></ruby>管理】🏦</span>
+                            </div>
+                            <div class="bg-indigo-50 border border-indigo-200 p-2 rounded-lg text-[11px] font-bold text-indigo-950 mt-2">
+                                🔄 クレジット会社から「<b>引落し依頼</b>」を受け、後でお客さんの口座から「<b>代金引落し</b>」を行う！
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             タブ2：② 情報システムの種別（図2・図3・図4 アニメーション）
+             ========================================== -->
+        <section id="section-2" class="hidden space-y-6">
+            
+            <!-- イントロ＆サブタブ切り替え -->
+            <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-teal-200">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="bg-teal-100 text-teal-800 text-xs font-extrabold px-3 py-1 rounded-full">教科書 p.115「2 情報システムの種別」</span>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mt-1">
+                            技術的な処理の形による「3つのシステム」を比べてみよう！
+                        </h2>
+                        <p class="text-xs md:text-sm text-slate-600 mt-1">
+                            ※現在の情報システムの多くは、<b>集中型・分散型・移動体型を組み合わせて</b>作られているよ（p.115 memo）。
+                        </p>
+                    </div>
+                    <!-- 図2・図3・図4 切り替えボタン -->
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="switchSysType('central')" id="subtab-central" class="bg-teal-600 text-white font-extrabold px-4 py-2.5 rounded-2xl shadow text-xs md:text-sm transition">
+                            図2：集中情報システム
+                        </button>
+                        <button onclick="switchSysType('distributed')" id="subtab-distributed" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs md:text-sm transition">
+                            図3：分散情報システム
+                        </button>
+                        <button onclick="switchSysType('mobile')" id="subtab-mobile" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs md:text-sm transition">
+                            図4：移動体情報システム
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- インタラクティブ実験ステージ -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- 左側：SVGアニメーションキャンバス（7カラム） -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-5 shadow-lg border-4 border-teal-400">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b-2 border-slate-100">
+                        <h3 id="sys-stage-title" class="text-lg md:text-xl font-extrabold text-teal-800">
+                            ▲図2 集中情報システム
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="runSysNormalAnim()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold px-3.5 py-2 rounded-xl shadow text-xs md:text-sm flex items-center gap-1 transition active:scale-95">
+                                <span>▶</span> 通常のデータ処理を見る
+                            </button>
+                            <button onclick="runSysTroubleAnim()" id="btn-sys-trouble" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold px-3.5 py-2 rounded-xl shadow text-xs md:text-sm flex items-center gap-1 transition active:scale-95">
+                                <span>⚡</span> 弱点・トラブル実験！
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 図2：集中情報システム ステージ -->
+                    <div id="stage-central" class="relative h-80 md:h-96 bg-slate-50 rounded-2xl border-2 border-slate-200 flex items-center justify-center overflow-hidden">
+                        <svg viewBox="0 0 500 340" class="w-full h-full">
+                            <!-- 放射状の接続線 -->
+                            <line id="c-line-1" x1="110" y1="70" x2="250" y2="170" stroke="#fde047" stroke-width="5" />
+                            <line id="c-line-2" x1="390" y1="70" x2="250" y2="170" stroke="#fde047" stroke-width="5" />
+                            <line id="c-line-3" x1="80" y1="170" x2="250" y2="170" stroke="#fde047" stroke-width="5" />
+                            <line id="c-line-4" x1="420" y1="170" x2="250" y2="170" stroke="#fde047" stroke-width="5" />
+                            <line id="c-line-5" x1="110" y1="270" x2="250" y2="170" stroke="#fde047" stroke-width="5" />
+                            <line id="c-line-6" x1="390" y1="270" x2="250" y2="170" stroke="#fde047" stroke-width="5" />
+
+                            <!-- パケット（アニメーション用ドット） -->
+                            <g id="central-packets" class="hidden">
+                                <circle id="cp-1" cx="110" cy="70" r="8" fill="#10b981" />
+                                <circle id="cp-2" cx="390" cy="70" r="8" fill="#10b981" />
+                                <circle id="cp-3" cx="80" cy="170" r="8" fill="#10b981" />
+                                <circle id="cp-4" cx="420" cy="170" r="8" fill="#10b981" />
+                                <circle id="cp-5" cx="110" cy="270" r="8" fill="#10b981" />
+                                <circle id="cp-6" cx="390" cy="270" r="8" fill="#10b981" />
+                            </g>
+
+                            <!-- 中央コンピュータ -->
+                            <g id="central-host" transform="translate(250, 170)">
+                                <circle cx="0" cy="0" r="54" fill="#34d399" stroke="#059669" stroke-width="4" id="central-host-circle" />
+                                <rect x="-26" y="-32" width="52" height="16" rx="3" fill="#ffffff" />
+                                <rect x="-26" y="-10" width="52" height="16" rx="3" fill="#ffffff" />
+                                <rect x="-26" y="12" width="52" height="16" rx="3" fill="#ffffff" />
+                                <circle cx="16" cy="-24" r="3" fill="#10b981" />
+                                <circle cx="16" cy="-2" r="3" fill="#10b981" />
+                                <circle cx="16" cy="20" r="3" fill="#10b981" />
+                                <text x="0" y="74" text-anchor="middle" font-weight="bold" font-size="14" fill="#0f172a">中央コンピュータ❶</text>
+                                <text x="0" y="-62" text-anchor="middle" font-weight="bold" font-size="12" fill="#dc2626" id="central-host-status"></text>
+                            </g>
+
+                            <!-- 6台の端末 -->
+                            <g transform="translate(110, 65)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <polygon points="-38,20 38,20 30,15 -30,15" fill="#0284c7" />
+                                <text x="0" y="38" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末❷</text>
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" class="c-term-label">入力のみ</text>
+                            </g>
+                            <g transform="translate(390, 65)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <polygon points="-38,20 38,20 30,15 -30,15" fill="#0284c7" />
+                                <text x="0" y="38" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末</text>
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" class="c-term-label">入力のみ</text>
+                            </g>
+                            <g transform="translate(75, 170)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <polygon points="-38,20 38,20 30,15 -30,15" fill="#0284c7" />
+                                <text x="0" y="38" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末</text>
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" class="c-term-label">ATM等</text>
+                            </g>
+                            <g transform="translate(425, 170)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <polygon points="-38,20 38,20 30,15 -30,15" fill="#0284c7" />
+                                <text x="0" y="38" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末</text>
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" class="c-term-label">POS等</text>
+                            </g>
+                            <g transform="translate(110, 270)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <polygon points="-38,20 38,20 30,15 -30,15" fill="#0284c7" />
+                                <text x="0" y="38" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末</text>
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" class="c-term-label">シンプル</text>
+                            </g>
+                            <g transform="translate(390, 270)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <polygon points="-38,20 38,20 30,15 -30,15" fill="#0284c7" />
+                                <text x="0" y="38" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末</text>
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" class="c-term-label">シンプル</text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- 図3：分散情報システム ステージ -->
+                    <div id="stage-distributed" class="hidden relative h-80 md:h-96 bg-slate-50 rounded-2xl border-2 border-slate-200 items-center justify-center overflow-hidden">
+                        <svg viewBox="0 0 520 340" class="w-full h-full">
+                            <!-- 中央の水平通信回線（バス） -->
+                            <line x1="30" y1="170" x2="490" y2="170" stroke="#facc15" stroke-width="7" />
+                            <!-- 枝分かれ線（上3本、下3本） -->
+                            <line x1="100" y1="110" x2="100" y2="170" stroke="#facc15" stroke-width="5" />
+                            <line x1="250" y1="110" x2="250" y2="170" stroke="#facc15" stroke-width="5" />
+                            <line x1="400" y1="110" x2="400" y2="170" stroke="#facc15" stroke-width="5" />
+                            <line x1="100" y1="170" x2="100" y2="230" stroke="#facc15" stroke-width="5" />
+                            <line x1="250" y1="170" x2="250" y2="230" stroke="#facc15" stroke-width="5" />
+                            <line x1="400" y1="170" x2="400" y2="230" stroke="#facc15" stroke-width="5" />
+
+                            <!-- 上段左：クライアント -->
+                            <g transform="translate(100, 75)">
+                                <text x="0" y="-36" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">クライアント</text>
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1" id="d-label-c1">PC①</text>
+                            </g>
+
+                            <!-- 上段中：メールサーバ -->
+                            <g transform="translate(250, 75)">
+                                <text x="0" y="-36" text-anchor="middle" font-weight="bold" font-size="13" fill="#065f46">メールサーバ</text>
+                                <rect x="-26" y="-25" width="52" height="50" rx="4" fill="#a7f3d0" stroke="#059669" stroke-width="3" />
+                                <text x="0" y="5" text-anchor="middle" font-size="18">📧</text>
+                            </g>
+
+                            <!-- 上段右：クライアント -->
+                            <g transform="translate(400, 75)">
+                                <text x="0" y="-36" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">クライアント</text>
+                                <rect x="-35" y="-25" width="50" height="38" rx="4" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <rect x="20" y="-28" width="18" height="42" rx="2" fill="#38bdf8" stroke="#0284c7" stroke-width="2" />
+                                <text x="-10" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1">PC②</text>
+                            </g>
+
+                            <!-- 下段左：ファイルサーバ -->
+                            <g transform="translate(100, 255)">
+                                <rect x="-26" y="-25" width="52" height="50" rx="4" fill="#a7f3d0" stroke="#059669" stroke-width="3" />
+                                <text x="0" y="5" text-anchor="middle" font-size="18">📁</text>
+                                <text x="0" y="45" text-anchor="middle" font-weight="bold" font-size="13" fill="#065f46">ファイルサーバ</text>
+                            </g>
+
+                            <!-- 下段中：クライアント -->
+                            <g transform="translate(250, 255)">
+                                <rect x="-32" y="-25" width="64" height="40" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <text x="0" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1">PC③</text>
+                                <text x="0" y="45" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">クライアント</text>
+                            </g>
+
+                            <!-- 下段右：データベースサーバ -->
+                            <g transform="translate(400, 255)">
+                                <rect x="-26" y="-25" width="52" height="50" rx="4" fill="#a7f3d0" stroke="#059669" stroke-width="3" />
+                                <text x="0" y="5" text-anchor="middle" font-size="18">🗄️</text>
+                                <text x="0" y="45" text-anchor="middle" font-weight="bold" font-size="13" fill="#065f46">データベースサーバ</text>
+                            </g>
+
+                            <!-- アニメーションステータス吹き出し -->
+                            <g id="dist-anim-overlay" class="hidden">
+                                <rect x="80" y="148" width="360" height="44" rx="12" fill="#0f172a" opacity="0.9" />
+                                <text id="dist-overlay-text" x="260" y="175" text-anchor="middle" fill="#facc15" font-weight="bold" font-size="13">
+                                    役割分担して高速処理中！
+                                </text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- 図4：移動体情報システム ステージ -->
+                    <div id="stage-mobile" class="hidden relative h-80 md:h-96 bg-slate-50 rounded-2xl border-2 border-slate-200 items-center justify-center overflow-hidden">
+                        <svg viewBox="0 0 500 340" class="w-full h-full">
+                            <!-- 左上：コンピュータ -->
+                            <g transform="translate(120, 95)">
+                                <text x="0" y="-42" text-anchor="middle" font-weight="bold" font-size="14" fill="#1e293b">コンピュータ</text>
+                                <rect x="-45" y="-28" width="60" height="44" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                <rect x="22" y="-32" width="22" height="50" rx="3" fill="#38bdf8" stroke="#0284c7" stroke-width="3" />
+                            </g>
+
+                            <!-- 電波マーク（コンピュータ ⇔ 基地局） -->
+                            <text x="245" y="95" text-anchor="middle" font-size="28" id="m-wave-top">⚡</text>
+
+                            <!-- 右上：基地局 -->
+                            <g transform="translate(365, 95)">
+                                <text x="-55" y="-35" text-anchor="middle" font-weight="bold" font-size="14" fill="#1e293b">基地局</text>
+                                <!-- 電波塔イラスト -->
+                                <polygon points="-25,55 25,55 8,-45 -8,-45" fill="none" stroke="#10b981" stroke-width="4" />
+                                <ellipse cx="0" cy="-30" rx="28" ry="8" fill="none" stroke="#059669" stroke-width="3" />
+                                <ellipse cx="0" cy="-12" rx="28" ry="8" fill="none" stroke="#059669" stroke-width="3" />
+                                <line x1="-18" y1="20" x2="18" y2="20" stroke="#10b981" stroke-width="3" />
+                            </g>
+
+                            <!-- 電波マーク（基地局 ⇔ 端末3台） -->
+                            <text x="210" y="185" text-anchor="middle" font-size="26" class="m-wave-sub">⚡</text>
+                            <text x="290" y="185" text-anchor="middle" font-size="26" class="m-wave-sub">⚡</text>
+                            <text x="370" y="185" text-anchor="middle" font-size="26" class="m-wave-sub">⚡</text>
+
+                            <!-- 下段：携帯情報端末 3台 -->
+                            <g id="m-terminals" transform="translate(0, 0)">
+                                <g transform="translate(170, 255)">
+                                    <rect x="-20" y="-32" width="40" height="64" rx="7" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                    <rect x="-15" y="-24" width="30" height="44" fill="#ffffff" />
+                                    <text x="0" y="2" text-anchor="middle" font-size="16">🎬</text>
+                                    <text x="0" y="52" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末(動画課金)</text>
+                                </g>
+                                <g transform="translate(270, 255)">
+                                    <rect x="-20" y="-32" width="40" height="64" rx="7" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                    <rect x="-15" y="-24" width="30" height="44" fill="#ffffff" />
+                                    <text x="0" y="2" text-anchor="middle" font-size="16">📝</text>
+                                    <text x="0" y="52" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末(客先見積)</text>
+                                </g>
+                                <g transform="translate(370, 255)">
+                                    <rect x="-20" y="-32" width="40" height="64" rx="7" fill="#bae6fd" stroke="#0284c7" stroke-width="3" />
+                                    <rect x="-15" y="-24" width="30" height="44" fill="#ffffff" />
+                                    <text x="0" y="2" text-anchor="middle" font-size="16">🏗️</text>
+                                    <text x="0" y="52" text-anchor="middle" font-weight="bold" font-size="13" fill="#1e293b">端末(現場管理)</text>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- アニメーション実況メッセージ -->
+                    <div id="sys-anim-log" class="mt-4 bg-teal-50 border-2 border-teal-300 rounded-2xl p-3.5 text-sm md:text-base font-bold text-teal-950">
+                        👆 上の「▶ 通常のデータ処理を見る」や「⚡ 弱点・トラブル実験！」ボタンを押して動きを確かめてみよう！
+                    </div>
+                </div>
+
+                <!-- 右側：教科書ポイント整理カード（5カラム） -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div id="sys-info-card" class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-slate-200 space-y-4">
+                        <!-- JSで動的にシステム種別ごとの解説を切り替え -->
+                    </div>
+
+                    <!-- プラスワン56：緊急地震速報システム -->
+                    <div class="bg-gradient-to-r from-rose-50 to-orange-50 rounded-3xl p-5 border-2 border-rose-300 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="bg-rose-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">教科書 p.115 プラスワン 56</span>
+                            <span class="text-2xl">🚨📱</span>
+                        </div>
+                        <h4 class="font-extrabold text-base md:text-lg text-rose-900 mt-2">緊急地震速報システム</h4>
+                        <p class="text-xs md:text-sm text-slate-700 mt-1 leading-relaxed">
+                            地震の発生直後、各地の<b>推定震度</b>と<b>予想到達時刻</b>を計算し、みんなのスマホへ一斉配信して<b>早期避難</b>を呼びかけたり、<b>工場の機械や新幹線を自動制御でストップ</b>させたりするシステム！<br>
+                            <span class="text-rose-700 font-bold">➔「計算」「通信」「制御」と「移動体情報システム」が合体したデータ活用の代表例だよ！</span>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             タブ3：③ さまざまなサーバ図鑑（表1）
+             ========================================== -->
+        <section id="section-3" class="hidden space-y-6">
+            
+            <div class="bg-white rounded-3xl p-5 md:p-7 shadow-md border-2 border-teal-200">
+                <span class="bg-teal-100 text-teal-800 text-xs font-extrabold px-3 py-1 rounded-full">教科書 p.115 表1「さまざまなサーバ」</span>
+                <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mt-2">
+                    3. クライアントサーバシステムで活躍する「8つの専門サーバ図鑑」
+                </h2>
+                <p class="text-xs md:text-sm text-slate-600 mt-1">
+                    分散情報システムの代表モデル「<b>クライアントサーバシステム</b>」では、いろんな専門サーバが役割分担してサービスを提供しているよ。カードをタップして、それぞれの働きを見てみよう！
+                </p>
+
+                <!-- 選択中のサーバのミニアニメ劇場 -->
+                <div id="server-theater" class="mt-5 bg-gradient-to-r from-indigo-900 via-slate-800 to-teal-900 text-white rounded-3xl p-5 md:p-6 shadow-inner">
+                    <div class="flex flex-col md:flex-row items-center gap-6">
+                        <div class="bg-white/10 rounded-2xl p-4 text-center shrink-0 w-full md:w-56 border border-white/20">
+                            <div id="srv-theater-icon" class="text-6xl mb-2 animate-bounce">🪪</div>
+                            <div id="srv-theater-name" class="text-lg font-extrabold text-amber-300">認証サーバ</div>
+                            <div id="srv-theater-sub" class="text-xs text-slate-300 mt-1">セキュリティの門番！</div>
+                        </div>
+                        <div class="flex-grow space-y-3">
+                            <div class="bg-white/10 rounded-xl px-3.5 py-2 text-xs md:text-sm font-bold text-teal-200 border border-teal-400/30">
+                                📖 教科書の定義：<span id="srv-theater-def" class="text-white">利用者の本人確認を行い、各種サービスの利用を許可する。</span>
+                            </div>
+                            <div id="srv-theater-story" class="text-sm md:text-base font-bold leading-relaxed text-amber-100">
+                                🧑 クライアント「IDとパスワードを送ります！ログインさせて！」<br>
+                                🪪 認証サーバ「ピピッ…登録データと一致！本人確認OK、サービスを使っていいよ！」
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8つのサーバカードグリッド -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-6" id="server-cards-grid">
+                    <!-- JSで8枚のカードを生成 -->
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ==========================================
+             タブ4：④ 問題＆確認クイズ（身の回りのシステム）
+             ========================================== -->
+        <section id="section-4" class="hidden space-y-8">
+            
+            <!-- 教科書の「問題」コーナー -->
+            <div class="bg-white rounded-3xl p-5 md:p-7 shadow-md border-2 border-amber-300">
+                <div class="flex items-center gap-2">
+                    <span class="bg-amber-500 text-white text-xs font-extrabold px-3 py-1 rounded-full">教科書 p.115「問題」を授業で考えよう！</span>
+                </div>
+                <h2 class="text-lg md:text-2xl font-extrabold text-slate-800 mt-2">
+                    問題：身の回りの端末を思い出し、それぞれどのような情報システムが活用されているか考えなさい。
+                </h2>
+                <p class="text-xs md:text-sm text-slate-600 mt-1">
+                    👇 普段みんなが使っている「身近な端末」をタップしてみよう！裏側でどんなシステムが動いているか透視できるよ。
+                </p>
+
+                <!-- 身近な端末ボタン -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    <button onclick="showEverydayDevice(0)" class="dev-btn bg-amber-50 hover:bg-amber-100 border-2 border-amber-400 rounded-2xl p-4 text-center transition shadow-sm">
+                        <div class="text-4xl mb-1">📱</div>
+                        <div class="font-extrabold text-sm text-slate-800">スマホ・バス案内</div>
+                        <div class="text-[11px] text-amber-700 font-bold mt-0.5">タップして透視🔍</div>
+                    </button>
+                    <button onclick="showEverydayDevice(1)" class="dev-btn bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 rounded-2xl p-4 text-center transition shadow-sm">
+                        <div class="text-4xl mb-1">🏧</div>
+                        <div class="font-extrabold text-sm text-slate-800">銀行のATM</div>
+                        <div class="text-[11px] text-amber-700 font-bold mt-0.5">タップして透視🔍</div>
+                    </button>
+                    <button onclick="showEverydayDevice(2)" class="dev-btn bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 rounded-2xl p-4 text-center transition shadow-sm">
+                        <div class="text-4xl mb-1">🍣</div>
+                        <div class="font-extrabold text-sm text-slate-800">回転寿司の注文パッド</div>
+                        <div class="text-[11px] text-amber-700 font-bold mt-0.5">タップして透視🔍</div>
+                    </button>
+                    <button onclick="showEverydayDevice(3)" class="dev-btn bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 rounded-2xl p-4 text-center transition shadow-sm">
+                        <div class="text-4xl mb-1">🥩</div>
+                        <div class="font-extrabold text-sm text-slate-800">スーパーの食品タグ</div>
+                        <div class="text-[11px] text-amber-700 font-bold mt-0.5">タップして透視🔍</div>
+                    </button>
+                </div>
+
+                <!-- 透視結果表示ボックス -->
+                <div id="device-insight-box" class="mt-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-2xl p-5">
+                    <!-- JSで初期表示・切り替え -->
+                </div>
+            </div>
+
+            <!-- 5問確認クイズ -->
+            <div class="bg-white rounded-3xl p-5 md:p-7 shadow-lg border-4 border-teal-400">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b-2 border-slate-100">
+                    <div>
+                        <span class="bg-teal-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">テスト対策バッチリ！</span>
+                        <h3 class="text-xl md:text-2xl font-extrabold text-slate-800 mt-1">
+                            🎯 3択でサクッと確認！情報システム5問クイズ
+                        </h3>
+                    </div>
+                    <div class="bg-teal-50 border-2 border-teal-300 rounded-2xl px-4 py-2 text-center">
+                        <span class="text-xs font-bold text-teal-800">現在のスコア</span>
+                        <div class="text-2xl font-extrabold text-teal-600"><span id="quiz-score">0</span> / 5 問正解</div>
+                    </div>
+                </div>
+
+                <div id="quiz-container" class="space-y-5 mt-5">
+                    <!-- JSで5問を生成 -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-slate-800 text-slate-300 text-center py-4 text-xs mt-10">
+        <p>高校「情報I」理論編 44 情報システム（p.114-115）インタラクティブ学習教材</p>
+    </footer>
+
+    <!-- ==========================================
+         JavaScript ロジック
+         ========================================== -->
+    <script>
+        // --------------------------------------------------
+        // 1. メインタブ切り替え
+        // --------------------------------------------------
+        function switchMainTab(tabNum) {
+            for (let i = 1; i <= 4; i++) {
+                const sec = document.getElementById(`section-${i}`);
+                const btn = document.getElementById(`tab-btn-${i}`);
+                if (i === tabNum) {
+                    sec.classList.remove('hidden');
+                    btn.className = "tab-btn bg-white text-teal-700 font-extrabold px-3 py-2 rounded-xl text-xs md:text-sm shadow-md transition transform scale-105 flex items-center gap-1";
+                } else {
+                    sec.classList.add('hidden');
+                    btn.className = "tab-btn bg-teal-700/60 hover:bg-teal-700 text-white font-bold px-3 py-2 rounded-xl text-xs md:text-sm transition transform hover:scale-105 flex items-center gap-1";
+                }
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --------------------------------------------------
+        // 2. タブ1：キーワードカードの切り替え
+        // --------------------------------------------------
+        const keywordData = {
+            calc: {
+                title: "🧮 【計算システム】（情報システムの種類①）",
+                desc: "お金の出し入れ（出納）の集計や、気象データの解析など、<b>「計算処理」を中心にした業務</b>に使われるシステムだよ！"
+            },
+            comm: {
+                title: "📡 【通信システム】（情報システムの種類②）",
+                desc: "気象データの収集や、遠く離れた場所とのオンライン会議など、<b>高速で安定した「データ通信」を行う業務</b>に使われるよ！"
+            },
+            ctrl: {
+                title: "🤖 【制御システム】（情報システムの種類③）",
+                desc: "工場の生産設備（ロボットやベルトコンベアなど）を<b>自動で動かす（自動運転する）業務</b>などに使われるシステムだよ！"
+            },
+            pos: {
+                title: "🏪 【POSシステム】（Point Of Sales system：販売時点情報管理）",
+                desc: "商品を販売したその瞬間（レジでバーコードを読んだ時点）に、「何が・いつ・いくらで・何個売れたか」のデータを収集・管理するシステムだよ！"
+            },
+            gps: {
+                title: "🛰️ 【GPS】（全地球測位システム）",
+                desc: "宇宙にある<b>複数の人工衛星からの位置情報</b>を使って、いま自分が地球上のどこにいるか（現在位置）を計算する仕組み！バスの運行状況通知やスマホの地図で大活躍！"
+            },
+            trace: {
+                title: "🏷️ 【トレーサビリティシステム】（商品の追跡）",
+                desc: "商品に<b>製造番号や電子タグ（ICタグ）</b>などを取り付けることで、<b>生産者（農家や工場）から消費者（わたしたち）まで商品の追跡</b>ができる仕組み！食品の安全（品質管理）や流通管理に役立っているよ。"
+            }
+        };
+
+        function showKeywordDetail(key) {
+            const box = document.getElementById('keyword-detail-box');
+            const item = keywordData[key];
+            box.innerHTML = `<span class="font-extrabold text-teal-700">${item.title}</span>：${item.desc}`;
+        }
+
+        // --------------------------------------------------
+        // 3. タブ1：図1（POSシステムのつながり）ステップアニメーション
+        // --------------------------------------------------
+        let fig1Step = 0;
+        let fig1AutoTimer = null;
+
+        const fig1StepsData = [
+            {
+                nodes: ['f1-node-pos'],
+                icon: '📠',
+                title: 'STEP 1：お店（POS端末）でピッ！とお買い物',
+                desc: 'お客さんがレジで「○△ティッシュ（98円）」を購入！POS端末がバーコードを読み取り、商品と値段を特定します。支払いはクレジットカード！'
+            },
+            {
+                nodes: ['f1-node-pos', 'f1-node-storepc'],
+                icon: '🖥️',
+                title: 'STEP 2：ストアコンピュータで【販売管理】と【在庫管理】',
+                desc: 'POS端末からお店の「ストアコンピュータ」へデータが送られ、「98円売上（販売管理）」と「ティッシュの在庫が残りわずかだ！（在庫管理）」と自動計算されます。'
+            },
+            {
+                nodes: ['f1-node-storepc', 'f1-node-hq'],
+                icon: '🏢',
+                title: 'STEP 3：本部へデータを送り【財務管理】【顧客管理】',
+                desc: '全国の店舗から「本部」へ売上・在庫データが集まります。本部では会社全体のお金（財務管理）やお客さんの情報（顧客管理）をまとめます。'
+            },
+            {
+                nodes: ['f1-node-hq', 'f1-node-maker'],
+                icon: '🏭',
+                title: 'STEP 4：本部からメーカーへ「○△ティッシュ発注」➔【生産管理】',
+                desc: 'お店のティッシュが売り切れそうなので、本部が「メーカー（工場）」へ自動発注！メーカーは【生産管理】システムでティッシュを生産します。'
+            },
+            {
+                nodes: ['f1-node-hq', 'f1-node-maker', 'f1-node-delivery'],
+                icon: '🏬',
+                title: 'STEP 5：配送センターで【配送管理】（配送手配＆納品）',
+                desc: '本部からの「配送手配」データと、メーカーからの商品「納品」が「配送センター」に集まり、どのお店にいつ届けるか【配送管理】します。'
+            },
+            {
+                nodes: ['f1-node-delivery', 'f1-node-truck', 'f1-node-pos'],
+                icon: '🚚',
+                title: 'STEP 6：お店へ「配送」完了！すべてのシステムがつながった！',
+                desc: '配送センターからトラックでお店へティッシュが「配送」されました！生産から販売・流通・決済までがすべてオンラインでつながっています✨'
+            }
+        ];
+
+        const fig1NodeDetails = {
+            satellite: {
+                icon: '🛰️',
+                title: '気象衛星ひまわり（可視センサ・熱赤外線センサ）',
+                desc: '宇宙から「雲の形・明るさ（可視センサ）」や「雲・陸・海の温度（熱赤外線センサ）」を観測して気象庁へデータを送っているよ！'
+            },
+            jma: {
+                icon: '🌤️',
+                title: '気象庁（天候、予報）',
+                desc: '気象衛星などのデータを解析して天気予報を発表！お店は「明日は寒くなるからティッシュや温かい飲み物が売れそう！」と予測して仕入れに活かすよ。'
+            },
+            clock: {
+                icon: '🗼',
+                title: 'おおたかどや山・はがね山（原子時計による日本標準時）',
+                desc: '誤差3000万年に1秒の「原子時計」で作られた日本標準時（東経135度）を、福島県と佐賀県の電波送信所から送信！全国のレジの時計をピタッと合わせているよ。'
+            },
+            pos: {
+                icon: '📠',
+                title: 'POS端末（販売時点情報管理）',
+                desc: 'バーコードを読み取って「○△ティッシュ 98円」と表示し、クレジットカード決済や売上データの送信を行うお店の入り口だよ！'
+            },
+            storepc: {
+                icon: '🖥️',
+                title: 'ストアコンピュータ（【販売管理】【在庫管理】）',
+                desc: 'お店の中の複数のレジ（POS端末）からデータを集め、「何が何個売れたか」「在庫があと何個か」をリアルタイムで管理するコンピュータだよ！'
+            },
+            hq: {
+                icon: '🏢',
+                title: '本部（【財務管理】【顧客管理】）',
+                desc: 'チェーン店全体の売上やお金（財務）、お客さんのポイントや購買履歴（顧客）を管理し、メーカーへの発注や配送センターへの手配を行う司令塔！'
+            },
+            maker: {
+                icon: '🏭',
+                title: 'メーカー（【生産管理】）',
+                desc: '本部からの「○△ティッシュ発注」データを受け取り、工場で無駄なく計画的に商品を作って配送センターへ「納品」するよ！'
+            },
+            delivery: {
+                icon: '🏬',
+                title: '配送センター（【配送管理】）',
+                desc: '本部からの「配送手配」とメーカーからの「納品」をまとめ、トラックでお店へ効率よく商品を「配送」する流通の拠点だよ！'
+            },
+            credit: {
+                icon: '💳',
+                title: 'クレジットカード会社（売上連絡・立替払い）',
+                desc: 'お店のストアコンピュータから「売上連絡」を受けると、お客さんに代わってお店へ代金を「立替払い」し、銀行へ「引落し依頼」を送るよ！'
+            },
+            bank: {
+                icon: '🏦',
+                title: '銀行（【金融管理】引落し依頼・代金引落し）',
+                desc: 'クレジットカード会社からの「引落し依頼」にもとづいて、お客さんの銀行口座から「代金引落し」を行い、お金の決済を完了させるよ！'
+            }
+        };
+
+        function clearFig1Highlights() {
+            document.querySelectorAll('#section-1 .node-box').forEach(el => {
+                el.classList.remove('node-active', 'ring-4', 'ring-amber-400');
+            });
+            document.getElementById('f1-node-truck').classList.remove('node-active');
+            document.getElementById('f1-wave-banner').classList.add('hidden');
+            document.getElementById('truck-icon').style.transform = 'translateX(0px)';
+        }
+
+        function updateFig1StepUI() {
+            clearFig1Highlights();
+            const stepInfo = fig1StepsData[fig1Step - 1];
+            if (!stepInfo) return;
+
+            stepInfo.nodes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('node-active');
+            });
+
+            if (fig1Step === 6) {
+                document.getElementById('truck-icon').style.transform = 'translateX(14px) scale(1.15)';
+                launchConfetti(40);
+            }
+
+            document.getElementById('fig1-step-counter').textContent = `${fig1Step}/6`;
+            document.getElementById('fig1-narrator-icon').textContent = stepInfo.icon;
+            document.getElementById('fig1-step-title').textContent = stepInfo.title;
+            document.getElementById('fig1-step-desc').textContent = stepInfo.desc;
+        }
+
+        function nextFig1Step() {
+            fig1Step++;
+            if (fig1Step > 6) fig1Step = 1;
+            updateFig1StepUI();
+        }
+
+        function toggleFig1Auto() {
+            const btn = document.getElementById('btn-fig1-auto');
+            if (fig1AutoTimer) {
+                clearInterval(fig1AutoTimer);
+                fig1AutoTimer = null;
+                btn.innerHTML = '<span>⏩</span> 自動再生';
+                btn.classList.replace('bg-rose-600', 'bg-emerald-600');
+            } else {
+                nextFig1Step();
+                btn.innerHTML = '<span>⏸</span> 停止する';
+                btn.classList.replace('bg-emerald-600', 'bg-rose-600');
+                fig1AutoTimer = setInterval(() => {
+                    if (fig1Step >= 6) {
+                        toggleFig1Auto();
+                    } else {
+                        nextFig1Step();
+                    }
+                }, 2800);
+            }
+        }
+
+        function playFig1SubRoute(route) {
+            if (fig1AutoTimer) toggleFig1Auto();
+            clearFig1Highlights();
+
+            if (route === 'weather') {
+                ['f1-node-satellite', 'f1-node-jma', 'f1-node-clock', 'f1-node-pos', 'f1-node-storepc'].forEach(id => {
+                    document.getElementById(id).classList.add('node-active');
+                });
+                document.getElementById('f1-wave-banner').classList.remove('hidden');
+                document.getElementById('fig1-narrator-icon').textContent = '🛰️';
+                document.getElementById('fig1-step-title').textContent = '別ルート①：気象衛星ひまわり・気象庁 ＆ 日本標準時の電波';
+                document.getElementById('fig1-step-desc').textContent = 'ひまわりが観測した雲や温度のデータから気象庁が天気を予報！さらに「おおたかどや山・はがね山」の原子時計から正確な日本標準時の電波がPOS端末に届き、「いつ・どんな天気の日に何が売れたか」が正確に記録されるよ！';
+            } else if (route === 'credit') {
+                ['f1-node-pos', 'f1-node-storepc', 'f1-node-credit', 'f1-node-bank', 'f1-node-hq'].forEach(id => {
+                    document.getElementById(id).classList.add('node-active');
+                });
+                document.getElementById('fig1-narrator-icon').textContent = '💳';
+                document.getElementById('fig1-step-title').textContent = '別ルート②：クレジットカード決済と銀行【金融管理】の流れ';
+                document.getElementById('fig1-step-desc').textContent = 'お客さんがカードで払うと、ストアコンピュータからクレジットカード会社へ「売上連絡」が行き、カード会社がお店に「立替払い」します。その後、銀行へ「引落し依頼」が送られ、口座から「代金引落し」が行われるよ！';
+            }
+        }
+
+        function focusFig1Node(key) {
+            if (fig1AutoTimer) toggleFig1Auto();
+            clearFig1Highlights();
+            const nodeMap = {
+                satellite: 'f1-node-satellite',
+                jma: 'f1-node-jma',
+                clock: 'f1-node-clock',
+                pos: 'f1-node-pos',
+                storepc: 'f1-node-storepc',
+                hq: 'f1-node-hq',
+                maker: 'f1-node-maker',
+                delivery: 'f1-node-delivery',
+                credit: 'f1-node-credit',
+                bank: 'f1-node-bank'
+            };
+            const el = document.getElementById(nodeMap[key]);
+            if (el) el.classList.add('node-active');
+
+            const info = fig1NodeDetails[key];
+            document.getElementById('fig1-narrator-icon').textContent = info.icon;
+            document.getElementById('fig1-step-title').textContent = `🔍 スポット解説：${info.title}`;
+            document.getElementById('fig1-step-desc').textContent = info.desc;
+        }
+
+        function resetFig1() {
+            if (fig1AutoTimer) toggleFig1Auto();
+            fig1Step = 0;
+            clearFig1Highlights();
+            document.getElementById('fig1-step-counter').textContent = '0/6';
+            document.getElementById('fig1-narrator-icon').textContent = '👆';
+            document.getElementById('fig1-step-title').textContent = 'スタート前：上の「▶ 1ステップ進める」または図の中のアイコンを押してみよう！';
+            document.getElementById('fig1-step-desc').textContent = 'コンビニやスーパーで「○△ティッシュ（98円）」をピッ！とレジに通した瞬間、裏側でどんな情報システムが動くか追いかけてみよう！';
+        }
+
+        // --------------------------------------------------
+        // 4. タブ2：情報システムの種別（図2・図3・図4）
+        // --------------------------------------------------
+        let currentSysType = 'central';
+
+        const sysTypeData = {
+            central: {
+                stageTitle: '▲図2 集中情報システム',
+                badge: '図2：集中情報システム',
+                summary: '中央に大型・中型の汎用コンピュータ（<b>メインフレーム／ホストマシン❶</b>）を設置し、<b>全てのデータを1か所で集中管理</b>するシステム！',
+                examples: '銀行のATM❷、販売店のPOS端末など',
+                merits: [
+                    'データを1か所で守るので、<b>機密性（秘密を守る）と完全性（データが正確）が保たれる！</b>',
+                    '周囲の端末機に高い性能はいらないため、<b>たくさんの端末を設置できる！</b>'
+                ],
+                demerits: [
+                    'データ量が増えると<b>中央コンピュータに負荷が集中</b>してしまう…',
+                    '中央が<b>故障した時や更新（アップデート）時の危険性</b>が大きく、コストも高い！'
+                ]
+            },
+            distributed: {
+                stageTitle: '▲図3 分散情報システム',
+                badge: '図3：分散情報システム',
+                summary: '複数の小型コンピュータを相互につなぎ、<b>データを共有しながら業務や作業を分担して処理</b>するシステム！代表例が「<b>クライアントサーバシステム</b>」だよ。',
+                examples: 'メールサーバ、ファイルサーバ、データベースサーバなど（表1）',
+                merits: [
+                    'さまざまなサーバが特定の処理を分担するため、<b>負荷が分散されて処理の高速化が望める！</b>',
+                    '1つのサーバが混雑しても、他の種類の作業は止まりにくい！'
+                ],
+                demerits: [
+                    'あちこちにデータが分散するため、<b>セキュリティが低下</b>しやすい場合がある…',
+                    '全部のコンピュータで<b>データの一貫性（同じ最新データに揃えること）を保つのが難しい</b>（機密性・完全性の課題）。'
+                ]
+            },
+            mobile: {
+                stageTitle: '▲図4 移動体情報システム',
+                badge: '図4：移動体情報システム',
+                summary: 'スマホやタブレットなどの<b>携帯情報端末</b>を使い、<b>無線技術（基地局の電波やWi-Fi）</b>によって移動中もやり取りできるシステム！',
+                examples: '動画・画像のその場課金、客先での見積もり・受注入力、建築現場のカメラ進行管理など',
+                merits: [
+                    '<b>屋内（Wi-Fiなど）と屋外（携帯回線など）で別々の回線を切り替えて運用</b>できる柔軟性がある！',
+                    '移動しながらでもリアルタイムにデータの入力や確認ができる！'
+                ],
+                demerits: [
+                    'いろんな端末でスムーズに使えるよう、<b>データ処理の規格を可能な限りオープン（公開・共通化）にする工夫</b>が必要！'
+                ]
+            }
+        };
+
+        function switchSysType(type) {
+            currentSysType = type;
+            ['central', 'distributed', 'mobile'].forEach(t => {
+                const btn = document.getElementById(`subtab-${t}`);
+                const stg = document.getElementById(`stage-${t}`);
+                if (t === type) {
+                    btn.className = "bg-teal-600 text-white font-extrabold px-4 py-2.5 rounded-2xl shadow text-xs md:text-sm transition";
+                    stg.classList.remove('hidden');
+                    stg.classList.add('flex');
+                } else {
+                    btn.className = "bg-slate-200 hover:bg-slate-300 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs md:text-sm transition";
+                    stg.classList.add('hidden');
+                    stg.classList.remove('flex');
+                }
+            });
+
+            const info = sysTypeData[type];
+            document.getElementById('sys-stage-title').textContent = info.stageTitle;
+
+            // 右側の解説カード更新
+            const card = document.getElementById('sys-info-card');
+            card.innerHTML = `
+                <div>
+                    <span class="bg-teal-100 text-teal-800 text-xs font-extrabold px-3 py-1 rounded-full">${info.badge}</span>
+                    <p class="text-sm md:text-base text-slate-800 mt-2 leading-relaxed">${info.summary}</p>
+                    <div class="bg-slate-100 rounded-xl p-2.5 text-xs font-bold text-slate-700 mt-2">
+                        💡 身近な例：${info.examples}
+                    </div>
+                </div>
+                <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5">
+                    <div class="font-extrabold text-emerald-800 text-sm mb-1">⭕ 良いところ（メリット・特徴）</div>
+                    <ul class="list-disc list-inside text-xs md:text-sm text-slate-700 space-y-1">
+                        ${info.merits.map(m => `<li>${m}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-3.5">
+                    <div class="font-extrabold text-rose-800 text-sm mb-1">⚠️ 気をつける点（課題・デメリット）</div>
+                    <ul class="list-disc list-inside text-xs md:text-sm text-slate-700 space-y-1">
+                        ${info.demerits.map(d => `<li>${d}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('sys-anim-log').innerHTML = `👆 「<b>▶ 通常のデータ処理を見る</b>」と「<b>⚡ 弱点・トラブル実験！</b>」を押して、${info.badge}の動きを体験しよう！`;
+        }
+
+        function runSysNormalAnim() {
+            const log = document.getElementById('sys-anim-log');
+
+            if (currentSysType === 'central') {
+                // 図2 通常アニメ
+                const hostCircle = document.getElementById('central-host-circle');
+                const statusText = document.getElementById('central-host-status');
+                const hostGroup = document.getElementById('central-host');
+                hostGroup.classList.remove('animate-shake');
+                hostCircle.setAttribute('fill', '#34d399');
+                statusText.textContent = '✨ 一括集中処理中！';
+                statusText.setAttribute('fill', '#059669');
+
+                document.querySelectorAll('.c-term-label').forEach(el => {
+                    el.textContent = '通信OK!';
+                    el.setAttribute('fill', '#059669');
+                });
+
+                log.innerHTML = `🟢 <b>【集中情報システムの通常処理】</b>：周囲6台の端末から送られたデータが、真ん中の「<b>中央コンピュータ（メインフレーム）</b>」1か所に集まり、安全・正確に一括管理されているよ！`;
+            } else if (currentSysType === 'distributed') {
+                // 図3 通常アニメ
+                const overlay = document.getElementById('dist-anim-overlay');
+                const overlayText = document.getElementById('dist-overlay-text');
+                overlay.classList.remove('hidden');
+                overlayText.textContent = '✨ メール・ファイル・DBがそれぞれ分担して高速処理中！';
+                overlayText.setAttribute('fill', '#34d399');
+
+                log.innerHTML = `🟢 <b>【分散情報システムの通常処理】</b>：クライアント（PC）からの依頼を、「メールサーバ📧」「ファイルサーバ📁」「データベースサーバ🗄️」が<b>役割分担して処理</b>するから、負荷が分散されてスピーディ！`;
+            } else if (currentSysType === 'mobile') {
+                // 図4 通常アニメ
+                const terms = document.getElementById('m-terminals');
+                terms.classList.add('animate-float');
+                log.innerHTML = `🟢 <b>【移動体情報システムの通常処理】</b>：スマホやタブレットが移動しながら<b>基地局と無線（電波⚡）で通信</b>！動画へのその場課金🎬や、客先での見積もり入力📝、建築現場のカメラ管理🏗️がどこでもできるよ！`;
+            }
+        }
+
+        function runSysTroubleAnim() {
+            const log = document.getElementById('sys-anim-log');
+
+            if (currentSysType === 'central') {
+                // 図2 トラブル実験：中央コンピュータの負荷集中・故障
+                const hostCircle = document.getElementById('central-host-circle');
+                const statusText = document.getElementById('central-host-status');
+                const hostGroup = document.getElementById('central-host');
+                hostGroup.classList.add('animate-shake');
+                hostCircle.setAttribute('fill', '#ef4444');
+                statusText.textContent = '💥 負荷集中・故障発生！';
+                statusText.setAttribute('fill', '#dc2626');
+
+                document.querySelectorAll('.c-term-label').forEach(el => {
+                    el.textContent = '❌停止';
+                    el.setAttribute('fill', '#dc2626');
+                });
+
+                log.innerHTML = `🚨 <b>【集中型の弱点テスト】</b>：アクセスが殺到して<b>中央コンピュータに負荷が集中・故障</b>すると、周りの<b>すべての端末（ATMやレジ）がストップ</b>してしまう危険性があるよ！`;
+            } else if (currentSysType === 'distributed') {
+                // 図3 トラブル実験：データの一貫性・セキュリティ課題
+                const overlay = document.getElementById('dist-anim-overlay');
+                const overlayText = document.getElementById('dist-overlay-text');
+                overlay.classList.remove('hidden');
+                overlayText.textContent = '⚠️ あちこちにデータが分散… 最新データのズレ・管理に注意！';
+                overlayText.setAttribute('fill', '#fb7185');
+
+                log.innerHTML = `🚨 <b>【分散型の弱点テスト】</b>：複数のサーバにデータが分かれているため、「こっちのサーバは更新されたのに、あっちは古いまま！」という<b>データの一貫性</b>や<b>セキュリティ低下</b>に気をつける必要があるよ。`;
+            } else if (currentSysType === 'mobile') {
+                // 図4 屋内・屋外の切り替え＆オープン規格
+                log.innerHTML = `📡 <b>【移動体型のポイント】</b>：移動中は建物の外（携帯基地局）と中（屋内Wi-Fiなど）で<b>別々の回線を切り替えて運用</b>するよ。いろんな機種で通信できるよう、<b>データ処理の規格をオープン（共通化）</b>にしておくことが大切！`;
+            }
+        }
+
+        // --------------------------------------------------
+        // 5. タブ3：表1「さまざまなサーバ」図鑑
+        // --------------------------------------------------
+        const serversList = [
+            {
+                icon: '🪪',
+                name: '認証サーバ',
+                sub: 'セキュリティの門番！',
+                def: '利用者の本人確認を行い、各種サービスの利用を許可する。',
+                story: '🧑 クライアント「IDとパスワードを送ります！ログインさせて！」<br>🪪 認証サーバ「ピピッ…登録データと一致！本人確認OK、サービスを使っていいよ！」'
+            },
+            {
+                icon: '🛡️',
+                name: 'プロキシサーバ',
+                sub: '頼れる代理アクセス係！',
+                def: 'クライアントの代わりにWebページにアクセスする。',
+                story: '🧑 クライアント「外のWebサイトを見たいんだけど、直接つなぐのは不安だな…」<br>🛡️ プロキシサーバ「私が代わりに安全な窓口としてWebページを取ってきてあげるよ！」'
+            },
+            {
+                icon: '📖',
+                name: 'DNSサーバ',
+                sub: 'ネットの住所録（電話帳）！',
+                def: 'IPアドレスとドメイン名を相互変換する。',
+                story: '🧑 クライアント「『example.jp（ドメイン名）』に行きたいけど、ネット上の番地がわからない！」<br>📖 DNSサーバ「そのドメインなら『192.0.2.1（IPアドレス）』だよ！翻訳完了！」'
+            },
+            {
+                icon: '📁',
+                name: 'ファイルサーバ',
+                sub: 'みんなの共有ロッカー！',
+                def: 'ファイルやフォルダを共有する。',
+                story: '🧑 クライアント「授業で作ったスライドをクラス全員で見られる場所に置きたい！」<br>📁 ファイルサーバ「私の共有フォルダに入れておけば、どのPCからでも開けるよ！」'
+            },
+            {
+                icon: '🖨️',
+                name: 'プリントサーバ',
+                sub: '印刷の順番整理係！',
+                def: 'プリンタを共有する。印刷待ちを管理する。',
+                story: '🧑 クライアント3人「「「先生！一斉に印刷ボタンを押しました！」」」<br>🖨️ プリントサーバ「混ざらないように1人ずつ順番待ち（キュー）を管理して1台のプリンタで印刷するね！」'
+            },
+            {
+                icon: '🗄️',
+                name: 'データベースサーバ',
+                sub: '巨大データの整理棚！',
+                def: 'データベースを提供・共有する。',
+                story: '🧑 クライアント「何万件もある商品データから『98円のティッシュ』の在庫だけすぐ教えて！」<br>🗄️ データベースサーバ「膨大なデータベースから一瞬で検索して結果を返すよ！」'
+            },
+            {
+                icon: '🌐',
+                name: 'Webサーバ',
+                sub: 'ホームページの配信係！',
+                def: 'Webページを管理、配信する。',
+                story: '🧑 クライアント「ブラウザでリンクをクリックしたよ！画面を見せて！」<br>🌐 Webサーバ「はいどうぞ！HTMLや画像のWebページデータをあなたの画面に配信するね！」'
+            },
+            {
+                icon: '📧',
+                name: 'メールサーバ',
+                sub: 'デジタルの郵便局！',
+                def: '電子メールを管理、送受信する。',
+                story: '🧑 クライアント「友だちにメールを送信！あと自分宛てのメールも届いてるかな？」<br>📧 メールサーバ「送信メールを相手の郵便局へ届けて、あなた宛てのメールをメールボックスに保管しておくよ！」'
+            }
+        ];
+
+        function initServerCards() {
+            const grid = document.getElementById('server-cards-grid');
+            grid.innerHTML = serversList.map((srv, idx) => `
+                <button onclick="selectServerCard(${idx})" id="srv-card-${idx}" class="srv-card text-left bg-slate-50 hover:bg-teal-50 border-2 ${idx === 0 ? 'border-teal-500 bg-teal-50/60' : 'border-slate-200'} rounded-2xl p-4 transition transform hover:-translate-y-1 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-3xl">${srv.icon}</span>
+                            <span class="text-[11px] font-bold bg-white border border-slate-200 px-2 py-0.5 rounded-full text-slate-600">${srv.sub}</span>
+                        </div>
+                        <div class="font-extrabold text-base text-slate-800">${srv.name}</div>
+                        <p class="text-xs text-slate-600 mt-1 leading-snug">${srv.def}</p>
+                    </div>
+                    <div class="text-[11px] font-extrabold text-teal-600 mt-3 text-right">▶ 動きを見る</div>
+                </button>
+            `).join('');
+        }
+
+        function selectServerCard(idx) {
+            const srv = serversList[idx];
+            document.getElementById('srv-theater-icon').textContent = srv.icon;
+            document.getElementById('srv-theater-name').textContent = srv.name;
+            document.getElementById('srv-theater-sub').textContent = srv.sub;
+            document.getElementById('srv-theater-def').textContent = srv.def;
+            document.getElementById('srv-theater-story').innerHTML = srv.story;
+
+            document.querySelectorAll('.srv-card').forEach((el, i) => {
+                if (i === idx) {
+                    el.className = "srv-card text-left bg-teal-50 border-2 border-teal-500 rounded-2xl p-4 transition transform -translate-y-1 shadow-md flex flex-col justify-between";
+                } else {
+                    el.className = "srv-card text-left bg-slate-50 hover:bg-teal-50 border-2 border-slate-200 rounded-2xl p-4 transition transform hover:-translate-y-1 shadow-sm flex flex-col justify-between";
+                }
+            });
+        }
+
+        // --------------------------------------------------
+        // 6. タブ4：教科書の「問題」＆ 5問確認クイズ
+        // --------------------------------------------------
+        const everydayDevices = [
+            {
+                title: '📱 スマホの地図アプリ・バス運行案内板',
+                tags: ['移動体情報システム', '通信システム', '計算システム', 'GPS'],
+                explanation: '宇宙の複数の衛星（<b>GPS</b>）から位置データを集め、基地局の無線電波（<b>移動体情報システム</b>）を使って「あと何分でバスが来るか」を計算・表示しているよ！'
+            },
+            {
+                title: '🏧 銀行のATM（現金自動預払機）',
+                tags: ['集中情報システム', '計算システム', '通信システム'],
+                explanation: '預金残高が1円でもズレたら大変！だから銀行の中央コンピュータ（<b>メインフレーム／集中情報システム</b>）で全ての口座データを厳重に集中管理し、正確な計算（<b>計算システム</b>）を行っているよ。'
+            },
+            {
+                title: '🍣 回転寿司の注文タッチパネル＆特急レーン',
+                tags: ['分散情報システム', '制御システム', 'POSシステム'],
+                explanation: '席の端末（クライアント）から注文すると、厨房の画面や会計の<b>POSシステム</b>へデータが共有され、さらに<b>制御システム</b>が働いてお寿司を乗せたレーンが自動であなたの席にピタッと止まるよ！'
+            },
+            {
+                title: '🥩 スーパーのお肉・野菜の「生産者番号・電子タグ」',
+                tags: ['トレーサビリティシステム', 'データベースサーバ'],
+                explanation: '商品の製造番号やQRコード・電子タグを読み取ることで、「どこの農場で育ち、どのルートで運ばれてきたか」を追跡できる<b>トレーサビリティシステム</b>が活用されているよ！'
+            }
+        ];
+
+        function showEverydayDevice(idx) {
+            const item = everydayDevices[idx];
+            const box = document.getElementById('device-insight-box');
+            box.innerHTML = `
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <span class="font-extrabold text-base md:text-lg text-slate-800">${item.title}</span>
+                    ${item.tags.map(t => `<span class="bg-amber-500 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full">${t}</span>`).join('')}
+                </div>
+                <p class="text-sm md:text-base text-slate-700 leading-relaxed">${item.explanation}</p>
+            `;
+
+            document.querySelectorAll('.dev-btn').forEach((btn, i) => {
+                if (i === idx) {
+                    btn.className = "dev-btn bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 text-center transition shadow-sm";
+                } else {
+                    btn.className = "dev-btn bg-slate-50 hover:bg-amber-50 border-2 border-slate-200 rounded-2xl p-4 text-center transition shadow-sm";
+                }
+            });
+        }
+
+        const quizQuestions = [
+            {
+                q: '第1問：商品を販売した時点（レジでバーコードを通した瞬間）で、売上や在庫などのデータを収集・管理するシステムを何という？',
+                options: ['GPS', 'POSシステム', '緊急地震速報システム'],
+                answer: 1,
+                explanation: '大正解！POS（Point Of Sales：販売時点情報管理）システムは、商品が売れたその瞬間にデータを集めて販売管理や在庫管理に活かすシステムだよ。'
+            },
+            {
+                q: '第2問：商品の製造番号や電子タグなどを取り付けることで、生産者から消費者まで「商品の追跡」を可能にするシステムを何という？',
+                options: ['トレーサビリティシステム', 'プリントサーバ', '原子時計システム'],
+                answer: 0,
+                explanation: 'バッチリ！トレース（追跡）できる仕組み＝「トレーサビリティシステム」だよ（p.114 脚注❶）。品質管理や流通管理に役立っているね！'
+            },
+            {
+                q: '第3問：中央に大型コンピュータ（メインフレーム）を設置し、全てのデータを1か所で集中管理するシステム（図2）の特徴として【正しいもの】はどれ？',
+                options: [
+                    '中央が故障しても周りの端末は平気で動き続ける',
+                    '機密性と完全性が保たれる一方、中央への負荷集中や故障時の危険性がある',
+                    '端末1台ごとに超高性能なスーパーコンピュータが必要になる'
+                ],
+                answer: 1,
+                explanation: 'その通り！集中情報システムは機密性・完全性が高い反面、中央コンピュータに負荷が集中しやすく、故障した時の影響が大きいのが特徴だよ。'
+            },
+            {
+                q: '第4問：分散情報システム（クライアントサーバシステム）で使われるサーバのうち、「IPアドレスとドメイン名を相互変換する」役割を持つサーバ（表1）はどれ？',
+                options: ['認証サーバ', 'ファイルサーバ', 'DNSサーバ'],
+                answer: 2,
+                explanation: '大正解！DNSサーバはインターネット上の電話帳（住所録）のように、ドメイン名（英語の文字）とIPアドレス（数字の番地）を変換してくれるサーバだよ。'
+            },
+            {
+                q: '第5問：スマホなどの携帯情報端末を用い、基地局などの無線技術によって移動中も利用可能にするシステム（図4）を何という？',
+                options: ['移動体情報システム', '集中情報システム', '工場自動制御システム'],
+                answer: 0,
+                explanation: 'パーフェクト！移動中も無線でやり取りでき、屋内と屋外で回線を切り替えて運用できるシステムを「移動体情報システム」というよ！'
+            }
+        ];
+
+        let answeredState = [false, false, false, false, false];
+        let currentScore = 0;
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = quizQuestions.map((item, qIdx) => `
+                <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 md:p-5">
+                    <div class="font-extrabold text-sm md:text-base text-slate-800 mb-3">
+                        ${item.q}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                        ${item.options.map((opt, oIdx) => `
+                            <button onclick="answerQuiz(${qIdx}, ${oIdx})" id="qbtn-${qIdx}-${oIdx}" class="bg-white hover:bg-teal-50 border-2 border-slate-300 rounded-xl p-3 text-left text-xs md:text-sm font-bold text-slate-700 transition shadow-sm">
+                                ${['ア', 'イ', 'ウ'][oIdx]}. ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="qexp-${qIdx}" class="hidden mt-3 p-3 rounded-xl text-xs md:text-sm font-bold"></div>
+                </div>
+            `).join('');
+        }
+
+        function answerQuiz(qIdx, selectedIdx) {
+            const q = quizQuestions[qIdx];
+            const expBox = document.getElementById(`qexp-${qIdx}`);
+            expBox.classList.remove('hidden');
+
+            if (selectedIdx === q.answer) {
+                expBox.className = "mt-3 p-3 rounded-xl text-xs md:text-sm font-bold bg-emerald-100 text-emerald-900 border border-emerald-400";
+                expBox.innerHTML = `⭕ ${q.explanation}`;
+                document.getElementById(`qbtn-${qIdx}-${selectedIdx}`).className = "bg-emerald-500 text-white border-2 border-emerald-600 rounded-xl p-3 text-left text-xs md:text-sm font-extrabold shadow";
+                if (!answeredState[qIdx]) {
+                    answeredState[qIdx] = true;
+                    currentScore++;
+                    document.getElementById('quiz-score').textContent = currentScore;
+                    launchConfetti(50);
+                }
+            } else {
+                expBox.className = "mt-3 p-3 rounded-xl text-xs md:text-sm font-bold bg-rose-100 text-rose-900 border border-rose-400";
+                expBox.innerHTML = `❌ おしい！もう一度別の選択肢を選んでみよう！`;
+                document.getElementById(`qbtn-${qIdx}-${selectedIdx}`).className = "bg-rose-100 text-rose-700 border-2 border-rose-400 rounded-xl p-3 text-left text-xs md:text-sm font-bold";
+            }
+        }
+
+        // --------------------------------------------------
+        // 7. 紙吹雪（Confetti）エフェクト
+        // --------------------------------------------------
+        function launchConfetti(count = 50) {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const colors = ['#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+            for (let i = 0; i < count; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.3 - 50,
+                    size: Math.random() * 8 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: Math.random() * 4 + 3,
+                    angle: Math.random() * 360
+                });
+            }
+
+            let frame = 0;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.angle += 5;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.angle * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+                frame++;
+                if (frame < 75) {
+                    requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            render();
+        }
+
+        // 初期化処理
+        window.onload = function () {
+            switchSysType('central');
+            initServerCards();
+            showEverydayDevice(0);
+            initQuiz();
+        };
+    </script>
+</body>
+</html>

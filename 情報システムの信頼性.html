@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>情報I：情報システムの信頼性 体験ラボ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Inter:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', 'Inter', sans-serif;
+      background-color: #f0f7ff;
+      color: #1e293b;
+    }
+
+    /* Custom Animations */
+    @keyframes floatBot {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: floatBot 3s ease-in-out infinite;
+    }
+
+    @keyframes pulseBolt {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.18); opacity: 0.85; }
+    }
+    .animate-bolt {
+      animation: pulseBolt 1.2s ease-in-out infinite;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      80% { transform: scale(1.06); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-in {
+      animation: popIn 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+    }
+
+    @keyframes waterFlow {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 24px; }
+    }
+    .water-stream {
+      background: repeating-linear-gradient(
+        180deg,
+        #38bdf8 0px,
+        #38bdf8 8px,
+        #bae6fd 8px,
+        #bae6fd 16px
+      );
+      background-size: 100% 24px;
+      animation: waterFlow 0.35s linear infinite;
+    }
+
+    @keyframes flameFlicker {
+      0%, 100% { transform: scaleY(1) scaleX(1); }
+      50% { transform: scaleY(1.12) scaleX(0.92); }
+    }
+    .flame-anim {
+      animation: flameFlicker 0.25s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes wavePulse {
+      0% { opacity: 0.25; transform: scale(0.95); }
+      50% { opacity: 0.75; transform: scale(1.03); }
+      100% { opacity: 0.25; transform: scale(0.95); }
+    }
+    .microwave-wave {
+      animation: wavePulse 0.8s ease-in-out infinite;
+    }
+
+    /* Smooth transitions for interactive SVG/DOM elements */
+    .smooth-transform {
+      transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .smooth-std {
+      transition: all 0.35s ease-in-out;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #e2e8f0;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+
+  <!-- Top Header Banner -->
+  <header class="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <!-- Textbook Cute Mascot Robot Inspired SVG -->
+        <div class="w-12 h-12 bg-white rounded-2xl p-1 shadow-md flex items-center justify-center animate-float shrink-0">
+          <svg viewBox="0 0 100 100" class="w-10 h-10">
+            <!-- Ears -->
+            <ellipse cx="32" cy="16" rx="8" ry="14" transform="rotate(-15 32 16)" fill="#facc15"/>
+            <ellipse cx="68" cy="16" rx="8" ry="14" transform="rotate(15 68 16)" fill="#facc15"/>
+            <!-- Headphones -->
+            <path d="M 18 50 A 32 32 0 0 1 82 50" fill="none" stroke="#475569" stroke-width="6"/>
+            <rect x="10" y="42" width="10" height="20" rx="5" fill="#334155"/>
+            <rect x="80" y="42" width="10" height="20" rx="5" fill="#334155"/>
+            <!-- Body -->
+            <rect x="20" y="26" width="60" height="56" rx="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+            <path d="M 24 66 Q 50 74 76 66 L 73 78 Q 50 86 27 78 Z" fill="#0ea5e9"/>
+            <!-- Visor -->
+            <rect x="28" y="36" width="44" height="20" rx="10" fill="#1e293b"/>
+            <circle cx="39" cy="46" r="5" fill="#38bdf8"/>
+            <circle cx="61" cy="46" r="5" fill="#38bdf8"/>
+            <circle cx="37" cy="44" r="2" fill="#ffffff"/>
+            <circle cx="59" cy="44" r="2" fill="#ffffff"/>
+            <!-- Bowtie -->
+            <polygon points="43,60 50,64 43,68" fill="#f43f5e"/>
+            <polygon points="57,60 50,64 57,68" fill="#f43f5e"/>
+            <circle cx="50" cy="64" r="2.5" fill="#e11d48"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-400 text-slate-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">情報I 45・理論編</span>
+            <span class="text-sky-100 text-xs font-medium">p.116 - p.117 完全対応</span>
+          </div>
+          <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">見て・触って納得！「情報システムの信頼性」体験ラボ</h1>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex flex-wrap justify-center gap-1.5 bg-blue-900/40 p-1.5 rounded-2xl w-full md:w-auto">
+        <button onclick="switchTab('tab1')" id="btn-tab1" class="tab-btn active-tab px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-white text-blue-700 shadow">
+          <span>① データ消失対策</span>
+        </button>
+        <button onclick="switchTab('tab2')" id="btn-tab2" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-sky-100 hover:bg-white/10">
+          <span>🔍 コラム：誤り検出</span>
+        </button>
+        <button onclick="switchTab('tab3')" id="btn-tab3" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-sky-100 hover:bg-white/10">
+          <span>② 故障・誤操作対策</span>
+        </button>
+        <button onclick="switchTab('tab4')" id="btn-tab4" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-sky-100 hover:bg-white/10">
+          <span>③ 信頼性の指標</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-6xl mx-auto px-4 pt-6 space-y-8">
+
+    <!-- ==========================================
+         TAB 1: ① データの消失への対処 (p.116)
+         ========================================== -->
+    <section id="tab1" class="tab-panel space-y-8">
+      <!-- Intro Guide Bubble -->
+      <div class="bg-white border-2 border-sky-200 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+        <div class="bg-sky-100 text-sky-700 p-3 rounded-2xl text-3xl shrink-0">💡</div>
+        <div class="space-y-1">
+          <h2 class="text-lg font-extrabold text-slate-800">なぜ「データの消失への対処」が必要なの？</h2>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            銀行のATMやLINE、ゲームのサーバーなどの情報システムは、一度動き始めたら<strong>カンタンに止めることができません</strong>。<br>
+            もし機械が壊れてもシステムが止まらない工夫（<span class="font-bold text-indigo-600 underline">冗長化・RAID</span>）と、データを定期的にコピーして守る工夫（<span class="font-bold text-amber-600 underline">バックアップ</span>）を動かして比べてみよう！
+          </p>
+        </div>
+      </div>
+
+      <!-- 1. 冗長化 (Redundancy) & RAID Interactive Simulator -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-bold">実験① システムを止めない工夫</span>
+            <h3 class="text-lg md:text-xl font-extrabold mt-0.5">冗長化（二重化）と RAID（レイド）の実験</h3>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="triggerRaidCrash()" id="btn-raid-crash" class="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-extrabold px-4 py-2 rounded-xl shadow-md transition flex items-center gap-1.5 text-sm">
+              <span>⚡ トラブル発生！（SSDを1台故障させる）</span>
+            </button>
+            <button onclick="resetRaidSim()" class="bg-white/20 hover:bg-white/30 text-white font-bold px-3 py-2 rounded-xl text-sm transition">
+              🔄 元に戻す
+            </button>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Key Term Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4">
+              <div class="flex items-center gap-2 font-extrabold text-indigo-900 text-base">
+                <span class="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-md">重要用語</span>
+                冗長化（二重化・多重化）
+              </div>
+              <p class="text-xs sm:text-sm text-slate-700 mt-1.5">
+                余裕を持った設計にし、<strong>複数の同じシステムを並行して動かしておく</strong>こと。「予備」があるから1つ壊れても止まらない！
+              </p>
+            </div>
+            <div class="bg-sky-50/70 border border-sky-200 rounded-2xl p-4">
+              <div class="flex items-center gap-2 font-extrabold text-sky-900 text-base">
+                <span class="bg-sky-600 text-white text-xs px-2 py-0.5 rounded-md">重要用語</span>
+                RAID（Redundant Arrays of Inexpensive Disks）
+              </div>
+              <p class="text-xs sm:text-sm text-slate-700 mt-1.5">
+                <strong>複数のSSDやハードディスクを組み合わせて、仮想的に「1台の装置」に見立てて運用</strong>し、壊れにくさ（耐故障性）を高める技術！
+              </p>
+            </div>
+          </div>
+
+          <!-- Interactive Comparison Boxes -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left: Single SSD -->
+            <div id="single-system-card" class="border-2 border-slate-200 rounded-2xl p-5 bg-slate-50 flex flex-col justify-between smooth-std">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="font-extrabold text-slate-700 text-base">❌ 通常の構成（SSD 1台のみ）</span>
+                  <span id="single-status-badge" class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">🟢 正常稼働中</span>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 border border-slate-200 flex flex-col items-center justify-center min-h-[170px] gap-3">
+                  <!-- PC / User -->
+                  <div class="text-xs font-bold text-slate-500">💻 システム本体</div>
+                  <!-- Arrow -->
+                  <div id="single-arrow" class="text-sky-500 font-black text-lg">⬇ データを読み書き ⬇</div>
+                  <!-- Single SSD -->
+                  <div id="single-ssd-box" class="w-44 bg-gradient-to-b from-slate-700 to-slate-800 text-white rounded-xl p-3 shadow flex items-center justify-between smooth-transform">
+                    <div class="flex items-center gap-2">
+                      <span id="single-ssd-icon" class="text-2xl">💾</span>
+                      <div>
+                        <div class="text-xs font-bold">SSD 1号機</div>
+                        <div id="single-ssd-sub" class="text-[11px] text-emerald-300">データ保管中</div>
+                      </div>
+                    </div>
+                    <span id="single-ssd-led" class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                  </div>
+                </div>
+              </div>
+              <p id="single-desc" class="text-xs sm:text-sm font-bold text-slate-600 mt-3 text-center bg-white py-2 px-3 rounded-xl border border-slate-200">
+                1台しかないので、これが壊れるとシステム全体がストップします。
+              </p>
+            </div>
+
+            <!-- Right: RAID / Redundant SSDs -->
+            <div id="raid-system-card" class="border-2 border-indigo-200 rounded-2xl p-5 bg-indigo-50/40 flex flex-col justify-between smooth-std">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="font-extrabold text-indigo-900 text-base">⭕ RAID・冗長化構成（複数台でカバー）</span>
+                  <span id="raid-status-badge" class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">🟢 正常稼働中</span>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 border border-indigo-200 flex flex-col items-center justify-center min-h-[170px] gap-2">
+                  <div class="text-xs font-bold text-indigo-700">💻 システム本体からは「仮想的に1台の装置」に見える！</div>
+                  <div id="raid-arrow" class="text-indigo-500 font-black text-sm">⬇ RAIDコントローラ（同時書き込み） ⬇</div>
+                  
+                  <!-- Virtual 1 Drive Container -->
+                  <div class="w-full border-2 border-dashed border-indigo-400 bg-indigo-50/50 rounded-xl p-2.5 flex items-center justify-around gap-2">
+                    <!-- RAID SSD 1 -->
+                    <div id="raid-ssd1-box" class="flex-1 bg-gradient-to-b from-slate-700 to-slate-800 text-white rounded-xl p-2.5 shadow flex items-center justify-between smooth-transform">
+                      <div class="flex items-center gap-1.5">
+                        <span id="raid-ssd1-icon" class="text-xl">💾</span>
+                        <div>
+                          <div class="text-xs font-bold">SSD 1号機</div>
+                          <div id="raid-ssd1-sub" class="text-[10px] text-emerald-300">稼働中</div>
+                        </div>
+                      </div>
+                      <span id="raid-ssd1-led" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </div>
+
+                    <!-- RAID SSD 2 -->
+                    <div id="raid-ssd2-box" class="flex-1 bg-gradient-to-b from-slate-700 to-slate-800 text-white rounded-xl p-2.5 shadow flex items-center justify-between smooth-transform">
+                      <div class="flex items-center gap-1.5">
+                        <span id="raid-ssd2-icon" class="text-xl">💾</span>
+                        <div>
+                          <div class="text-xs font-bold">SSD 2号機</div>
+                          <div id="raid-ssd2-sub" class="text-[10px] text-emerald-300">同時記録中</div>
+                        </div>
+                      </div>
+                      <span id="raid-ssd2-led" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p id="raid-desc" class="text-xs sm:text-sm font-bold text-indigo-900 mt-3 text-center bg-white py-2 px-3 rounded-xl border border-indigo-200">
+                複数のSSDを1台に見立てて運用！片方が壊れても、もう片方でそのまま動き続けられます。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. バックアップ3兄弟シミュレーター (図1・図2) -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full font-bold">実験② 教科書p.116 図1・図2を完全アニメ化</span>
+            <h3 class="text-lg md:text-xl font-extrabold mt-0.5">バックアップ3種類（フル・差分・増分）の違いシミュレーター</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="playBackupWeek()" id="btn-play-week" class="bg-slate-900 hover:bg-slate-800 active:scale-95 text-amber-300 font-extrabold px-4 py-2 rounded-xl shadow transition text-sm flex items-center gap-1.5">
+              <span>▶ 月〜金まで自動再生</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Step 1: Select Backup Type -->
+          <div class="space-y-2">
+            <label class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">STEP 1：バックアップの方式を選んでみよう</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button onclick="selectBackupType('full')" id="btype-full" class="p-4 rounded-2xl border-2 border-amber-500 bg-amber-50 text-left transition flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-base text-amber-900">① フルバックアップ</span>
+                    <span class="text-xs bg-amber-500 text-white font-bold px-2 py-0.5 rounded-full">選択中</span>
+                  </div>
+                  <p class="text-xs text-slate-700 mt-1.5 leading-relaxed">
+                    <strong>すべてのデータを毎回まるごと</strong>バックアップする方式。
+                  </p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-amber-200/80 flex justify-between text-[11px] font-bold text-amber-800">
+                  <span>📦 必要な容量：特大（15個分）</span>
+                  <span>⚡ 戻す速さ：最速！</span>
+                </div>
+              </button>
+
+              <button onclick="selectBackupType('diff')" id="btype-diff" class="p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-300 bg-white text-left transition flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-base text-slate-800">② 差分バックアップ</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">クリックで切替</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                    <strong>前回のフルバックアップ（月曜）から増えた分すべて</strong>を毎回バックアップする方式。
+                  </p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[11px] font-bold text-slate-500">
+                  <span>📦 必要な容量：中くらい（11個分）</span>
+                  <span>⚡ 戻す速さ：2回でOK</span>
+                </div>
+              </button>
+
+              <button onclick="selectBackupType('inc')" id="btype-inc" class="p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-300 bg-white text-left transition flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-base text-slate-800">③ 増分バックアップ</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">クリックで切替</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                    <strong>前回のバックアップ（前日）から増えた分だけ</strong>を毎回バックアップする方式。
+                  </p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[11px] font-bold text-slate-500">
+                  <span>📦 必要な容量：最小！（5個分）</span>
+                  <span>⚡ 戻す手間：月〜金全部必要</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Day Selector & Textbook Figure 1 Block Diagram -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span class="text-xs font-extrabold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">図1：曜日ごとのバックアップの動き</span>
+                <h4 id="backup-current-title" class="text-base sm:text-lg font-extrabold text-slate-800 mt-1">
+                  フルバックアップ：全てのデータを毎回バックアップする
+                </h4>
+              </div>
+              <!-- Day Filter Buttons -->
+              <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs font-bold text-slate-400 px-2">曜日を見る:</span>
+                <button onclick="setBackupDay(1)" id="day-btn-1" class="day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-amber-500 text-white">月</button>
+                <button onclick="setBackupDay(2)" id="day-btn-2" class="day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-amber-500 text-white">火</button>
+                <button onclick="setBackupDay(3)" id="day-btn-3" class="day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-amber-500 text-white">水</button>
+                <button onclick="setBackupDay(4)" id="day-btn-4" class="day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-amber-500 text-white">木</button>
+                <button onclick="setBackupDay(5)" id="day-btn-5" class="day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-amber-500 text-white">金</button>
+              </div>
+            </div>
+
+            <!-- Visual Chart Matching Figure 1 -->
+            <div class="grid grid-cols-5 gap-2 sm:gap-4 pt-4">
+              <!-- Columns generated dynamically by JS -->
+              <div id="backup-cols-container" class="col-span-5 grid grid-cols-5 gap-2 sm:gap-4 items-end min-h-[260px] bg-white p-4 rounded-2xl border border-slate-200"></div>
+            </div>
+
+            <!-- Explanation Callout for Selected Day -->
+            <div id="backup-day-explanation" class="bg-amber-100/80 border-l-4 border-amber-500 p-3.5 rounded-r-xl text-xs sm:text-sm font-bold text-amber-950">
+              金曜日の時点：月〜金までのデータを毎回まるごとコピーしているので、合計15ブロック分の大容量になります！
+            </div>
+          </div>
+
+          <!-- Textbook Figure 2: Workers Carrying Storage Comparison -->
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="bg-amber-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-md">図2 バックアップの特徴</span>
+              <h4 class="font-extrabold text-slate-800 text-sm sm:text-base">なぜ「増分バックアップ」や「差分バックアップ」を使うの？</h4>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <!-- Heavy Full Backup Box -->
+              <div class="bg-white rounded-xl p-4 border border-amber-200 flex items-center gap-4 shadow-sm">
+                <div class="text-4xl shrink-0">🥵💦</div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-slate-800 text-sm">フルバックアップの保管庫</span>
+                    <span class="text-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded">合計 15ブロック</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-4 rounded-full mt-2 overflow-hidden p-0.5">
+                    <div class="bg-amber-500 h-full rounded-full" style="width: 100%"></div>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1.5">
+                    毎日全部コピーするので、<strong>時間がかかり、保管場所（容量）もパンパン</strong>になってしまいます。
+                  </p>
+                </div>
+              </div>
+
+              <!-- Light Incremental Backup Box -->
+              <div class="bg-white rounded-xl p-4 border border-emerald-200 flex items-center gap-4 shadow-sm">
+                <div class="text-4xl shrink-0">😄🙌</div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-slate-800 text-sm">増分バックアップの保管庫</span>
+                    <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">合計 5ブロック（1/3！）</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-4 rounded-full mt-2 overflow-hidden p-0.5">
+                    <div class="bg-emerald-500 h-full rounded-full" style="width: 33%"></div>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1.5">
+                    前日から増えた分だけコピーするので、<strong>バックアップがすぐ終わり、容量も少なくて済みます！</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==========================================
+         TAB 2: コラム パリティチェックとチェックディジット (p.116)
+         ========================================== -->
+    <section id="tab2" class="tab-panel hidden space-y-8">
+      <!-- Intro Guide Bubble -->
+      <div class="bg-white border-2 border-purple-200 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+        <div class="bg-purple-100 text-purple-700 p-3 rounded-2xl text-3xl shrink-0">🔍</div>
+        <div class="space-y-1">
+          <h2 class="text-lg font-extrabold text-slate-800">データの「通信エラー」や「打ち間違い」をどうやって見つける？</h2>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            データを送るときにノイズで「0」が「1」に化けてしまったり、人間がバーコードの数字を打ち間違えたりすることがあります。<br>
+            そこで、データの後ろに<strong>「確認用の1桁（チェック用の数字）」</strong>をくっつけてミスを見破る2つの技術を体験しよう！
+          </p>
+        </div>
+      </div>
+
+      <!-- 1. パリティチェック体験シミュレーター -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-bold">コラム① 通信や保存のエラー検出</span>
+            <h3 class="text-lg md:text-xl font-extrabold mt-0.5">パリティチェック体験シミュレーター（奇数パリティ）</h3>
+          </div>
+          <button onclick="resetParityTextbook()" class="bg-white/20 hover:bg-white/30 text-white text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl transition">
+            📖 教科書の例（1001100）に戻す
+          </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+            <span class="font-extrabold text-purple-900">💡 パリティチェックのルール（教科書の例：1の個数を常に「奇数」にする場合）：</span><br>
+            送りたい7ビットのデータの中にある<strong>「1」の個数</strong>を数えます。最後の1枠（<strong>パリティビット</strong>）に「0」か「1」を入れて、<strong>全体で「1」の個数が必ず奇数（1, 3, 5, 7個）になるように揃えてから送信</strong>します！
+          </div>
+
+          <!-- Sender Side -->
+          <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="bg-indigo-600 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">送信側</span>
+                <span class="font-extrabold text-slate-800 text-sm sm:text-base">① 送りたいデータ（クリックで 0 / 1 を変えられます）</span>
+              </div>
+              <span id="sender-ones-badge" class="bg-indigo-100 text-indigo-800 text-xs font-extrabold px-3 py-1 rounded-full">
+                データの「1」は 3個
+              </span>
+            </div>
+
+            <!-- 7 Data Bits + 1 Parity Bit -->
+            <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 py-2">
+              <div id="sender-bits-container" class="flex items-center gap-1.5 sm:gap-2"></div>
+              <div class="text-xl font-black text-slate-400">＋</div>
+              <!-- Parity Bit Box -->
+              <div class="flex flex-col items-center">
+                <span class="text-[11px] font-extrabold text-purple-700 mb-1">パリティビット</span>
+                <div id="sender-parity-box" class="w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-purple-600 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-md border-2 border-purple-800">
+                  0
+                </div>
+              </div>
+            </div>
+
+            <div id="sender-rule-explain" class="text-center text-xs sm:text-sm font-extrabold text-purple-900 bg-purple-100/80 py-2.5 px-4 rounded-xl">
+              データの中に「1」が 3個（すでに奇数）あるので、パリティビットには【 0 】を付加して合計 3個（奇数）にします！
+            </div>
+          </div>
+
+          <!-- Transmission Arrow & Glitch Button -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div class="flex items-center gap-2 text-slate-500 font-extrabold text-sm">
+              <span>📡 データを送信</span>
+              <span class="text-xl">⬇</span>
+            </div>
+            <button onclick="injectParityError()" class="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+              <span>⚡ 教科書の例のように7番目を化けさせる（誤り発生）</span>
+            </button>
+            <button onclick="clearParityError()" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+              <span>✨ エラーなしで正常に受信する</span>
+            </button>
+          </div>
+
+          <!-- Receiver Side -->
+          <div id="receiver-card" class="bg-rose-50/70 border-2 border-rose-300 rounded-2xl p-5 space-y-4 smooth-std">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="bg-slate-800 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">受信後</span>
+                <span class="font-extrabold text-slate-800 text-sm sm:text-base">② 届いたデータ（どのビットもクリックで反転できます）</span>
+              </div>
+              <span id="receiver-status-badge" class="bg-rose-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">
+                🚨 誤りを検出！
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 py-2">
+              <div id="receiver-bits-container" class="flex items-center gap-1.5 sm:gap-2"></div>
+              <div class="text-xl font-black text-slate-400">＋</div>
+              <div class="flex flex-col items-center">
+                <span class="text-[11px] font-extrabold text-slate-600 mb-1">パリティビット</span>
+                <button onclick="toggleReceiverParity()" id="receiver-parity-box" class="w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-slate-300 hover:bg-slate-400 text-slate-900 font-black text-2xl sm:text-3xl flex items-center justify-center shadow border-2 border-slate-400 transition">
+                  0
+                </button>
+              </div>
+            </div>
+
+            <div id="receiver-result-explain" class="text-center text-xs sm:text-sm font-extrabold text-rose-900 bg-rose-200/70 py-3 px-4 rounded-xl">
+              🚨 受信後の「1」の数を数えると【 4個（偶数）】になっています！「必ず奇数になるはず」というルールに反するため、通信途中でデータが化けた（誤りがある）ことが一瞬でわかります！
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. JANコード チェックディジット計算機 -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-bold">コラム② バーコードの入力ミス・ねつ造防止</span>
+            <h3 class="text-lg md:text-xl font-extrabold mt-0.5">JANコードの「チェックディジット」4ステップ計算アニメ</h3>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="nextJanStep()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition">
+              ▶ 次のステップを見る
+            </button>
+            <button onclick="resetJanTextbook()" class="bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm px-3 py-2 rounded-xl transition">
+              🔄 教科書の番号に戻す
+            </button>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            私たちがコンビニやスーパーで買う商品のバーコード（<strong>JANコード</strong>）は13桁の数字でできています。<br>
+            一番右端（1桁目）の数字は<strong>「チェックディジット」</strong>と呼ばれ、左側の12個の数字から<strong>ある計算ルール</strong>で自動的に決まります！下のステップボタンを押して色分けを見てみよう。
+          </p>
+
+          <!-- 13-Digit Interactive Barcode Display -->
+          <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 sm:p-5 overflow-x-auto">
+            <div class="min-w-[640px] space-y-2">
+              <!-- Digit Position Labels (13 down to 1 as in textbook) -->
+              <div id="jan-pos-row" class="grid grid-cols-13 gap-1.5 text-center"></div>
+              <!-- Code Digits (Interactive) -->
+              <div id="jan-digits-row" class="grid grid-cols-13 gap-1.5 text-center"></div>
+              <!-- Category Brackets matching textbook -->
+              <div class="grid grid-cols-13 gap-1.5 text-center pt-2 text-[11px] font-bold">
+                <div class="col-span-2 bg-slate-200/80 text-slate-700 py-1 rounded-lg">国コード<br><span class="text-[10px] font-normal">(2桁)</span></div>
+                <div class="col-span-7 bg-slate-200/80 text-slate-700 py-1 rounded-lg">メーカーコード<br><span class="text-[10px] font-normal">(7桁)</span></div>
+                <div class="col-span-3 bg-slate-200/80 text-slate-700 py-1 rounded-lg">商品コード<br><span class="text-[10px] font-normal">(3桁)</span></div>
+                <div class="col-span-1 bg-amber-200 text-amber-950 py-1 rounded-lg font-extrabold">チェック<br>ディジット</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Step Buttons & Animated Formula Box -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="setJanStep(1)" id="jan-step-btn-1" class="p-3 rounded-xl border-2 text-left transition font-bold text-xs sm:text-sm">
+              <div class="text-sky-600 font-extrabold">ステップ①</div>
+              <div class="text-slate-700 mt-0.5">奇数桁の和を求める</div>
+            </button>
+            <button onclick="setJanStep(2)" id="jan-step-btn-2" class="p-3 rounded-xl border-2 text-left transition font-bold text-xs sm:text-sm">
+              <div class="text-emerald-600 font-extrabold">ステップ②</div>
+              <div class="text-slate-700 mt-0.5">偶数桁の和を3倍する</div>
+            </button>
+            <button onclick="setJanStep(3)" id="jan-step-btn-3" class="p-3 rounded-xl border-2 text-left transition font-bold text-xs sm:text-sm">
+              <div class="text-purple-600 font-extrabold">ステップ③</div>
+              <div class="text-slate-700 mt-0.5">①と②を合計する</div>
+            </button>
+            <button onclick="setJanStep(4)" id="jan-step-btn-4" class="p-3 rounded-xl border-2 text-left transition font-bold text-xs sm:text-sm">
+              <div class="text-amber-600 font-extrabold">ステップ④</div>
+              <div class="text-slate-700 mt-0.5">10から1の位を引く！</div>
+            </button>
+          </div>
+
+          <!-- Step Live Calculation Detail -->
+          <div id="jan-calc-panel" class="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl p-5 shadow-inner space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==========================================
+         TAB 3: ② 故障や誤操作への対処 (図3・図4 p.117)
+         ========================================== -->
+    <section id="tab3" class="tab-panel hidden space-y-8">
+      <!-- Super Clear Comparison Banner -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white border-2 border-sky-400 rounded-3xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="bg-sky-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">機械の故障対策</span>
+            <span class="text-2xl">🛡️</span>
+          </div>
+          <h3 class="text-xl font-extrabold text-sky-900 mt-2">フェイルセーフ <span class="text-xs font-normal text-slate-500">(Fail Safe)</span></h3>
+          <p class="text-xs sm:text-sm text-slate-700 mt-2 leading-relaxed">
+            <strong>「機械が故障・トラブルになったとき」</strong>でも、被害が広がらないように<strong>必ず安全な側（止まる側）に動作させる</strong>対策！
+          </p>
+        </div>
+
+        <div class="bg-white border-2 border-amber-400 rounded-3xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="bg-amber-500 text-white text-xs font-extrabold px-3 py-1 rounded-full">人間のうっかりミス対策</span>
+            <span class="text-2xl">🙅‍♂️</span>
+          </div>
+          <h3 class="text-xl font-extrabold text-amber-900 mt-2">フールプルーフ <span class="text-xs font-normal text-slate-500">(Fool Proof)</span></h3>
+          <p class="text-xs sm:text-sm text-slate-700 mt-2 leading-relaxed">
+            <strong>「利用する人間が誤操作（うっかりミス）したとき」</strong>に、事故が起きないよう<strong>そもそもミスできない形にしたり確認したりする</strong>対策！
+          </p>
+        </div>
+
+        <div class="bg-white border-2 border-teal-400 rounded-3xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="bg-teal-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">教科書p.117 左側注</span>
+            <span class="text-2xl">✈️</span>
+          </div>
+          <h3 class="text-xl font-extrabold text-teal-900 mt-2">フェイルソフト <span class="text-xs font-normal text-slate-500">(Fail Soft)</span></h3>
+          <p class="text-xs sm:text-sm text-slate-700 mt-2 leading-relaxed">
+            異常時にすべて停止するのではなく、<strong>問題が起きた部分だけを切り離し、性能や範囲を狭めてでも最後まで動かし続ける</strong>考え方！
+          </p>
+        </div>
+      </div>
+
+      <!-- 図3：フェイルセーフの例 3つの体験アニメーション -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-4 text-white">
+          <span class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-bold">教科書 p.117 図3 の完全解説</span>
+          <h3 class="text-lg md:text-xl font-extrabold mt-0.5">図3：フェイルセーフの3つの具体例（ボタンを押してトラブルを起こしてみよう！）</h3>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Card 3-1: 水道の蛇口 -->
+          <div class="border-2 border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-base">① 水道の蛇口（レバー式）</span>
+                <span id="faucet-badge" class="bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-0.5 rounded-full">💧 出水中</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                なぜ今の水道レバーは「上げると水が出て、下げると止まる」向きになっているのかな？
+              </p>
+
+              <!-- Interactive Faucet Stage -->
+              <div class="relative bg-white border border-slate-200 rounded-xl h-52 my-4 flex items-center justify-center overflow-hidden">
+                <!-- Falling Yellow Block -->
+                <div id="faucet-falling-block" class="absolute left-[105px] -top-16 w-12 h-12 bg-amber-400 border-2 border-slate-800 rounded-lg shadow-md flex items-center justify-center font-black text-xs text-slate-900 smooth-transform z-20">
+                  落下物
+                </div>
+
+                <!-- Faucet SVG -->
+                <svg viewBox="0 0 220 180" class="w-52 h-44">
+                  <!-- Base body -->
+                  <rect x="45" y="75" width="34" height="80" rx="6" fill="#cbd5e1" stroke="#334155" stroke-width="3"/>
+                  <ellipse cx="62" cy="75" rx="17" ry="12" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
+                  <!-- Spout pipe -->
+                  <path d="M 72 135 L 135 95 Q 150 86 165 95 L 165 112 L 145 112 L 145 105 L 75 148 Z" fill="#cbd5e1" stroke="#334155" stroke-width="3"/>
+                  <!-- Lever Group (rotates around 62, 68) -->
+                  <g id="faucet-lever" style="transform: rotate(-32deg); transform-origin: 62px 68px;" class="smooth-transform">
+                    <path d="M 55 68 Q 75 45 115 48 L 115 58 Q 80 58 62 74 Z" fill="#e2e8f0" stroke="#334155" stroke-width="3"/>
+                  </g>
+                  <!-- Direction Arrow hint -->
+                  <path id="faucet-arrow-up" d="M 110 75 Q 125 55 115 35" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-dasharray="3 3"/>
+                </svg>
+
+                <!-- Flowing Water Stream -->
+                <div id="faucet-water" class="absolute left-[146px] top-[122px] w-3.5 h-20 water-stream rounded-b-lg border-x border-sky-500 transition-all duration-300"></div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="toggleFaucetSim()" id="btn-faucet" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                📦 上から物を落としてみる！
+              </button>
+              <p id="faucet-explain" class="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
+                地震などで上から物が落ちてレバーに当たったとき、レバーが下がって<strong>「水が止まる（部屋が水浸しにならない）」</strong>安全設計です！
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 3-2: ストーブ -->
+          <div class="border-2 border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-base">② ストーブ（対震自動消火）</span>
+                <span id="stove-badge" class="bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-0.5 rounded-full">🔥 燃焼中</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                地震が起きたり、足がぶつかってストーブが傾いたりしたときはどうなる？
+              </p>
+
+              <!-- Interactive Stove Stage -->
+              <div class="relative bg-white border border-slate-200 rounded-xl h-52 my-4 flex items-center justify-center overflow-hidden">
+                <div id="stove-body" class="smooth-transform flex flex-col items-center">
+                  <svg viewBox="0 0 180 180" class="w-44 h-44">
+                    <!-- Stove Outer Yellow Casing -->
+                    <rect x="40" y="25" width="100" height="125" rx="12" fill="#facc15" stroke="#334155" stroke-width="3.5"/>
+                    <!-- Top lid -->
+                    <ellipse cx="90" cy="28" rx="50" ry="8" fill="#eab308" stroke="#334155" stroke-width="3"/>
+                    <!-- Inner Window -->
+                    <rect x="52" y="45" width="76" height="58" rx="6" fill="#1e293b" stroke="#334155" stroke-width="2.5"/>
+                    <!-- Flame inside -->
+                    <g id="stove-flame" class="flame-anim">
+                      <path d="M 90 55 Q 108 78 98 96 Q 90 102 82 96 Q 72 78 90 55 Z" fill="#f97316"/>
+                      <path d="M 90 68 Q 100 82 94 95 Q 90 99 86 95 Q 80 82 90 68 Z" fill="#fde047"/>
+                    </g>
+                    <!-- Grill bars -->
+                    <line x1="48" y1="56" x2="132" y2="56" stroke="#cbd5e1" stroke-width="2.5"/>
+                    <line x1="48" y1="68" x2="132" y2="68" stroke="#cbd5e1" stroke-width="2.5"/>
+                    <line x1="48" y1="80" x2="132" y2="80" stroke="#cbd5e1" stroke-width="2.5"/>
+                    <line x1="48" y1="92" x2="132" y2="92" stroke="#cbd5e1" stroke-width="2.5"/>
+                    <!-- Dial -->
+                    <circle cx="75" cy="126" r="11" fill="#94a3b8" stroke="#334155" stroke-width="2.5"/>
+                    <rect x="100" y="120" width="18" height="10" rx="2" fill="#ef4444" stroke="#334155" stroke-width="2"/>
+                    <!-- Base plate -->
+                    <rect x="32" y="146" width="116" height="8" rx="4" fill="#ca8a04" stroke="#334155" stroke-width="3"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="toggleStoveSim()" id="btn-stove" class="w-full bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                🦶 衝撃を与える・傾けてみる！
+              </button>
+              <p id="stove-explain" class="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
+                衝撃を受けたり転倒したりすると、<strong>一瞬で自動的に火を消して（安全側に止めて）</strong>大火災を防ぎます！
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 3-3: 踏切 -->
+          <div class="border-2 border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-base">③ 踏切の遮断機</span>
+                <span id="crossing-badge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">🚗 通行可能</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                もし停電や故障で踏切のシステムが壊れたら、遮断機は「上がる」？それとも「下りる」？
+              </p>
+
+              <!-- Interactive Crossing Stage -->
+              <div class="relative bg-white border border-slate-200 rounded-xl h-52 my-4 flex items-center justify-center overflow-hidden">
+                <svg viewBox="0 0 240 180" class="w-56 h-44">
+                  <!-- Car in background -->
+                  <g id="crossing-car" class="smooth-transform">
+                    <rect x="35" y="96" width="76" height="36" rx="10" fill="#38bdf8" stroke="#334155" stroke-width="2.5"/>
+                    <path d="M 45 96 L 55 72 L 92 72 L 102 96 Z" fill="#bae6fd" stroke="#334155" stroke-width="2.5"/>
+                    <circle cx="50" cy="114" r="6" fill="#facc15" stroke="#334155" stroke-width="2"/>
+                    <circle cx="96" cy="114" r="6" fill="#facc15" stroke="#334155" stroke-width="2"/>
+                    <rect x="40" y="130" width="14" height="10" rx="3" fill="#334155"/>
+                    <rect x="92" y="130" width="14" height="10" rx="3" fill="#334155"/>
+                  </g>
+
+                  <!-- Crossing Post Right -->
+                  <rect x="195" y="30" width="8" height="125" fill="#eab308" stroke="#334155" stroke-width="2"/>
+                  <!-- X Sign -->
+                  <g transform="translate(199, 48)">
+                    <rect x="-22" y="-4" width="44" height="8" transform="rotate(30)" fill="#facc15" stroke="#334155" stroke-width="2"/>
+                    <rect x="-22" y="-4" width="44" height="8" transform="rotate(-30)" fill="#facc15" stroke="#334155" stroke-width="2"/>
+                  </g>
+                  <!-- Warning Lights -->
+                  <circle id="crossing-light1" cx="184" cy="82" r="7" fill="#ef4444" stroke="#334155" stroke-width="2"/>
+                  <circle id="crossing-light2" cx="184" cy="100" r="7" fill="#7f1d1d" stroke="#334155" stroke-width="2"/>
+
+                  <!-- Gate Arm Pivot Box -->
+                  <rect x="152" y="102" width="22" height="52" rx="3" fill="#475569" stroke="#1e293b" stroke-width="2.5"/>
+                  <!-- Gate Arm (rotates from 160, 112) -->
+                  <g id="crossing-arm" style="transform: rotate(35deg); transform-origin: 160px 112px;" class="smooth-transform">
+                    <rect x="15" y="107" width="150" height="9" rx="2" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+                    <rect x="30" y="107" width="14" height="9" fill="#1e293b"/>
+                    <rect x="60" y="107" width="14" height="9" fill="#1e293b"/>
+                    <rect x="90" y="107" width="14" height="9" fill="#1e293b"/>
+                    <rect x="120" y="107" width="14" height="9" fill="#1e293b"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="toggleCrossingSim()" id="btn-crossing" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                ⚡ 踏切を故障させてみる！
+              </button>
+              <p id="crossing-explain" class="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
+                故障すると重りで<strong>自動的に遮断機が下りて立ち入れなくし</strong>、電車との衝突事故を絶対に防ぎます！（渋滞より命が最優先！）
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 図4：フールプルーフの例 3つの体験アニメーション -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 text-white">
+          <span class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full font-bold">教科書 p.117 図4 の完全解説</span>
+          <h3 class="text-lg md:text-xl font-extrabold mt-0.5">図4：フールプルーフの3つの具体例（人間のうっかり誤操作を体験しよう！）</h3>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Card 4-1: 電池ボックス -->
+          <div class="border-2 border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-base">① 電池ボックスの構造</span>
+                <span id="battery-badge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">💡 ピタッ（正常）</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                うっかり電池の「＋」と「ー」を逆向きに入れたとき、なぜ電気が流れないの？
+              </p>
+
+              <!-- Interactive Battery Stage -->
+              <div class="relative bg-white border border-slate-200 rounded-xl h-52 my-4 flex flex-col items-center justify-center p-3 overflow-hidden">
+                <div id="battery-sound-label" class="text-sm font-black text-emerald-600 mb-2">
+                  ✨ ピタッ！ 突起が奥の電極に届いて通電！
+                </div>
+
+                <!-- Battery Box Graphic -->
+                <div class="relative w-60 h-24 bg-slate-100 border-4 border-slate-400 rounded-xl flex items-center justify-between px-2">
+                  <!-- Left Recessed + Terminal -->
+                  <div class="flex flex-col items-center">
+                    <div class="w-3 h-4 bg-slate-400 rounded-r"></div>
+                    <div class="w-2.5 h-7 bg-amber-500 border border-slate-700"></div>
+                    <div class="w-3 h-4 bg-slate-400 rounded-r"></div>
+                  </div>
+
+                  <!-- Battery Body -->
+                  <div id="battery-unit" class="flex items-center smooth-transform">
+                    <!-- + Nub (Left when correct) -->
+                    <div id="bat-nub-left" class="w-3.5 h-6 bg-slate-300 border-2 border-slate-700 rounded-l-sm -mr-0.5 z-10"></div>
+                    <!-- Main Cylinder -->
+                    <div class="w-40 h-14 bg-gradient-to-r from-amber-400 via-amber-300 to-sky-500 border-2 border-slate-800 rounded-md flex items-center justify-between px-3 font-black text-slate-900">
+                      <span id="bat-sign-left" class="text-lg">＋</span>
+                      <span class="text-xs tracking-widest bg-white/80 px-2 py-0.5 rounded">DENCHI</span>
+                      <span id="bat-sign-right" class="text-lg">ー</span>
+                    </div>
+                    <!-- + Nub (Right when reversed, hidden initially) -->
+                    <div id="bat-nub-right" class="hidden w-3.5 h-6 bg-slate-300 border-2 border-slate-700 rounded-r-sm -ml-0.5 z-10"></div>
+                  </div>
+
+                  <!-- Right Spring - Terminal -->
+                  <div class="w-5 h-10 flex items-center">
+                    <svg viewBox="0 0 24 40" class="w-5 h-10">
+                      <path d="M 22 4 L 6 10 L 20 18 L 4 24 L 20 32 L 22 36" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex justify-between w-56 text-[11px] font-bold text-slate-500 mt-1">
+                  <span>▲ ＋極側（奥まったくぼみ）</span>
+                  <span>▲ ー極側（バネ）</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="toggleBatterySim()" id="btn-battery" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                🔄 電池を「逆向き」に入れ替えてみる！
+              </button>
+              <p id="battery-explain" class="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
+                ＋側の電極が「くぼみ」の中にあるので、平らな「ー極」を向けても<strong>スカッ！と隙間ができて接触せず、発熱や故障を防ぎます！</strong>
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 4-2: 確認メッセージ -->
+          <div class="border-2 border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-base">② 削除前の確認メッセージ</span>
+                <span id="dialog-badge" class="bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-0.5 rounded-full">📄 ファイル保護</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                大事なレポートの「削除」ボタンに手が滑って当たってしまったら…？
+              </p>
+
+              <!-- Interactive File & Modal Stage -->
+              <div class="relative bg-white border border-slate-200 rounded-xl h-52 my-4 flex flex-col items-center justify-center p-4 overflow-hidden">
+                <!-- File Icon View -->
+                <div id="file-normal-view" class="flex flex-col items-center gap-2">
+                  <div class="w-16 h-20 bg-sky-50 border-2 border-sky-400 rounded-xl flex flex-col items-center justify-center shadow-sm">
+                    <span class="text-3xl">📝</span>
+                    <span class="text-[10px] font-extrabold text-sky-800 mt-1">夏休み課題.docx</span>
+                  </div>
+                  <span id="file-status-text" class="text-xs font-bold text-slate-600">3時間かけて書いた大切なファイル</span>
+                </div>
+
+                <!-- Popup Confirmation Dialog (Textbook Fig 4 replica) -->
+                <div id="confirm-dialog-overlay" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center p-3 z-20">
+                  <div class="bg-white border-2 border-slate-700 rounded-2xl p-4 shadow-xl w-full max-w-[230px] text-center pop-in">
+                    <div class="text-amber-500 text-2xl mb-1">⚠️</div>
+                    <p class="font-extrabold text-slate-800 text-sm mb-3">本当に削除しますか？</p>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button onclick="resolveDialog(true)" class="bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-extrabold py-1.5 rounded-lg text-xs transition">
+                        OK
+                      </button>
+                      <button onclick="resolveDialog(false)" class="bg-sky-600 hover:bg-sky-700 text-white font-extrabold py-1.5 rounded-lg text-xs shadow transition">
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="triggerDeleteDialog()" class="w-full bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                🗑️ うっかり「削除ボタン」を押してみる！
+              </button>
+              <p id="dialog-explain" class="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
+                いきなり消さずに<strong>「本当に削除しますか？」とワンクッション確認する</strong>ことで、人間の操作ミスによるデータ消失を防ぎます！
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 4-3: 電子レンジ -->
+          <div class="border-2 border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-base">③ 電子レンジのドア連動停止</span>
+                <span id="microwave-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full">♨️ 加熱中</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                温めている最中に、「ストップ」を押さずにいきなりドアを開けたらどうなる？
+              </p>
+
+              <!-- Interactive Microwave Stage -->
+              <div class="relative bg-white border border-slate-200 rounded-xl h-52 my-4 flex items-center justify-center overflow-hidden">
+                <svg viewBox="0 0 240 170" class="w-56 h-44">
+                  <!-- Microwave Body -->
+                  <rect x="75" y="35" width="135" height="95" rx="8" fill="#facc15" stroke="#334155" stroke-width="3"/>
+                  <!-- Cavity Inside -->
+                  <rect x="85" y="47" width="88" height="71" rx="4" fill="#fef9c3" stroke="#334155" stroke-width="2.5"/>
+                  <!-- Bowl inside -->
+                  <path d="M 112 96 Q 129 114 146 96 Z" fill="#38bdf8" stroke="#334155" stroke-width="2"/>
+                  <ellipse cx="129" cy="96" rx="17" ry="4" fill="#bae6fd" stroke="#334155" stroke-width="2"/>
+                  <!-- Heating Waves Glow -->
+                  <g id="microwave-waves" class="microwave-wave">
+                    <circle cx="129" cy="85" r="28" fill="#fb923c" opacity="0.35"/>
+                    <path d="M 118 75 Q 122 65 118 55" stroke="#ea580c" stroke-width="2.5" fill="none"/>
+                    <path d="M 129 73 Q 133 63 129 53" stroke="#ea580c" stroke-width="2.5" fill="none"/>
+                    <path d="M 140 75 Q 144 65 140 55" stroke="#ea580c" stroke-width="2.5" fill="none"/>
+                  </g>
+                  <!-- Control Panel on Right -->
+                  <rect x="180" y="47" width="20" height="71" rx="3" fill="#eab308" stroke="#334155" stroke-width="2"/>
+                  <rect id="mw-timer-screen" x="183" y="53" width="14" height="10" fill="#1e293b"/>
+                  <circle cx="190" cy="80" r="4" fill="#fef08a" stroke="#334155" stroke-width="1.5"/>
+                  <circle cx="190" cy="95" r="4" fill="#ef4444" stroke="#334155" stroke-width="1.5"/>
+
+                  <!-- Closed Door Overlay -->
+                  <g id="mw-door-closed">
+                    <rect x="82" y="44" width="94" height="77" rx="5" fill="#fde047" fill-opacity="0.35" stroke="#334155" stroke-width="3"/>
+                    <rect x="166" y="58" width="5" height="45" rx="2" fill="#475569"/>
+                  </g>
+
+                  <!-- Opened Door Overlay (Swung to Left, hidden initially) -->
+                  <g id="mw-door-open" class="hidden">
+                    <polygon points="82,44 22,34 22,130 82,121" fill="#facc15" stroke="#334155" stroke-width="3"/>
+                    <polygon points="75,54 32,47 32,116 75,111" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button onclick="toggleMicrowaveSim()" id="btn-microwave" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                🚪 加熱中にいきなりドアを開ける！
+              </button>
+              <p id="microwave-explain" class="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
+                人間が停止ボタンを押さずにドアを開けても、<strong>ドアが開いた瞬間に加熱を自動停止</strong>させて、電磁波や火傷の危険を防ぎます！
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Quiz: Fail-Safe vs Fool-Proof -->
+      <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-lg space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="bg-amber-400 text-slate-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full">テストに出る！10秒チェック</span>
+            <h3 class="text-lg font-extrabold mt-1">どっちかな？「フェイルセーフ」vs「フールプルーフ」仕分けクイズ</h3>
+          </div>
+          <span class="text-xs text-sky-200">見分け方のコツ：「機械の故障対策」＝フェイルセーフ ／ 「人間のうっかり対策」＝フールプルーフ</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white/10 border border-white/15 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+            <p class="text-sm font-bold">Q1. 自動車で「ブレーキを踏んでいないとエンジンが始動しない」仕組みはどっち？</p>
+            <div class="space-y-2">
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="checkQuiz(1, false)" class="bg-sky-600 hover:bg-sky-500 py-2 rounded-xl text-xs font-extrabold">フェイルセーフ</button>
+                <button onclick="checkQuiz(1, true)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 py-2 rounded-xl text-xs font-extrabold">フールプルーフ</button>
+              </div>
+              <div id="quiz-ans-1" class="hidden text-xs p-2 rounded-lg font-bold"></div>
+            </div>
+          </div>
+
+          <div class="bg-white/10 border border-white/15 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+            <p class="text-sm font-bold">Q2. 街の信号機が故障したとき、「青信号」ではなく「赤点滅」に切り替わる仕組みはどっち？</p>
+            <div class="space-y-2">
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="checkQuiz(2, true)" class="bg-sky-600 hover:bg-sky-500 py-2 rounded-xl text-xs font-extrabold">フェイルセーフ</button>
+                <button onclick="checkQuiz(2, false)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 py-2 rounded-xl text-xs font-extrabold">フールプルーフ</button>
+              </div>
+              <div id="quiz-ans-2" class="hidden text-xs p-2 rounded-lg font-bold"></div>
+            </div>
+          </div>
+
+          <div class="bg-white/10 border border-white/15 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+            <p class="text-sm font-bold">Q3. 洗濯機のフタが開いているときは、脱水槽が回転しないようにする仕組みはどっち？</p>
+            <div class="space-y-2">
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="checkQuiz(3, false)" class="bg-sky-600 hover:bg-sky-500 py-2 rounded-xl text-xs font-extrabold">フェイルセーフ</button>
+                <button onclick="checkQuiz(3, true)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 py-2 rounded-xl text-xs font-extrabold">フールプルーフ</button>
+              </div>
+              <div id="quiz-ans-3" class="hidden text-xs p-2 rounded-lg font-bold"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==========================================
+         TAB 4: ③ 情報システムの信頼性の指標 (p.117)
+         ========================================== -->
+    <section id="tab4" class="tab-panel hidden space-y-8">
+      <!-- Intro Guide Bubble -->
+      <div class="bg-white border-2 border-emerald-200 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+        <div class="bg-emerald-100 text-emerald-700 p-3 rounded-2xl text-3xl shrink-0">📊</div>
+        <div class="space-y-1">
+          <h2 class="text-lg font-extrabold text-slate-800">英語4文字「MTBF」と「MTTR」をスッキリ覚えよう！</h2>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            システムの信頼性（どれくらい頼りになるか）を表す2つの指標が登場します。<br>
+            英語が苦手でも大丈夫！<strong>「元気に動いている時間（MTBF）」</strong>と<strong>「故障して修理している時間（MTTR）」</strong>の2つだけです！
+          </p>
+        </div>
+      </div>
+
+      <!-- Visual Memory Cards for MTBF & MTTR -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white border-2 border-emerald-400 rounded-3xl p-6 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="bg-emerald-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">元気に動いている間隔</span>
+            <span class="text-emerald-700 font-black text-sm">値が「大きい（長い）」ほどエライ！⬆</span>
+          </div>
+          <h3 class="text-2xl font-black text-slate-800">
+            平均故障間隔 <span class="text-emerald-600">（MTBF）</span>
+          </h3>
+          <p class="text-xs font-mono text-slate-500">Mean Time <strong class="text-emerald-700 underline">Between Failures</strong>（故障と故障のあいだの平均時間）</p>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            使用開始（または修理完了）から、<strong>「次に故障するまで連続して稼働できる時間」の平均値</strong>。<br>
+            👉 この数字が<strong>大きいほど「めったに壊れない信頼性の高いシステム」</strong>！
+          </p>
+        </div>
+
+        <div class="bg-white border-2 border-rose-400 rounded-3xl p-6 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="bg-rose-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">停止して直している時間</span>
+            <span class="text-rose-700 font-black text-sm">値が「小さい（短い）」ほどエライ！⬇</span>
+          </div>
+          <h3 class="text-2xl font-black text-slate-800">
+            平均修理時間 <span class="text-rose-600">（MTTR）</span>
+          </h3>
+          <p class="text-xs font-mono text-slate-500">Mean Time <strong class="text-rose-700 underline">To Repair</strong>（修理にかかる平均時間）</p>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            障害が発生してから、<strong>「修復が完了するまでシステムが停止（ダウン）している時間」の平均値</strong>。<br>
+            👉 この数字が<strong>小さいほど「壊れてもすぐ直る信頼性の高いシステム」</strong>！
+          </p>
+        </div>
+      </div>
+
+      <!-- Interactive MTBF & MTTR Timeline Simulator -->
+      <div class="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-bold">スライダーで体感！</span>
+            <h3 class="text-lg md:text-xl font-extrabold mt-0.5">MTBF・MTTR タイムライン＆稼働率シミュレーター</h3>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="setReliabilityPreset(90, 10)" class="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-lg">標準システム</button>
+            <button onclick="setReliabilityPreset(195, 5)" class="bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-extrabold px-3 py-1.5 rounded-lg">✨ 高信頼システム</button>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Visual Timeline Diagram -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+            <div class="text-xs font-extrabold text-slate-500 flex items-center justify-between">
+              <span>⏰ システムの動き（時間の流れ）</span>
+              <span>緑が長い＆赤が短いほど信頼性バツグン！</span>
+            </div>
+
+            <!-- Dynamic Alternating Bars -->
+            <div class="w-full h-16 rounded-2xl overflow-hidden flex shadow-inner border-2 border-slate-300 font-extrabold text-xs sm:text-sm text-white">
+              <div id="bar-mtbf-1" class="bg-emerald-500 flex flex-col items-center justify-center transition-all duration-300 overflow-hidden" style="width: 45%">
+                <span>🟢 稼働 (MTBF)</span>
+                <span class="text-[11px] opacity-90"><span class="mtbf-val-label">90</span>時間</span>
+              </div>
+              <div id="bar-mttr-1" class="bg-rose-500 flex flex-col items-center justify-center transition-all duration-300 overflow-hidden border-x-2 border-white" style="width: 5%">
+                <span>🔧</span>
+              </div>
+              <div id="bar-mtbf-2" class="bg-emerald-500 flex flex-col items-center justify-center transition-all duration-300 overflow-hidden" style="width: 45%">
+                <span>🟢 稼働 (MTBF)</span>
+                <span class="text-[11px] opacity-90"><span class="mtbf-val-label">90</span>時間</span>
+              </div>
+              <div id="bar-mttr-2" class="bg-rose-500 flex flex-col items-center justify-center transition-all duration-300 overflow-hidden border-l-2 border-white" style="width: 5%">
+                <span>🔧</span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap justify-between text-xs font-bold text-slate-600 gap-2">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span> 稼働時間（MTBF：平均故障間隔）</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500 inline-block"></span> 修理・停止時間（MTTR：平均修理時間 ※システムがダウンしている時間）</span>
+            </div>
+          </div>
+
+          <!-- Sliders & Live Calculation -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div class="lg:col-span-7 space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+              <!-- MTBF Slider -->
+              <div class="space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <label class="font-extrabold text-sm text-emerald-900">🟢 平均故障間隔（MTBF）：動いている時間</label>
+                  <span class="bg-emerald-100 text-emerald-800 font-black px-3 py-0.5 rounded-lg text-base"><span id="mtbf-num">90</span> 時間</span>
+                </div>
+                <input type="range" id="slider-mtbf" min="20" max="200" step="5" value="90" oninput="updateReliabilitySim()" class="w-full accent-emerald-600 h-2.5 bg-emerald-200 rounded-lg cursor-pointer">
+                <div class="flex justify-between text-[11px] text-slate-400 font-bold">
+                  <span>壊れやすい (20時間)</span>
+                  <span>なかなか壊れない！ (200時間)</span>
+                </div>
+              </div>
+
+              <!-- MTTR Slider -->
+              <div class="space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <label class="font-extrabold text-sm text-rose-900">🔧 平均修理時間（MTTR）：止まっている時間</label>
+                  <span class="bg-rose-100 text-rose-800 font-black px-3 py-0.5 rounded-lg text-base"><span id="mttr-num">10</span> 時間</span>
+                </div>
+                <input type="range" id="slider-mttr" min="1" max="60" step="1" value="10" oninput="updateReliabilitySim()" class="w-full accent-rose-600 h-2.5 bg-rose-200 rounded-lg cursor-pointer">
+                <div class="flex justify-between text-[11px] text-slate-400 font-bold">
+                  <span>すぐ直る！ (1時間)</span>
+                  <span>修理が長引く (60時間)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Availability Box -->
+            <div class="lg:col-span-5 bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-2xl p-5 shadow-md space-y-3 text-center">
+              <div class="text-xs font-bold text-sky-300">システムが動いている割合（稼働率）</div>
+              <div class="text-4xl font-black text-amber-400 tracking-tight">
+                <span id="availability-percent">90.0</span> %
+              </div>
+
+              <!-- Visual Fraction Formula -->
+              <div class="bg-white/10 rounded-xl p-3 text-xs flex items-center justify-center gap-3 font-bold">
+                <span>稼働率 ＝</span>
+                <div class="flex flex-col items-center">
+                  <span class="border-b border-white/40 px-2 pb-1 text-emerald-300">MTBF (<span id="f-mtbf-top">90</span>)</span>
+                  <span class="pt-1">MTBF (<span id="f-mtbf-bot">90</span>) ＋ MTTR (<span id="f-mttr-bot">10</span>)</span>
+                </div>
+              </div>
+              <p id="reliability-comment" class="text-xs font-bold text-emerald-300">
+                100時間のうち90時間動いている状態です！
+              </p>
+            </div>
+          </div>
+
+          <!-- ダウン・リストア・リカバリとデータの整合性 (p.117 下部 & memo) -->
+          <div class="border-t border-slate-200 pt-6">
+            <h4 class="font-extrabold text-slate-800 text-base mb-3 flex items-center gap-2">
+              <span class="bg-indigo-600 text-white text-xs px-2.5 py-0.5 rounded-md">p.117 重要ポイント</span>
+              障害が起きたときの用語と「データの整合性」
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+                <div class="font-extrabold text-rose-800 text-sm">① ダウン (Down)</div>
+                <p class="text-xs text-slate-700 mt-1">
+                  故障やトラブルで<strong>情報システムが停止すること</strong>。
+                </p>
+              </div>
+              <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                <div class="font-extrabold text-amber-900 text-sm">② リストア (Restore)</div>
+                <p class="text-xs text-slate-700 mt-1">
+                  データ損失が起きたときに、<strong>バックアップデータを用いて元通りに復元すること</strong>。
+                </p>
+              </div>
+              <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4">
+                <div class="font-extrabold text-sky-900 text-sm">③ リカバリ (Recovery)</div>
+                <p class="text-xs text-slate-700 mt-1">
+                  障害からシステム全体の<strong>正常化や初期化などを行い、復旧させること</strong>。
+                </p>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                <div class="font-extrabold text-emerald-900 text-sm">④ データの整合性</div>
+                <p class="text-xs text-slate-700 mt-1">
+                  ただ再起動するだけでなく、<strong>障害前のデータと矛盾がない状態（整合性がとれた状態）</strong>に戻して初めて正しい復旧といえる！
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* =========================================================
+       TAB NAVIGATION
+       ========================================================= */
+    function switchTab(tabId) {
+      const panels = document.querySelectorAll('.tab-panel');
+      panels.forEach(p => p.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      const btns = document.querySelectorAll('.tab-btn');
+      btns.forEach(b => {
+        b.classList.remove('bg-white', 'text-blue-700', 'shadow');
+        b.classList.add('text-sky-100');
+      });
+      const activeBtn = document.getElementById('btn-' + tabId);
+      activeBtn.classList.remove('text-sky-100');
+      activeBtn.classList.add('bg-white', 'text-blue-700', 'shadow');
+    }
+
+    /* =========================================================
+       TAB 1-1: REDUNDANCY & RAID SIMULATOR
+       ========================================================= */
+    function triggerRaidCrash() {
+      // Single System Crash
+      const singleCard = document.getElementById('single-system-card');
+      singleCard.className = 'border-2 border-rose-400 rounded-2xl p-5 bg-rose-50/70 flex flex-col justify-between smooth-std';
+      document.getElementById('single-status-badge').className = 'bg-rose-600 text-white text-xs font-extrabold px-3 py-1 rounded-full animate-bounce';
+      document.getElementById('single-status-badge').textContent = '🚨 システム停止（ダウン）';
+      document.getElementById('single-arrow').className = 'text-rose-500 font-black text-lg';
+      document.getElementById('single-arrow').textContent = '✖ アクセス不能！ ✖';
+      document.getElementById('single-ssd-box').className = 'w-44 bg-rose-900 text-white rounded-xl p-3 shadow flex items-center justify-between smooth-transform rotate-3';
+      document.getElementById('single-ssd-icon').textContent = '💥';
+      document.getElementById('single-ssd-sub').className = 'text-[11px] text-rose-300 font-bold';
+      document.getElementById('single-ssd-sub').textContent = '故障・データ消失😭';
+      document.getElementById('single-ssd-led').className = 'w-3 h-3 rounded-full bg-rose-500';
+      document.getElementById('single-desc').className = 'text-xs sm:text-sm font-extrabold text-rose-800 mt-3 text-center bg-rose-100 py-2 px-3 rounded-xl border border-rose-300';
+      document.getElementById('single-desc').textContent = 'SSDが1台壊れただけで、システム全体が完全にストップしてしまいました…！';
+
+      // RAID System Survives
+      const raidCard = document.getElementById('raid-system-card');
+      raidCard.className = 'border-2 border-emerald-400 rounded-2xl p-5 bg-emerald-50/50 flex flex-col justify-between smooth-std';
+      document.getElementById('raid-status-badge').className = 'bg-emerald-600 text-white text-xs font-extrabold px-3 py-1 rounded-full';
+      document.getElementById('raid-status-badge').textContent = '✨ 無停止で稼働継続中！';
+      document.getElementById('raid-arrow').className = 'text-emerald-600 font-black text-sm';
+      document.getElementById('raid-arrow').textContent = '⬇ 2号機へ自動切り替え（システムは止まらない！） ⬇';
+
+      // SSD 1 broken
+      document.getElementById('raid-ssd1-box').className = 'flex-1 bg-rose-900/90 text-white rounded-xl p-2.5 shadow flex items-center justify-between smooth-transform opacity-75';
+      document.getElementById('raid-ssd1-icon').textContent = '💥';
+      document.getElementById('raid-ssd1-sub').className = 'text-[10px] text-rose-300 font-bold';
+      document.getElementById('raid-ssd1-sub').textContent = '故障発生';
+      document.getElementById('raid-ssd1-led').className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+
+      // SSD 2 active highlight
+      document.getElementById('raid-ssd2-box').className = 'flex-1 bg-emerald-700 text-white rounded-xl p-2.5 shadow-lg ring-4 ring-emerald-300 flex items-center justify-between smooth-transform scale-105';
+      document.getElementById('raid-ssd2-icon').textContent = '🛡️';
+      document.getElementById('raid-ssd2-sub').className = 'text-[10px] text-amber-200 font-extrabold';
+      document.getElementById('raid-ssd2-sub').textContent = 'カバーして稼働中！';
+
+      document.getElementById('raid-desc').className = 'text-xs sm:text-sm font-extrabold text-emerald-900 mt-3 text-center bg-emerald-100 py-2 px-3 rounded-xl border border-emerald-300';
+      document.getElementById('raid-desc').textContent = '1号機が壊れても、同じデータを持つ2号機が即座にカバー！システムを1秒も止めずに動かし続けられます！';
+    }
+
+    function resetRaidSim() {
+      document.getElementById('single-system-card').className = 'border-2 border-slate-200 rounded-2xl p-5 bg-slate-50 flex flex-col justify-between smooth-std';
+      document.getElementById('single-status-badge').className = 'bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full';
+      document.getElementById('single-status-badge').textContent = '🟢 正常稼働中';
+      document.getElementById('single-arrow').className = 'text-sky-500 font-black text-lg';
+      document.getElementById('single-arrow').textContent = '⬇ データを読み書き ⬇';
+      document.getElementById('single-ssd-box').className = 'w-44 bg-gradient-to-b from-slate-700 to-slate-800 text-white rounded-xl p-3 shadow flex items-center justify-between smooth-transform';
+      document.getElementById('single-ssd-icon').textContent = '💾';
+      document.getElementById('single-ssd-sub').className = 'text-[11px] text-emerald-300';
+      document.getElementById('single-ssd-sub').textContent = 'データ保管中';
+      document.getElementById('single-ssd-led').className = 'w-3 h-3 rounded-full bg-emerald-400 animate-pulse';
+      document.getElementById('single-desc').className = 'text-xs sm:text-sm font-bold text-slate-600 mt-3 text-center bg-white py-2 px-3 rounded-xl border border-slate-200';
+      document.getElementById('single-desc').textContent = '1台しかないので、これが壊れるとシステム全体がストップします。';
+
+      document.getElementById('raid-system-card').className = 'border-2 border-indigo-200 rounded-2xl p-5 bg-indigo-50/40 flex flex-col justify-between smooth-std';
+      document.getElementById('raid-status-badge').className = 'bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full';
+      document.getElementById('raid-status-badge').textContent = '🟢 正常稼働中';
+      document.getElementById('raid-arrow').className = 'text-indigo-500 font-black text-sm';
+      document.getElementById('raid-arrow').textContent = '⬇ RAIDコントローラ（同時書き込み） ⬇';
+
+      document.getElementById('raid-ssd1-box').className = 'flex-1 bg-gradient-to-b from-slate-700 to-slate-800 text-white rounded-xl p-2.5 shadow flex items-center justify-between smooth-transform';
+      document.getElementById('raid-ssd1-icon').textContent = '💾';
+      document.getElementById('raid-ssd1-sub').className = 'text-[10px] text-emerald-300';
+      document.getElementById('raid-ssd1-sub').textContent = '稼働中';
+      document.getElementById('raid-ssd1-led').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+
+      document.getElementById('raid-ssd2-box').className = 'flex-1 bg-gradient-to-b from-slate-700 to-slate-800 text-white rounded-xl p-2.5 shadow flex items-center justify-between smooth-transform';
+      document.getElementById('raid-ssd2-icon').textContent = '💾';
+      document.getElementById('raid-ssd2-sub').className = 'text-[10px] text-emerald-300';
+      document.getElementById('raid-ssd2-sub').textContent = '同時記録中';
+      document.getElementById('raid-ssd2-led').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+
+      document.getElementById('raid-desc').className = 'text-xs sm:text-sm font-bold text-indigo-900 mt-3 text-center bg-white py-2 px-3 rounded-xl border border-indigo-200';
+      document.getElementById('raid-desc').textContent = '複数のSSDを1台に見立てて運用！片方が壊れても、もう片方でそのまま動き続けられます。';
+    }
+
+    /* =========================================================
+       TAB 1-2: BACKUP SIMULATOR (Textbook Fig 1 & Fig 2)
+       ========================================================= */
+    let currentBackupType = 'full';
+    let currentBackupDay = 5;
+    let backupTimer = null;
+
+    const backupConfigs = {
+      full: {
+        title: '① フルバックアップ：全てのデータを毎回バックアップする',
+        days: [
+          { dayLabel: '月', saved: ['月'], ghost: [] },
+          { dayLabel: '火', saved: ['月', '火'], ghost: [] },
+          { dayLabel: '水', saved: ['月', '火', '水'], ghost: [] },
+          { dayLabel: '木', saved: ['月', '火', '水', '木'], ghost: [] },
+          { dayLabel: '金', saved: ['月', '火', '水', '木', '金'], ghost: [] }
+        ],
+        explain: (dayIdx) => {
+          const dNames = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日'];
+          const totalBlocks = [1, 3, 6, 10, 15][dayIdx];
+          return `【${dNames[dayIdx]}】その日にある「すべてのデータ」を毎回まるごとコピーします。${dNames[dayIdx]}までの合計保存量は【 ${totalBlocks}ブロック分 】です！`;
+        }
+      },
+      diff: {
+        title: '② 差分バックアップ：前回のフルバックアップ（月曜）からの差分のみバックアップする',
+        days: [
+          { dayLabel: '月', saved: ['月'], ghost: [] },
+          { dayLabel: '火', saved: ['火'], ghost: ['月'] },
+          { dayLabel: '水', saved: ['火', '水'], ghost: ['月'] },
+          { dayLabel: '木', saved: ['火', '水', '木'], ghost: ['月'] },
+          { dayLabel: '金', saved: ['火', '水', '木', '金'], ghost: ['月'] }
+        ],
+        explain: (dayIdx) => {
+          if (dayIdx === 0) return '【月曜日】最初は基準となる「フルバックアップ（月）」を行います。';
+          const dNames = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日'];
+          return `【${dNames[dayIdx]}】月曜日のフルバックアップ以降に増えたデータ（火〜${dNames[dayIdx][0]}）だけをまとめてバックアップします！（点線の「月」はコピーしません）`;
+        }
+      },
+      inc: {
+        title: '③ 増分バックアップ：前回のバックアップ（前日）からの増分のみバックアップする',
+        days: [
+          { dayLabel: '月', saved: ['月'], ghost: [] },
+          { dayLabel: '火', saved: ['火'], ghost: ['月'] },
+          { dayLabel: '水', saved: ['水'], ghost: ['月', '火'] },
+          { dayLabel: '木', saved: ['木'], ghost: ['月', '火', '水'] },
+          { dayLabel: '金', saved: ['金'], ghost: ['月', '火', '水', '木'] }
+        ],
+        explain: (dayIdx) => {
+          if (dayIdx === 0) return '【月曜日】最初は基準となる「フルバックアップ（月）」を行います。';
+          const dNames = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日'];
+          return `【${dNames[dayIdx]}】前日のバックアップから今日新しく増えた【「${dNames[dayIdx][0]}」の1ブロックだけ】をバックアップします！5日間合計でもたった5ブロック分で済みます！`;
+        }
+      }
+    };
+
+    function selectBackupType(type) {
+      if (backupTimer) clearInterval(backupTimer);
+      currentBackupType = type;
+
+      ['full', 'diff', 'inc'].forEach(t => {
+        const btn = document.getElementById('btype-' + t);
+        const badge = btn.querySelector('span:nth-child(2)');
+        if (t === type) {
+          btn.className = 'p-4 rounded-2xl border-2 border-amber-500 bg-amber-50 text-left transition flex flex-col justify-between shadow-sm';
+          badge.className = 'text-xs bg-amber-500 text-white font-bold px-2 py-0.5 rounded-full';
+          badge.textContent = '選択中';
+        } else {
+          btn.className = 'p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-300 bg-white text-left transition flex flex-col justify-between';
+          badge.className = 'text-xs bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full';
+          badge.textContent = 'クリックで切替';
+        }
+      });
+
+      renderBackupColumns();
+    }
+
+    function setBackupDay(dayNum) {
+      if (backupTimer) clearInterval(backupTimer);
+      currentBackupDay = dayNum;
+      renderBackupColumns();
+    }
+
+    function playBackupWeek() {
+      if (backupTimer) clearInterval(backupTimer);
+      currentBackupDay = 1;
+      renderBackupColumns();
+      backupTimer = setInterval(() => {
+        if (currentBackupDay < 5) {
+          currentBackupDay++;
+          renderBackupColumns();
+        } else {
+          clearInterval(backupTimer);
+        }
+      }, 650);
+    }
+
+    function renderBackupColumns() {
+      const cfg = backupConfigs[currentBackupType];
+      document.getElementById('backup-current-title').textContent = cfg.title;
+
+      // Update day buttons
+      for (let i = 1; i <= 5; i++) {
+        const b = document.getElementById('day-btn-' + i);
+        if (i <= currentBackupDay) {
+          b.className = 'day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-amber-500 text-white shadow-sm transition';
+        } else {
+          b.className = 'day-btn w-9 h-9 rounded-lg font-extrabold text-sm bg-slate-100 text-slate-400 transition';
+        }
+      }
+
+      const container = document.getElementById('backup-cols-container');
+      container.innerHTML = '';
+
+      cfg.days.forEach((dObj, idx) => {
+        const isVisible = (idx + 1) <= currentBackupDay;
+        const col = document.createElement('div');
+        col.className = 'flex flex-col items-center justify-end h-full transition-opacity duration-300 ' + (isVisible ? 'opacity-100' : 'opacity-20');
+
+        const stack = document.createElement('div');
+        stack.className = 'w-full max-w-[90px] flex flex-col-reverse gap-1 mb-2';
+
+        const allOrder = ['月', '火', '水', '木', '金'].slice(0, idx + 1);
+        allOrder.forEach(blockLabel => {
+          const isSaved = dObj.saved.includes(blockLabel);
+          const block = document.createElement('div');
+          if (isSaved) {
+            block.className = 'h-9 rounded-lg bg-amber-300 border-2 border-slate-800 flex items-center justify-center font-extrabold text-sm text-slate-900 shadow-sm pop-in';
+            block.textContent = blockLabel;
+          } else {
+            block.className = 'h-9 rounded-lg bg-slate-50 border-2 border-dashed border-slate-300 flex items-center justify-center font-bold text-xs text-slate-300';
+            block.textContent = blockLabel + ' (済)';
+          }
+          stack.appendChild(block);
+        });
+
+        const dayFooter = document.createElement('div');
+        dayFooter.className = 'w-full text-center py-1.5 rounded-lg font-extrabold text-xs sm:text-sm ' +
+          ((idx + 1) === currentBackupDay ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-700');
+        dayFooter.textContent = dObj.dayLabel + '曜';
+
+        col.appendChild(stack);
+        col.appendChild(dayFooter);
+        container.appendChild(col);
+      });
+
+      document.getElementById('backup-day-explanation').textContent = cfg.explain(currentBackupDay - 1);
+    }
+
+    /* =========================================================
+       TAB 2-1: PARITY CHECK SIMULATOR (Odd Parity)
+       ========================================================= */
+    let senderBits = [1, 0, 0, 1, 1, 0, 0];
+    let receiverBits = [1, 0, 0, 1, 1, 0, 1]; // Textbook error in 7th bit
+    let receiverParity = 0;
+
+    function getSenderParityBit() {
+      const ones = senderBits.filter(b => b === 1).length;
+      // Rule: total number of 1s must be ODD
+      return (ones % 2 === 1) ? 0 : 1;
+    }
+
+    function renderParitySim() {
+      const sContainer = document.getElementById('sender-bits-container');
+      sContainer.innerHTML = '';
+      senderBits.forEach((bit, idx) => {
+        const btn = document.createElement('button');
+        btn.onclick = () => {
+          senderBits[idx] = senderBits[idx] === 1 ? 0 : 1;
+          receiverBits = [...senderBits];
+          receiverParity = getSenderParityBit();
+          renderParitySim();
+        };
+        btn.className = 'w-10 h-14 sm:w-12 sm:h-16 rounded-xl font-black text-xl sm:text-2xl flex flex-col items-center justify-center border-2 transition shadow-sm ' +
+          (bit === 1 ? 'bg-sky-100 border-sky-500 text-sky-900' : 'bg-white border-slate-300 text-slate-700');
+        btn.innerHTML = `<span>${bit}</span><span class="text-[9px] font-bold text-slate-400">${idx + 1}bit</span>`;
+        sContainer.appendChild(btn);
+      });
+
+      const sOnes = senderBits.filter(b => b === 1).length;
+      const pBit = getSenderParityBit();
+      document.getElementById('sender-ones-badge').textContent = `データの「1」は ${sOnes}個`;
+      document.getElementById('sender-parity-box').textContent = pBit;
+
+      if (sOnes % 2 === 1) {
+        document.getElementById('sender-rule-explain').textContent =
+          `データの中に「1」が ${sOnes}個（すでに奇数）あるので、パリティビットには【 0 】を付加して合計 ${sOnes}個（奇数）にします！`;
+      } else {
+        document.getElementById('sender-rule-explain').textContent =
+          `データの中に「1」が ${sOnes}個（偶数）あるので、パリティビットには【 1 】を付加して合計 ${sOnes + 1}個（奇数）にします！`;
+      }
+
+      // Receiver side
+      const rContainer = document.getElementById('receiver-bits-container');
+      rContainer.innerHTML = '';
+      receiverBits.forEach((bit, idx) => {
+        const isDiff = bit !== senderBits[idx];
+        const btn = document.createElement('button');
+        btn.onclick = () => {
+          receiverBits[idx] = receiverBits[idx] === 1 ? 0 : 1;
+          renderParitySim();
+        };
+        btn.className = 'w-10 h-14 sm:w-12 sm:h-16 rounded-xl font-black text-xl sm:text-2xl flex flex-col items-center justify-center border-2 transition shadow-sm ' +
+          (isDiff ? 'bg-rose-500 border-rose-700 text-white scale-105 animate-pulse' : 'bg-white border-slate-300 text-slate-800');
+        btn.innerHTML = `<span>${bit}</span><span class="text-[9px] font-bold ${isDiff ? 'text-rose-100' : 'text-slate-400'}">${isDiff ? '変化!' : (idx + 1) + 'bit'}</span>`;
+        rContainer.appendChild(btn);
+      });
+
+      const rParityBox = document.getElementById('receiver-parity-box');
+      rParityBox.textContent = receiverParity;
+
+      const totalReceiverOnes = receiverBits.filter(b => b === 1).length + (receiverParity === 1 ? 1 : 0);
+      const isOddValid = (totalReceiverOnes % 2 === 1);
+
+      const rCard = document.getElementById('receiver-card');
+      const rBadge = document.getElementById('receiver-status-badge');
+      const rExplain = document.getElementById('receiver-result-explain');
+
+      if (isOddValid) {
+        rCard.className = 'bg-emerald-50/70 border-2 border-emerald-300 rounded-2xl p-5 space-y-4 smooth-std';
+        rBadge.className = 'bg-emerald-600 text-white text-xs font-extrabold px-3 py-1 rounded-full';
+        rBadge.textContent = '⭕ 正常に受信（1が奇数個）';
+        rExplain.className = 'text-center text-xs sm:text-sm font-extrabold text-emerald-900 bg-emerald-200/70 py-3 px-4 rounded-xl';
+        rExplain.textContent = `✨ 受信後の「1」の数は合計【 ${totalReceiverOnes}個（奇数）】です！ルール通り奇数になっているので、エラーなく届いたと確認できます。`;
+      } else {
+        rCard.className = 'bg-rose-50/70 border-2 border-rose-300 rounded-2xl p-5 space-y-4 smooth-std';
+        rBadge.className = 'bg-rose-600 text-white text-xs font-extrabold px-3 py-1 rounded-full animate-bounce';
+        rBadge.textContent = '🚨 誤りを検出！（1が偶数個）';
+        rExplain.className = 'text-center text-xs sm:text-sm font-extrabold text-rose-900 bg-rose-200/70 py-3 px-4 rounded-xl';
+        rExplain.textContent = `🚨 受信後の「1」の数を数えると【 ${totalReceiverOnes}個（偶数）】になっています！「1が偶数個のため誤り」と一瞬で検出できます！`;
+      }
+    }
+
+    function toggleReceiverParity() {
+      receiverParity = receiverParity === 1 ? 0 : 1;
+      renderParitySim();
+    }
+
+    function injectParityError() {
+      receiverBits = [...senderBits];
+      receiverParity = getSenderParityBit();
+      receiverBits[6] = receiverBits[6] === 1 ? 0 : 1; // Flip 7th bit like textbook
+      renderParitySim();
+    }
+
+    function clearParityError() {
+      receiverBits = [...senderBits];
+      receiverParity = getSenderParityBit();
+      renderParitySim();
+    }
+
+    function resetParityTextbook() {
+      senderBits = [1, 0, 0, 1, 1, 0, 0];
+      receiverBits = [1, 0, 0, 1, 1, 0, 1];
+      receiverParity = 0;
+      renderParitySim();
+    }
+
+    /* =========================================================
+       TAB 2-2: JAN CODE CHECK DIGIT CALCULATOR (p.116)
+       ========================================================= */
+    // Textbook 12 digits (pos 13 down to 2): 4 5 1 2 3 4 5 6 7 8 9 0 -> check digit (pos 1) = 6
+    let janDigits12 = [4, 5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+    let currentJanStep = 4;
+
+    function calculateJanDetails() {
+      // Positions from right: index 0 is pos 13 (odd), index 1 is pos 12 (even), ..., index 11 is pos 2 (even)
+      const oddDigits = []; // pos 13, 11, 9, 7, 5, 3 -> indices 0, 2, 4, 6, 8, 10
+      const evenDigits = []; // pos 12, 10, 8, 6, 4, 2 -> indices 1, 3, 5, 7, 9, 11
+      janDigits12.forEach((d, idx) => {
+        const pos = 13 - idx;
+        if (pos % 2 === 1) oddDigits.push(d);
+        else evenDigits.push(d);
+      });
+
+      const oddSum = oddDigits.reduce((a, b) => a + b, 0);
+      const evenSum = evenDigits.reduce((a, b) => a + b, 0);
+      const evenTimes3 = evenSum * 3;
+      const total = oddSum + evenTimes3;
+      const onesDigit = total % 10;
+      const checkDigit = onesDigit === 0 ? 0 : (10 - onesDigit);
+
+      return { oddDigits, evenDigits, oddSum, evenSum, evenTimes3, total, onesDigit, checkDigit };
+    }
+
+    function renderJanCode() {
+      const posRow = document.getElementById('jan-pos-row');
+      const digitsRow = document.getElementById('jan-digits-row');
+      posRow.innerHTML = '';
+      digitsRow.innerHTML = '';
+
+      const calc = calculateJanDetails();
+
+      for (let idx = 0; idx < 13; idx++) {
+        const pos = 13 - idx; // 13 down to 1
+        const isOddPos = (pos > 1 && pos % 2 === 1);
+        const isEvenPos = (pos > 1 && pos % 2 === 0);
+        const isCheckDigit = (pos === 1);
+
+        // Position header cell
+        const pCell = document.createElement('div');
+        let pClass = 'text-xs font-extrabold py-1 rounded-md ';
+        if (isCheckDigit) pClass += 'bg-amber-500 text-white';
+        else if (currentJanStep === 1 && isOddPos) pClass += 'bg-sky-600 text-white scale-105 transition';
+        else if (currentJanStep === 2 && isEvenPos) pClass += 'bg-emerald-600 text-white scale-105 transition';
+        else pClass += 'bg-slate-200 text-slate-600';
+        pCell.className = pClass;
+        pCell.textContent = pos + '桁';
+        posRow.appendChild(pCell);
+
+        // Digit box
+        const dCell = document.createElement('div');
+        if (isCheckDigit) {
+          dCell.className = 'h-12 rounded-xl bg-amber-400 border-2 border-amber-700 font-black text-xl text-slate-900 flex items-center justify-center shadow';
+          dCell.textContent = calc.checkDigit;
+        } else {
+          let dClass = 'h-12 rounded-xl border-2 font-black text-xl flex flex-col items-center justify-center cursor-pointer transition ';
+          if (currentJanStep === 1 && isOddPos) {
+            dClass += 'bg-sky-100 border-sky-600 text-sky-900 ring-2 ring-sky-300 scale-105';
+          } else if (currentJanStep === 2 && isEvenPos) {
+            dClass += 'bg-emerald-100 border-emerald-600 text-emerald-900 ring-2 ring-emerald-300 scale-105';
+          } else if (currentJanStep >= 3) {
+            dClass += isOddPos ? 'bg-sky-50 border-sky-300 text-sky-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900';
+          } else {
+            dClass += 'bg-white border-slate-300 text-slate-800';
+          }
+          dCell.className = dClass;
+          dCell.title = 'クリックで数字を+1変更できます';
+          dCell.onclick = () => {
+            janDigits12[idx] = (janDigits12[idx] + 1) % 10;
+            renderJanCode();
+          };
+          dCell.innerHTML = `<span>${janDigits12[idx]}</span>`;
+        }
+        digitsRow.appendChild(dCell);
+      }
+
+      // Highlight Step Buttons
+      for (let s = 1; s <= 4; s++) {
+        const sb = document.getElementById('jan-step-btn-' + s);
+        if (s === currentJanStep) {
+          sb.className = 'p-3 rounded-xl border-2 border-amber-500 bg-amber-50 text-left transition font-bold text-xs sm:text-sm shadow-sm';
+        } else {
+          sb.className = 'p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 text-left transition font-bold text-xs sm:text-sm';
+        }
+      }
+
+      // Render Calculation Panel
+      const panel = document.getElementById('jan-calc-panel');
+      const oddFormula = calc.oddDigits.join(' ＋ ');
+      const evenFormula = calc.evenDigits.join(' ＋ ');
+
+      let stepHtml = '';
+      if (currentJanStep === 1) {
+        stepHtml = `
+          <div class="text-sky-300 font-extrabold text-sm">【ステップ①】1桁目を除く、奇数桁（13, 11, 9, 7, 5, 3桁目）の数の和を求める</div>
+          <div class="text-xl sm:text-2xl font-black tracking-wide">${oddFormula} ＝ <span class="text-sky-400 underline">${calc.oddSum}</span></div>
+        `;
+      } else if (currentJanStep === 2) {
+        stepHtml = `
+          <div class="text-emerald-300 font-extrabold text-sm">【ステップ②】偶数桁（12, 10, 8, 6, 4, 2桁目）の数の和を3倍する</div>
+          <div class="text-xl sm:text-2xl font-black tracking-wide">(${evenFormula}) × 3 ＝ ${calc.evenSum} × 3 ＝ <span class="text-emerald-400 underline">${calc.evenTimes3}</span></div>
+        `;
+      } else if (currentJanStep === 3) {
+        stepHtml = `
+          <div class="text-purple-300 font-extrabold text-sm">【ステップ③】①と②で求めた数を合計する</div>
+          <div class="text-xl sm:text-2xl font-black tracking-wide"><span class="text-sky-400">${calc.oddSum}</span> ＋ <span class="text-emerald-400">${calc.evenTimes3}</span> ＝ <span class="text-purple-300 underline">${calc.total}</span></div>
+        `;
+      } else {
+        stepHtml = `
+          <div class="text-amber-300 font-extrabold text-sm">【ステップ④】③で求めた数（${calc.total}）の「1の位の数（${calc.onesDigit}）」を10から引く！</div>
+          <div class="text-xl sm:text-2xl font-black tracking-wide">
+            ①奇数桁の和(<span class="text-sky-400">${calc.oddSum}</span>) ＋ ②偶数桁の和×3(<span class="text-emerald-400">${calc.evenTimes3}</span>) ＝ <span class="text-purple-300">${calc.total}</span>
+            👉 10 ー <span class="underline">${calc.onesDigit}</span> ＝ <span class="bg-amber-400 text-slate-900 px-3 py-0.5 rounded-lg">チェックディジットは ${calc.checkDigit}</span>
+          </div>
+        `;
+      }
+      panel.innerHTML = stepHtml;
+    }
+
+    function setJanStep(step) {
+      currentJanStep = step;
+      renderJanCode();
+    }
+
+    function nextJanStep() {
+      currentJanStep = (currentJanStep % 4) + 1;
+      renderJanCode();
+    }
+
+    function resetJanTextbook() {
+      janDigits12 = [4, 5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+      currentJanStep = 4;
+      renderJanCode();
+    }
+
+    /* =========================================================
+       TAB 3: FAIL-SAFE & FOOL-PROOF INTERACTIVE CARDS (Fig 3 & Fig 4)
+       ========================================================= */
+    // 3-1 Faucet
+    let faucetClosed = false;
+    function toggleFaucetSim() {
+      faucetClosed = !faucetClosed;
+      const block = document.getElementById('faucet-falling-block');
+      const lever = document.getElementById('faucet-lever');
+      const water = document.getElementById('faucet-water');
+      const badge = document.getElementById('faucet-badge');
+      const btn = document.getElementById('btn-faucet');
+
+      if (faucetClosed) {
+        block.style.transform = 'translateY(108px) rotate(12deg)';
+        lever.style.transform = 'rotate(8deg)';
+        water.style.height = '0px';
+        water.style.opacity = '0';
+        badge.className = 'bg-emerald-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🛡️ 止水（安全！）';
+        btn.textContent = '🔄 レバーを上げて水を出しておく';
+      } else {
+        block.style.transform = 'translateY(0px) rotate(0deg)';
+        lever.style.transform = 'rotate(-32deg)';
+        water.style.height = '80px';
+        water.style.opacity = '1';
+        badge.className = 'bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '💧 出水中';
+        btn.textContent = '📦 上から物を落としてみる！';
+      }
+    }
+
+    // 3-2 Stove
+    let stoveTilted = false;
+    function toggleStoveSim() {
+      stoveTilted = !stoveTilted;
+      const body = document.getElementById('stove-body');
+      const flame = document.getElementById('stove-flame');
+      const badge = document.getElementById('stove-badge');
+      const btn = document.getElementById('btn-stove');
+
+      if (stoveTilted) {
+        body.style.transform = 'rotate(-24deg) translateX(-10px)';
+        flame.style.display = 'none';
+        badge.className = 'bg-emerald-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🛡️ 自動消火完了！';
+        btn.textContent = '🔄 ストーブをまっすぐ戻して点火';
+      } else {
+        body.style.transform = 'rotate(0deg) translateX(0px)';
+        flame.style.display = 'block';
+        badge.className = 'bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🔥 燃焼中';
+        btn.textContent = '🦶 衝撃を与える・傾けてみる！';
+      }
+    }
+
+    // 3-3 Crossing
+    let crossingBroken = false;
+    function toggleCrossingSim() {
+      crossingBroken = !crossingBroken;
+      const arm = document.getElementById('crossing-arm');
+      const badge = document.getElementById('crossing-badge');
+      const btn = document.getElementById('btn-crossing');
+
+      if (crossingBroken) {
+        arm.style.transform = 'rotate(0deg)';
+        badge.className = 'bg-rose-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🛡️ 遮断機下降（進入防止）';
+        btn.textContent = '🔄 修理して遮断機を上げる';
+      } else {
+        arm.style.transform = 'rotate(35deg)';
+        badge.className = 'bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🚗 通行可能';
+        btn.textContent = '⚡ 踏切を故障させてみる！';
+      }
+    }
+
+    // 4-1 Battery Box
+    let batteryReversed = false;
+    function toggleBatterySim() {
+      batteryReversed = !batteryReversed;
+      const nubLeft = document.getElementById('bat-nub-left');
+      const nubRight = document.getElementById('bat-nub-right');
+      const signLeft = document.getElementById('bat-sign-left');
+      const signRight = document.getElementById('bat-sign-right');
+      const label = document.getElementById('battery-sound-label');
+      const badge = document.getElementById('battery-badge');
+      const btn = document.getElementById('btn-battery');
+
+      if (batteryReversed) {
+        nubLeft.classList.add('hidden');
+        nubRight.classList.remove('hidden');
+        signLeft.textContent = 'ー';
+        signRight.textContent = '＋';
+        label.className = 'text-sm font-black text-rose-600 mb-2';
+        label.textContent = '🙅‍♂️ スカッ！ 平らな「ー極」がくぼみに届かず通電しない！';
+        badge.className = 'bg-amber-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🛡️ スカッ（接触防止）';
+        btn.textContent = '🔄 正しい向き（＋を左）に入れ直す';
+      } else {
+        nubLeft.classList.remove('hidden');
+        nubRight.classList.add('hidden');
+        signLeft.textContent = '＋';
+        signRight.textContent = 'ー';
+        label.className = 'text-sm font-black text-emerald-600 mb-2';
+        label.textContent = '✨ ピタッ！ 突起が奥の電極に届いて通電！';
+        badge.className = 'bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '💡 ピタッ（正常）';
+        btn.textContent = '🔄 電池を「逆向き」に入れ替えてみる！';
+      }
+    }
+
+    // 4-2 Confirmation Dialog
+    function triggerDeleteDialog() {
+      document.getElementById('confirm-dialog-overlay').classList.remove('hidden');
+    }
+
+    function resolveDialog(isDeleted) {
+      document.getElementById('confirm-dialog-overlay').classList.add('hidden');
+      const statusText = document.getElementById('file-status-text');
+      const badge = document.getElementById('dialog-badge');
+      if (isDeleted) {
+        statusText.className = 'text-xs font-extrabold text-rose-600';
+        statusText.textContent = '🗑️ 確認の上で削除を実行しました';
+        badge.textContent = '削除完了';
+      } else {
+        statusText.className = 'text-xs font-extrabold text-emerald-700';
+        statusText.textContent = '😮‍💨 キャンセルを押して大事な課題を守りました！';
+        badge.textContent = '🛡️ 誤削除を防止！';
+      }
+    }
+
+    // 4-3 Microwave
+    let mwDoorOpened = false;
+    function toggleMicrowaveSim() {
+      mwDoorOpened = !mwDoorOpened;
+      const waves = document.getElementById('microwave-waves');
+      const closedDoor = document.getElementById('mw-door-closed');
+      const openDoor = document.getElementById('mw-door-open');
+      const badge = document.getElementById('microwave-badge');
+      const btn = document.getElementById('btn-microwave');
+
+      if (mwDoorOpened) {
+        waves.classList.add('hidden');
+        closedDoor.classList.add('hidden');
+        openDoor.classList.remove('hidden');
+        badge.className = 'bg-emerald-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '🛡️ 自動停止中（安全！）';
+        btn.textContent = '🚪 ドアを閉めて加熱を再開する';
+      } else {
+        waves.classList.remove('hidden');
+        closedDoor.classList.remove('hidden');
+        openDoor.classList.add('hidden');
+        badge.className = 'bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full';
+        badge.textContent = '♨️ 加熱中';
+        btn.textContent = '🚪 加熱中にいきなりドアを開ける！';
+      }
+    }
+
+    // Mini Quiz
+    function checkQuiz(qNum, isCorrect) {
+      const box = document.getElementById('quiz-ans-' + qNum);
+      box.classList.remove('hidden');
+      if (isCorrect) {
+        box.className = 'text-xs p-2.5 rounded-xl font-extrabold bg-emerald-500/30 border border-emerald-400 text-emerald-200 pop-in';
+        if (qNum === 1) box.textContent = '⭕ 大正解！人間がアクセルを踏み間違えたまま急発進するのを防ぐ「フールプルーフ」です！';
+        if (qNum === 2) box.textContent = '⭕ 大正解！信号機という機械が故障したとき、赤点滅にして衝突を防ぐ「フェイルセーフ」です！';
+        if (qNum === 3) box.textContent = '⭕ 大正解！人間がフタを開けたまま手を入れてケガをするのを防ぐ「フールプルーフ」です！';
+      } else {
+        box.className = 'text-xs p-2.5 rounded-xl font-extrabold bg-rose-500/30 border border-rose-400 text-rose-200 pop-in';
+        box.textContent = '💡 おしい！「機械が壊れたとき」はフェイルセーフ、「人間のうっかり操作防止」はフールプルーフだよ！';
+      }
+    }
+
+    /* =========================================================
+       TAB 4: MTBF & MTTR RELIABILITY SIMULATOR
+       ========================================================= */
+    function updateReliabilitySim() {
+      const mtbf = parseInt(document.getElementById('slider-mtbf').value, 10);
+      const mttr = parseInt(document.getElementById('slider-mttr').value, 10);
+
+      document.getElementById('mtbf-num').textContent = mtbf;
+      document.getElementById('mttr-num').textContent = mttr;
+
+      document.querySelectorAll('.mtbf-val-label').forEach(el => el.textContent = mtbf);
+
+      const cycle = mtbf + mttr;
+      const mtbfPct = (mtbf / cycle) * 50;
+      const mttrPct = (mttr / cycle) * 50;
+
+      document.getElementById('bar-mtbf-1').style.width = mtbfPct + '%';
+      document.getElementById('bar-mttr-1').style.width = mttrPct + '%';
+      document.getElementById('bar-mtbf-2').style.width = mtbfPct + '%';
+      document.getElementById('bar-mttr-2').style.width = mttrPct + '%';
+
+      const avail = (mtbf / (mtbf + mttr)) * 100;
+      document.getElementById('availability-percent').textContent = avail.toFixed(1);
+      document.getElementById('f-mtbf-top').textContent = mtbf;
+      document.getElementById('f-mtbf-bot').textContent = mtbf;
+      document.getElementById('f-mttr-bot').textContent = mttr;
+
+      const comment = document.getElementById('reliability-comment');
+      if (avail >= 95) {
+        comment.className = 'text-xs font-extrabold text-amber-300';
+        comment.textContent = '✨ MTBFが大きくMTTRが小さい、非常に信頼性の高いシステムです！';
+      } else if (avail >= 85) {
+        comment.className = 'text-xs font-bold text-emerald-300';
+        comment.textContent = '🟢 標準的な稼働状態です。さらにMTBFを伸ばしMTTRを縮めると信頼性が上がります！';
+      } else {
+        comment.className = 'text-xs font-extrabold text-rose-300';
+        comment.textContent = '⚠️ 停止している時間（MTTR）の割合が大きく、信頼性が低い状態です。';
+      }
+    }
+
+    function setReliabilityPreset(mtbf, mttr) {
+      document.getElementById('slider-mtbf').value = mtbf;
+      document.getElementById('slider-mttr').value = mttr;
+      updateReliabilitySim();
+    }
+
+    // Initialize everything on load
+    window.onload = function() {
+      renderBackupColumns();
+      renderParitySim();
+      renderJanCode();
+      updateReliabilitySim();
+    };
+  </script>
+</body>
+</html>

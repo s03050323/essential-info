@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>情報I：情報システムの活用 インタラクティブ図解ラボ</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: M PLUS Rounded 1c -->
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      background-color: #f0f7ff;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+    ruby rt {
+      font-size: 0.65em;
+      color: #64748b;
+      font-weight: 700;
+    }
+    /* Custom Animations */
+    @keyframes pulseWave {
+      0% { transform: scale(0.8); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .wave-ring {
+      animation: pulseWave 1.6s infinite ease-out;
+    }
+    .wave-ring-delay {
+      animation: pulseWave 1.6s infinite ease-out 0.8s;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .float-anim {
+      animation: floatSlow 3s ease-in-out infinite;
+    }
+    @keyframes electricSpark {
+      0%, 100% { filter: drop-shadow(0 0 2px #facc15); transform: scale(1); }
+      50% { filter: drop-shadow(0 0 12px #facc15); transform: scale(1.12); }
+    }
+    .spark-active {
+      animation: electricSpark 0.6s infinite;
+    }
+    @keyframes shakeAlert {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake-anim {
+      animation: shakeAlert 0.45s ease-in-out;
+    }
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -24; }
+    }
+    .flowing-line {
+      stroke-dasharray: 6, 6;
+      animation: dashFlow 0.8s linear infinite;
+    }
+    /* Custom Scrollbar for horizontal tabs on mobile */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .pop-btn {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pop-btn:active {
+      transform: translateY(3px);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="bg-white text-indigo-600 font-extrabold px-3 py-1 rounded-xl text-sm shadow-sm flex items-center gap-1">
+          <i class="fa-solid fa-book-open"></i> 理論編 46
+        </div>
+        <h1 class="text-lg md:text-2xl font-extrabold tracking-tight flex items-center gap-2">
+          情報システムの<ruby>活用<rt>かつよう</rt></ruby>
+          <span class="hidden sm:inline-block text-xs bg-amber-400 text-slate-900 px-2.5 py-0.5 rounded-full font-bold">さわれる図解ラボ</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="bg-white/20 hover:bg-white/30 text-white text-xs md:text-sm px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5 transition">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+          <span id="soundText">効果音 ON</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-indigo-950/30 backdrop-blur-sm border-t border-white/15">
+      <div class="max-w-6xl mx-auto px-2 sm:px-4 flex overflow-x-auto no-scrollbar py-2 gap-1.5 md:gap-2">
+        <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition bg-white text-indigo-700 shadow-md">
+          <span class="bg-indigo-100 text-indigo-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-extrabold">1</span>
+          情報システムと<ruby>通貨<rt>つうか</rt></ruby>
+        </button>
+        <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition text-white/90 hover:bg-white/15">
+          <span class="bg-white/20 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-extrabold">2</span>
+          情報システムによる<ruby>変革<rt>へんかく</rt></ruby>(DX)
+        </button>
+        <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition text-white/90 hover:bg-white/15">
+          <span class="bg-white/20 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-extrabold">3</span>
+          オープンデータの<ruby>重要性<rt>じゅうようせい</rt></ruby>
+        </button>
+        <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition text-white/90 hover:bg-white/15">
+          <span class="bg-white/20 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-extrabold">4</span>
+          クリエイティブ・コモンズ
+        </button>
+        <button onclick="switchTab(5)" id="tab-btn-5" class="tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition text-amber-200 hover:bg-white/15 ml-auto">
+          <i class="fa-solid fa-trophy text-amber-300"></i>
+          まとめ<ruby>確認<rt>かくにん</rt></ruby>クイズ
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-8">
+
+    <!-- ==========================================
+         TAB 1: ① 情報システムと通貨
+         ========================================== -->
+    <section id="tab-content-1" class="space-y-8">
+      <!-- Intro Banner -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-indigo-100 flex flex-col md:flex-row items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-3xl shrink-0">
+          <i class="fa-solid fa-wallet"></i>
+        </div>
+        <div class="space-y-1">
+          <div class="inline-block bg-indigo-100 text-indigo-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 p.118</div>
+          <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">① 情報システムと<ruby>通貨<rt>つうか</rt></ruby> ～お金がデジタルデータになる！～</h2>
+          <p class="text-sm md:text-base text-slate-600">
+            お金の価値（<ruby>貨幣価値<rt>かへいかち</rt></ruby>）をデジタルデータで表したものを<strong class="text-indigo-600 bg-indigo-50 px-1 rounded">電子マネー</strong>や<strong class="text-amber-600 bg-amber-50 px-1 rounded"><ruby>暗号資産<rt>あんごうしさん</rt></ruby></strong>と呼ぶよ。どうやって動いているのか実験してみよう！
+          </p>
+        </div>
+      </div>
+
+      <!-- Part 1-1: 電子マネーの2つのタイプ比較 -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-slate-200 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <h3 class="text-lg md:text-xl font-extrabold flex items-center gap-2 text-slate-800">
+            <span class="bg-blue-500 text-white w-7 h-7 rounded-lg inline-flex items-center justify-center text-sm">A</span>
+            電子マネーの2つのタイプを<ruby>比較<rt>ひかく</rt></ruby>しよう
+          </h3>
+          <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">ボタンを押して切り替え！</span>
+        </div>
+
+        <!-- Toggle Selector -->
+        <div class="grid grid-cols-2 gap-3 max-w-lg mx-auto bg-slate-100 p-1.5 rounded-2xl">
+          <button onclick="selectEmoneyType('ic')" id="emoney-btn-ic" class="py-2.5 px-4 rounded-xl font-extrabold text-sm md:text-base transition bg-blue-600 text-white shadow">
+            <i class="fa-solid fa-train-subway mr-1"></i> IC型 電子マネー
+          </button>
+          <button onclick="selectEmoneyType('net')" id="emoney-btn-net" class="py-2.5 px-4 rounded-xl font-extrabold text-sm md:text-base transition text-slate-600 hover:bg-white/60">
+            <i class="fa-solid fa-cloud mr-1"></i> ネットワーク型 電子マネー
+          </button>
+        </div>
+
+        <!-- Comparison Card Display -->
+        <div id="emoney-card-ic" class="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-2xl p-5 border-2 border-blue-200 grid md:grid-cols-2 gap-6 items-center">
+          <div class="space-y-3">
+            <div class="inline-flex items-center gap-2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+              <i class="fa-solid fa-microchip"></i> カードやスマホの中のICチップに記録！
+            </div>
+            <h4 class="text-xl font-extrabold text-blue-900">IC型（交通系・<ruby>流通系<rt>りゅうつうけい</rt></ruby>など）</h4>
+            <p class="text-sm text-slate-700 leading-relaxed">
+              カードやスマートフォンに組み込まれた<strong>専用のICチップ</strong>に金額のデータを記録するタイプ。改札やレジにピッとタッチして一瞬で支払えるのが特徴！
+            </p>
+            <div class="bg-white/90 rounded-xl p-3 border border-blue-200 text-xs space-y-1">
+              <div class="font-extrabold text-blue-700"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>身近な例：</div>
+              <p class="text-slate-600">Suica / ICOCA / PASMO（交通系）、WAON / nanaco / 楽天Edy（流通系）など</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-4 shadow-inner border border-blue-100 flex items-center justify-around">
+            <div class="text-center">
+              <div class="w-24 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl shadow-md p-2 text-white flex flex-col justify-between mx-auto">
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-bold">IC CARD</span>
+                  <i class="fa-solid fa-wifi rotate-90 text-xs"></i>
+                </div>
+                <div class="w-5 h-4 bg-amber-300 rounded-sm border border-amber-500 flex items-center justify-center">
+                  <div class="w-3 h-2 border border-amber-700/40"></div>
+                </div>
+                <div class="text-right text-[11px] font-extrabold">¥1,000</div>
+              </div>
+              <span class="text-xs font-bold text-slate-600 mt-2 block">ICチップの中に残高データ</span>
+            </div>
+            <i class="fa-solid fa-bolt text-2xl text-amber-400"></i>
+            <div class="text-center">
+              <div class="w-16 h-20 bg-slate-800 rounded-xl p-2 text-white flex flex-col items-center justify-center mx-auto border-2 border-blue-400">
+                <i class="fa-solid fa-wave-square text-blue-300 text-lg"></i>
+                <span class="text-[10px] mt-1 font-bold text-blue-200">タッチ！</span>
+              </div>
+              <span class="text-xs font-bold text-slate-600 mt-2 block">改札・お店の読み取り機</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="emoney-card-net" class="hidden bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border-2 border-purple-200 grid md:grid-cols-2 gap-6 items-center">
+          <div class="space-y-3">
+            <div class="inline-flex items-center gap-2 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+              <i class="fa-solid fa-server"></i> インターネット上のサーバーで管理！
+            </div>
+            <h4 class="text-xl font-extrabold text-purple-900">ネットワーク型（プリペイド・ネット管理）</h4>
+            <p class="text-sm text-slate-700 leading-relaxed">
+              カード自体にお金が入っているのではなく、<strong>インターネット上のサーバーでお金の情報を管理</strong>するタイプ。コンビニで買えるプリペイドカードの番号を入力してチャージするよ！
+            </p>
+            <div class="bg-white/90 rounded-xl p-3 border border-purple-200 text-xs space-y-1">
+              <div class="font-extrabold text-purple-700"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>身近な例：</div>
+              <p class="text-slate-600">Apple Gift Card / Google Play ギフトカード / WebMoney / Amazonギフトカード など</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-4 shadow-inner border border-purple-100 flex items-center justify-around">
+            <div class="text-center">
+              <div class="w-20 h-24 bg-gradient-to-b from-pink-500 to-purple-600 rounded-xl shadow-md p-2 text-white flex flex-col justify-between mx-auto">
+                <span class="text-[9px] font-bold bg-white/20 rounded px-1">GIFT CARD</span>
+                <i class="fa-solid fa-gamepad text-2xl"></i>
+                <span class="text-[9px] font-mono bg-slate-900/50 rounded px-1">ABCD-1234</span>
+              </div>
+              <span class="text-xs font-bold text-slate-600 mt-2 block">番号を入力</span>
+            </div>
+            <i class="fa-solid fa-arrow-right-arrow-left text-xl text-purple-500"></i>
+            <div class="text-center">
+              <div class="w-24 h-20 bg-purple-900 rounded-xl p-2 text-white flex flex-col items-center justify-center mx-auto border-2 border-purple-400">
+                <i class="fa-solid fa-cloud text-2xl text-purple-300"></i>
+                <span class="text-[10px] mt-1 font-bold text-amber-300">残高：¥3,000</span>
+              </div>
+              <span class="text-xs font-bold text-slate-600 mt-2 block">ネット上のサーバーで管理</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Part 1-2: MAIN ANIMATION - 非接触型ICカード（RFID）の仕組み -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-emerald-200 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 図1・重要ポイント</span>
+            <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">
+              <i class="fa-solid fa-wand-magic-sparkles text-emerald-600 mr-1"></i>
+              なぜ電池がないカードなのに通信できるの？（<ruby>非接触型<rt>ひせっしょくがた</rt></ruby>ICカード / RFIDの仕組み）
+            </h3>
+          </div>
+          <div class="bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-300">
+            💬 つまり：読み取り機の電波から「その場で電気を作って」動いている！
+          </div>
+        </div>
+
+        <!-- Interactive RFID Stage -->
+        <div class="bg-slate-900 rounded-2xl p-4 md:p-6 text-white relative overflow-hidden">
+          <!-- Step Progress Pills -->
+          <div class="grid grid-cols-3 gap-2 mb-6">
+            <div id="rfid-pill-1" class="bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-center transition">
+              <div class="text-xs text-blue-400 font-extrabold">Step 1</div>
+              <div class="text-xs md:text-sm font-bold"><ruby>磁界<rt>じかい</rt></ruby>が発生している</div>
+            </div>
+            <div id="rfid-pill-2" class="bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-center transition">
+              <div class="text-xs text-amber-400 font-extrabold">Step 2</div>
+              <div class="text-xs md:text-sm font-bold"><ruby>電磁誘導<rt>でんじゆうどう</rt></ruby>で<ruby>電流<rt>でんりゅう</rt></ruby>発生！</div>
+            </div>
+            <div id="rfid-pill-3" class="bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-center transition">
+              <div class="text-xs text-emerald-400 font-extrabold">Step 3</div>
+              <div class="text-xs md:text-sm font-bold">ICチップ起動＆無線通信！</div>
+            </div>
+          </div>
+
+          <!-- Animation Visual Area -->
+          <div class="relative h-64 md:h-72 bg-slate-950/80 rounded-2xl border border-slate-800 flex items-center justify-between px-4 md:px-14 overflow-hidden">
+            
+            <!-- Left: IC Card -->
+            <div id="rfid-card-box" class="relative z-20 transition-all duration-700 transform translate-x-0">
+              <div class="w-40 md:w-52 h-28 md:h-32 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-3 shadow-2xl border-2 border-emerald-300 relative flex flex-col justify-between">
+                <!-- Internal Antenna Coil (visible inside card) -->
+                <div id="rfid-coil" class="absolute inset-1.5 border-2 border-dashed border-white/30 rounded-xl pointer-events-none transition-all duration-300"></div>
+                
+                <div class="flex justify-between items-center z-10">
+                  <span class="text-xs font-extrabold tracking-wider bg-black/25 px-2 py-0.5 rounded">Suica / ICカード</span>
+                  <span id="rfid-battery-tag" class="text-[10px] bg-slate-900/70 text-slate-300 px-2 py-0.5 rounded-full">電池なし</span>
+                </div>
+
+                <!-- IC Chip & LED -->
+                <div class="flex items-center gap-3 z-10 my-auto">
+                  <div id="rfid-chip" class="w-10 h-8 bg-amber-300 rounded-md border-2 border-amber-600 flex items-center justify-center text-slate-900 font-extrabold text-xs shadow transition-all">
+                    IC
+                  </div>
+                  <div id="rfid-electric-badge" class="hidden bg-amber-400 text-slate-950 text-xs font-extrabold px-2 py-0.5 rounded-full items-center gap-1 shadow">
+                    <i class="fa-solid fa-bolt"></i> 電流発生!
+                  </div>
+                </div>
+
+                <!-- Balance Display -->
+                <div class="flex justify-between items-end z-10">
+                  <span class="text-[11px] text-emerald-100">残高データ</span>
+                  <span id="rfid-balance" class="text-lg md:text-xl font-extrabold font-mono bg-black/30 px-2.5 py-0.5 rounded-lg text-white transition-all">¥1,000</span>
+                </div>
+              </div>
+              <div class="text-center text-xs text-slate-400 mt-2 font-bold">あなたのICカード</div>
+            </div>
+
+            <!-- Middle: Wireless Signal / Communication Waves -->
+            <div id="rfid-comm-arrows" class="hidden flex-col items-center justify-center z-20 mx-auto">
+              <div class="bg-emerald-500 text-slate-950 font-extrabold text-xs px-3 py-1 rounded-full shadow-lg animate-bounce">
+                ピピッ！無線通信中 <i class="fa-solid fa-Tower-broadcast ml-1"></i>
+              </div>
+              <div class="text-emerald-400 font-mono text-xs mt-1 font-bold">-160円 決済完了！</div>
+            </div>
+
+            <!-- Right: Ticket Gate Reader -->
+            <div class="relative z-10 flex flex-col items-center">
+              <!-- Magnetic Field Rings (Step 1+) -->
+              <div id="rfid-magnetic-waves" class="absolute -left-12 top-1/2 -translate-y-1/2 w-32 h-32 pointer-events-none flex items-center justify-center">
+                <div class="w-24 h-24 rounded-full border-4 border-blue-400/60 wave-ring absolute"></div>
+                <div class="w-24 h-24 rounded-full border-4 border-cyan-300/50 wave-ring-delay absolute"></div>
+              </div>
+
+              <div id="rfid-reader-box" class="w-28 md:w-36 h-40 bg-slate-800 rounded-2xl border-4 border-blue-500 shadow-2xl flex flex-col items-center justify-between p-3 relative">
+                <div class="text-[11px] font-extrabold text-blue-300 bg-blue-950 px-2 py-0.5 rounded">改札の読み取り機</div>
+                <div id="rfid-reader-ring" class="w-16 h-16 rounded-full bg-blue-950 border-4 border-blue-400 flex flex-col items-center justify-center shadow-inner transition-all">
+                  <i class="fa-solid fa-wifi text-blue-300 text-xl"></i>
+                  <span class="text-[9px] text-blue-200 font-bold mt-0.5">TOUCH</span>
+                </div>
+                <div class="text-[10px] text-cyan-300 font-bold"><i class="fa-solid fa-magnet mr-1"></i>磁界を発生中</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Explanation Box & Controls -->
+          <div class="mt-4 bg-slate-800/90 rounded-xl p-4 border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="space-y-1 flex-1">
+              <div id="rfid-step-title" class="text-amber-300 font-extrabold text-sm md:text-base">
+                【Step 1】読み取り機からは常に「磁界（じかい）」が出ているよ
+              </div>
+              <p id="rfid-step-desc" class="text-xs md:text-sm text-slate-200 leading-relaxed">
+                下の「改札にタッチ！」ボタンを押して、カードを近づけてみよう。電池が入っていないカードがどうやって動くかな？
+              </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="runRfidTouch()" id="rfid-touch-btn" class="pop-btn bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-extrabold px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm md:text-base">
+                <i class="fa-solid fa-hand-pointer"></i> 改札・読み取り機にタッチ！
+              </button>
+              <button onclick="resetRfid()" class="pop-btn bg-slate-700 hover:bg-slate-600 text-white font-bold px-3.5 py-3 rounded-xl text-xs md:text-sm">
+                <i class="fa-solid fa-rotate-left"></i> リセット
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Part 1-3: 暗号資産とブロックチェーン -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-amber-200 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="bg-amber-100 text-amber-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 p.118 下部</span>
+            <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">
+              <i class="fa-solid fa-coins text-amber-500 mr-1"></i>
+              <ruby>暗号資産<rt>あんごうしさん</rt></ruby>（<ruby>仮想通貨<rt>かそうつうか</rt></ruby>）とブロックチェーンの仕組み
+            </h3>
+          </div>
+        </div>
+
+        <!-- Merit & Risk Cards -->
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="bg-blue-50 rounded-2xl p-4 border border-blue-200 space-y-1.5">
+            <div class="font-extrabold text-blue-800 flex items-center gap-1.5 text-sm md:text-base">
+              <i class="fa-solid fa-circle-check text-blue-600"></i> 暗号資産の特徴とメリット
+            </div>
+            <p class="text-xs md:text-sm text-slate-700 leading-relaxed">
+              インターネット上でやり取りできるデジタルの資産（ビットコインなど）。円やドルと交換でき、<strong>ブロックチェーン</strong>という技術を使うことで、<strong>銀行のような機関を通さずに直接価値を移せる</strong>メリットがあるよ！
+            </p>
+          </div>
+          <div class="bg-rose-50 rounded-2xl p-4 border border-rose-200 space-y-1.5">
+            <div class="font-extrabold text-rose-800 flex items-center gap-1.5 text-sm md:text-base">
+              <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> 知っておくべき注意点（リスク）
+            </div>
+            <p class="text-xs md:text-sm text-slate-700 leading-relaxed">
+              日本円のように国や中央銀行といった<strong>「公的な発行主体や管理者の裏付け」がない</strong>ものも多く、価格が急に<strong><ruby>暴落<rt>ぼうらく</rt></ruby>したり価値が<ruby>消失<rt>しょうしつ</rt></ruby>したりするリスク</strong>があるよ。
+            </p>
+          </div>
+        </div>
+
+        <!-- Blockchain Tamper Experiment -->
+        <div class="bg-slate-900 rounded-2xl p-4 md:p-6 text-white space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 class="font-extrabold text-base md:text-lg text-amber-300 flex items-center gap-2">
+                <i class="fa-solid fa-link"></i> 実験！なぜ「ブロックチェーン」はズル（<ruby>改<rt>かい</rt></ruby>ざん）ができないの？
+              </h4>
+              <p class="text-xs text-slate-300 mt-0.5">
+                取引データを「ブロック」という単位にまとめ、鎖（チェーン）のようにつなげて<strong>参加者みんなで同じデータを持ち合う（分散管理）</strong>仕組みだよ。
+              </p>
+            </div>
+          </div>
+
+          <!-- 4 Nodes Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+            <!-- Node A -->
+            <div id="bc-node-1" class="bg-slate-800 border-2 border-emerald-500/70 rounded-2xl p-3 text-center space-y-2 transition-all">
+              <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto text-lg">
+                <i class="fa-solid fa-user-check"></i>
+              </div>
+              <div class="text-xs font-extrabold">Aさんの記録帳</div>
+              <div class="bg-slate-950 rounded-xl p-2 font-mono text-xs border border-slate-700 space-y-1">
+                <div class="text-[10px] text-slate-400">Block #101 🔗 #102</div>
+                <div class="text-emerald-400 font-bold">Cさん残高: 100コイン</div>
+              </div>
+              <span class="inline-block text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">✅ 正しいデータ</span>
+            </div>
+
+            <!-- Node B -->
+            <div id="bc-node-2" class="bg-slate-800 border-2 border-emerald-500/70 rounded-2xl p-3 text-center space-y-2 transition-all">
+              <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto text-lg">
+                <i class="fa-solid fa-user-check"></i>
+              </div>
+              <div class="text-xs font-extrabold">Bさんの記録帳</div>
+              <div class="bg-slate-950 rounded-xl p-2 font-mono text-xs border border-slate-700 space-y-1">
+                <div class="text-[10px] text-slate-400">Block #101 🔗 #102</div>
+                <div class="text-emerald-400 font-bold">Cさん残高: 100コイン</div>
+              </div>
+              <span class="inline-block text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">✅ 正しいデータ</span>
+            </div>
+
+            <!-- Node C (Target of Hack) -->
+            <div id="bc-node-3" class="bg-slate-800 border-2 border-emerald-500/70 rounded-2xl p-3 text-center space-y-2 transition-all relative">
+              <div id="bc-hacker-icon" class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto text-lg">
+                <i class="fa-solid fa-user-secret"></i>
+              </div>
+              <div class="text-xs font-extrabold">Cさんの記録帳</div>
+              <div class="bg-slate-950 rounded-xl p-2 font-mono text-xs border border-slate-700 space-y-1">
+                <div class="text-[10px] text-slate-400">Block #101 🔗 #102</div>
+                <div id="bc-node3-val" class="text-emerald-400 font-bold transition-all">Cさん残高: 100コイン</div>
+              </div>
+              <span id="bc-node3-status" class="inline-block text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">✅ 正しいデータ</span>
+            </div>
+
+            <!-- Node D -->
+            <div id="bc-node-4" class="bg-slate-800 border-2 border-emerald-500/70 rounded-2xl p-3 text-center space-y-2 transition-all">
+              <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto text-lg">
+                <i class="fa-solid fa-user-check"></i>
+              </div>
+              <div class="text-xs font-extrabold">Dさんの記録帳</div>
+              <div class="bg-slate-950 rounded-xl p-2 font-mono text-xs border border-slate-700 space-y-1">
+                <div class="text-[10px] text-slate-400">Block #101 🔗 #102</div>
+                <div class="text-emerald-400 font-bold">Cさん残高: 100コイン</div>
+              </div>
+              <span class="inline-block text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">✅ 正しいデータ</span>
+            </div>
+          </div>
+
+          <!-- Blockchain Status Message & Trigger -->
+          <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div id="bc-status-msg" class="text-xs md:text-sm text-slate-200 flex-1">
+              今はA・B・C・Dの4人全員が「Cさんの残高は100コイン」という同じ取引データのブロックを持っているよ。もしCさんが勝手に自分の記録を「9999コイン」に書き換えたらどうなるかな？
+            </div>
+            <button onclick="runBlockchainHack()" id="bc-hack-btn" class="pop-btn shrink-0 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-extrabold px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-xs md:text-sm">
+              <i class="fa-solid fa-bug"></i> 悪い人がデータを書き換える（改ざん実験）
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 2: ② 情報システムによる変革 (DX)
+         ========================================== -->
+    <section id="tab-content-2" class="hidden space-y-8">
+      <!-- Intro Banner -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-purple-100 flex flex-col md:flex-row items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-3xl shrink-0">
+          <i class="fa-solid fa-rocket"></i>
+        </div>
+        <div class="space-y-1">
+          <div class="inline-block bg-purple-100 text-purple-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 p.118〜119</div>
+          <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">② 情報システムによる<ruby>変革<rt>へんかく</rt></ruby> ～デジタル化とDXの違いって？～</h2>
+          <p class="text-sm md:text-base text-slate-600">
+            ただ紙や電話をデジタルに置き換えるだけでなく、<strong>世の中の仕組みや価値観そのものを大きく変えること</strong>を<strong class="text-purple-600 bg-purple-50 px-1 rounded">DX（デジタルトランスフォーメーション）</strong>と呼ぶよ！
+          </p>
+        </div>
+      </div>
+
+      <!-- Part 2-1: 学校の欠席連絡で見る「アナログ → デジタル化 → DX」3ステップ -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-purple-200 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-lg md:text-xl font-extrabold text-slate-800">
+            <i class="fa-solid fa-school text-purple-600 mr-1"></i>
+            学校の「欠席連絡と学び」で体験！単なるデジタル化とDXの違い
+          </h3>
+          <span class="text-xs font-bold bg-purple-100 text-purple-800 px-3 py-1 rounded-full">3つの段階をクリックして比べてみよう！</span>
+        </div>
+
+        <!-- 3-Step Selector Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <button onclick="setDxStage(1)" id="dx-btn-1" class="pop-btn p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 bg-slate-100 border-slate-400">
+            <div class="w-10 h-10 rounded-xl bg-slate-600 text-white flex items-center justify-center font-extrabold shrink-0">昔</div>
+            <div>
+              <div class="text-xs font-bold text-slate-500">Before：アナログ</div>
+              <div class="font-extrabold text-sm md:text-base text-slate-800">電話で連絡＆紙の出席簿</div>
+            </div>
+          </button>
+          <button onclick="setDxStage(2)" id="dx-btn-2" class="pop-btn p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 bg-white border-slate-200 hover:bg-blue-50/40">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold shrink-0">1</div>
+            <div>
+              <div class="text-xs font-bold text-blue-600">Step 1：デジタル化</div>
+              <div class="font-extrabold text-sm md:text-base text-slate-800">アプリやメールで欠席連絡</div>
+            </div>
+          </button>
+          <button onclick="setDxStage(3)" id="dx-btn-3" class="pop-btn p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 bg-white border-slate-200 hover:bg-purple-50/40">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white flex items-center justify-center font-extrabold shrink-0">DX</div>
+            <div>
+              <div class="text-xs font-bold text-purple-600">Step 2：DX（変革！）</div>
+              <div class="font-extrabold text-sm md:text-base text-slate-800">学習システム連携で新しい学び！</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Visual Stage Container -->
+        <div id="dx-stage-box" class="bg-slate-50 rounded-2xl p-5 md:p-6 border-2 border-slate-200 transition-all">
+          <!-- Stage 1 Content: Analog -->
+          <div id="dx-view-1" class="grid md:grid-cols-2 gap-6 items-center">
+            <div class="space-y-3">
+              <span class="bg-slate-700 text-white text-xs font-bold px-3 py-1 rounded-full">Before：アナログの時代</span>
+              <h4 class="text-xl font-extrabold text-slate-800">朝の職員室は電話ラッシュで大忙し…！</h4>
+              <p class="text-sm text-slate-600 leading-relaxed">
+                生徒が休むときは保護者が学校へ電話をかけ、先生がメモを取って紙の出席簿に手書きで記入していました。電話が話し中でつながらなかったり、担任の先生に伝わるまで時間がかかったりして大変でした。
+              </p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 flex items-center justify-around text-center shadow-inner">
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl mx-auto">
+                  <i class="fa-solid fa-phone-volume animate-bounce text-rose-500"></i>
+                </div>
+                <div class="text-xs font-bold mt-2">朝から電話対応</div>
+                <div class="text-[10px] text-rose-500 font-bold">「話し中でつながらない…」</div>
+              </div>
+              <i class="fa-solid fa-arrow-right text-slate-400 text-xl"></i>
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-3xl mx-auto">
+                  <i class="fa-solid fa-clipboard-user"></i>
+                </div>
+                <div class="text-xs font-bold mt-2">紙の出席簿に手書き</div>
+                <div class="text-[10px] text-slate-500">集計や共有も手作業</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stage 2 Content: Digitization -->
+          <div id="dx-view-2" class="hidden grid md:grid-cols-2 gap-6 items-center">
+            <div class="space-y-3">
+              <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">Step 1：既存の仕組みをデジタル化</span>
+              <h4 class="text-xl font-extrabold text-blue-900">スマホアプリやメールで欠席連絡！便利になった！</h4>
+              <p class="text-sm text-slate-700 leading-relaxed">
+                電話で行われていた欠席連絡を、<strong>電子メールや専用アプリ</strong>で行うように変更！保護者は24時間いつでも送れて、先生も一覧でパッと確認できるようになり、<strong>利便性（便利さ）がアップ</strong>しました。
+              </p>
+              <div class="bg-blue-100/70 text-blue-900 text-xs p-3 rounded-xl font-bold">
+                💡 ポイント：ここはまだ「電話をアプリに置き換えた（デジタル化）」段階だよ！
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl p-5 border border-blue-200 flex items-center justify-around text-center shadow-inner">
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-3xl mx-auto">
+                  <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <div class="text-xs font-bold mt-2">専用アプリで送信</div>
+                <div class="text-[10px] text-blue-600 font-bold">30秒で入力完了！</div>
+              </div>
+              <i class="fa-solid fa-paper-plane text-blue-400 text-xl"></i>
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto">
+                  <i class="fa-solid fa-laptop-file"></i>
+                </div>
+                <div class="text-xs font-bold mt-2">先生のタブレットに自動集計</div>
+                <div class="text-[10px] text-emerald-600 font-bold">電話対応ゼロに！</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stage 3 Content: DX (Transformation) -->
+          <div id="dx-view-3" class="hidden grid md:grid-cols-2 gap-6 items-center">
+            <div class="space-y-3">
+              <span class="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full">Step 2：DX（デジタルトランスフォーメーション）</span>
+              <h4 class="text-xl font-extrabold text-purple-900">データ連携で「新しい学びの方法や価値」が生まれる！</h4>
+              <p class="text-sm text-slate-700 leading-relaxed">
+                出欠データだけでなく、普段の学習記録と<strong>学習管理システム（LMS）などを連携</strong>！休んだ生徒の端末に「今日の授業の配信・録画」や「今の理解度に合わせた個別課題」が自動で届くなど、<strong>学びの仕組み自体が変革</strong>されます！
+              </p>
+              <div class="bg-purple-100 text-purple-950 text-xs p-3 rounded-xl font-bold border border-purple-300">
+                🌟 これがDX：世の中の仕組みの在り方や価値観に大きな影響を与える変革！
+              </div>
+            </div>
+            <div class="bg-gradient-to-br from-purple-900 to-indigo-950 text-white rounded-2xl p-4 border-2 border-purple-400 space-y-3 shadow-lg">
+              <div class="text-xs font-extrabold text-center text-amber-300">
+                <i class="fa-solid fa-diagram-project mr-1"></i> さまざまなデータ × 学習管理システム（LMS）連携
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center items-center">
+                <div class="bg-white/10 rounded-xl p-2">
+                  <i class="fa-solid fa-calendar-check text-pink-400 text-xl"></i>
+                  <div class="text-[10px] font-bold mt-1">出欠・体調データ</div>
+                </div>
+                <div class="bg-purple-500/30 border border-purple-300 rounded-xl p-2">
+                  <i class="fa-solid fa-brain text-amber-300 text-2xl"></i>
+                  <div class="text-[10px] font-extrabold mt-1">LMS自動連携</div>
+                </div>
+                <div class="bg-white/10 rounded-xl p-2">
+                  <i class="fa-solid fa-chart-line text-cyan-300 text-xl"></i>
+                  <div class="text-[10px] font-bold mt-1">テスト・学習履歴</div>
+                </div>
+              </div>
+              <div class="bg-emerald-400/20 border border-emerald-400/50 rounded-xl p-2.5 text-center">
+                <div class="text-xs font-extrabold text-emerald-300">✨ 生まれた新しい価値！</div>
+                <div class="text-[11px] text-white mt-0.5">自宅からオンライン授業参加＆自分にピッタリの課題で遅れず学べる！</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Part 2-2: memo マイナンバー（個人番号）の連携デモ -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-indigo-200 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="bg-indigo-100 text-indigo-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 p.118 memo</span>
+            <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">
+              <i class="fa-solid fa-id-card text-indigo-600 mr-1"></i>
+              マイナンバー（個人番号）で行政手続きはどう変わる？
+            </h3>
+          </div>
+          <button onclick="toggleMyNumber()" id="mynum-btn" class="pop-btn bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold px-5 py-2.5 rounded-xl shadow flex items-center gap-2 text-xs md:text-sm">
+            <i class="fa-solid fa-link"></i> マイナンバーで関連付ける！
+          </button>
+        </div>
+
+        <p class="text-xs md:text-sm text-slate-600">
+          各行政機関（市役所・税務署・年金事務所など）で<strong>バラバラに分散管理されている個人情報</strong>を、<strong>マイナンバーで関連付ける</strong>ことで、あちこちの窓口へ書類を取りに行く手間がなくなり、行政手続きの利便性向上や効率化が期待できるよ！
+        </p>
+
+        <!-- MyNumber Visual Diagram -->
+        <div class="bg-slate-900 rounded-2xl p-5 text-white relative">
+          <div class="grid md:grid-cols-3 gap-4 items-center">
+            <!-- Left: Citizen -->
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 text-center space-y-2">
+              <div id="mynum-card-visual" class="w-28 h-16 bg-gradient-to-r from-pink-200 via-sky-200 to-indigo-200 text-slate-900 rounded-xl mx-auto p-2 flex items-center gap-2 shadow transition-all">
+                <div class="w-7 h-8 bg-slate-400 rounded flex items-center justify-center text-white text-xs">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="text-left">
+                  <div class="text-[8px] font-extrabold">個人番号カード</div>
+                  <div class="text-[9px] font-mono font-bold">1234-5678-9012</div>
+                </div>
+              </div>
+              <div class="font-extrabold text-sm">わたしたち住民</div>
+              <div id="mynum-user-status" class="text-xs text-rose-300 font-bold bg-rose-950/60 border border-rose-700/50 rounded-lg p-2">
+                💦「引越しや手続きのたびに、全部の窓口へ書類を出しに行くのが大変…」
+              </div>
+            </div>
+
+            <!-- Middle: Connection Hub -->
+            <div class="flex flex-col items-center justify-center py-2">
+              <div id="mynum-hub" class="w-24 h-24 rounded-full bg-slate-800 border-4 border-dashed border-slate-600 flex flex-col items-center justify-center text-center p-2 transition-all">
+                <i id="mynum-hub-icon" class="fa-solid fa-unlink text-2xl text-slate-400"></i>
+                <span id="mynum-hub-text" class="text-[11px] font-extrabold text-slate-400 mt-1">バラバラに管理</span>
+              </div>
+            </div>
+
+            <!-- Right: Government Agencies -->
+            <div class="space-y-2.5">
+              <div id="agency-1" class="bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center justify-between transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i class="fa-solid fa-building-columns text-sky-400 text-lg"></i>
+                  <div>
+                    <div class="text-xs font-extrabold">市区町村の役所</div>
+                    <div class="text-[10px] text-slate-400">住民票・児童手当・福祉データ</div>
+                  </div>
+                </div>
+                <span class="agency-badge text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">個別管理</span>
+              </div>
+
+              <div id="agency-2" class="bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center justify-between transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i class="fa-solid fa-file-invoice-dollar text-amber-400 text-lg"></i>
+                  <div>
+                    <div class="text-xs font-extrabold">税務署</div>
+                    <div class="text-[10px] text-slate-400">所得・税金のデータ</div>
+                  </div>
+                </div>
+                <span class="agency-badge text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">個別管理</span>
+              </div>
+
+              <div id="agency-3" class="bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center justify-between transition-all">
+                <div class="flex items-center gap-2.5">
+                  <i class="fa-solid fa-hospital-user text-emerald-400 text-lg"></i>
+                  <div>
+                    <div class="text-xs font-extrabold">年金事務所・健康保険</div>
+                    <div class="text-[10px] text-slate-400">年金・医療保険のデータ</div>
+                  </div>
+                </div>
+                <span class="agency-badge text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">個別管理</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 3: ③ オープンデータの重要性
+         ========================================== -->
+    <section id="tab-content-3" class="hidden space-y-8">
+      <!-- Intro Banner -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col md:flex-row items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl shrink-0">
+          <i class="fa-solid fa-database"></i>
+        </div>
+        <div class="space-y-1">
+          <div class="inline-block bg-emerald-100 text-emerald-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 p.119 上部</div>
+          <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">③ オープンデータの<ruby>重要性<rt>じゅうようせい</rt></ruby> ～みんなのデータで街を便利に！～</h2>
+          <p class="text-sm md:text-base text-slate-600">
+            国や地方公共団体、企業が持っているデータのうち、<strong>誰でもインターネットを通して無料で自由に使えるように公開されたデータ</strong>を<strong class="text-emerald-600 bg-emerald-50 px-1 rounded">オープンデータ</strong>というよ！
+          </p>
+        </div>
+      </div>
+
+      <!-- Part 3-1: オープンデータの3つの条件 -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-slate-200 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-lg md:text-xl font-extrabold text-slate-800">
+            <i class="fa-solid fa-list-check text-emerald-600 mr-1"></i>
+            テストに出る！「オープンデータ」と呼ぶための3つの条件
+          </h3>
+          <span class="text-xs font-bold text-slate-500">デジタル庁「オープンデータ基本指針」より</span>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <!-- Condition 1 -->
+          <div class="bg-emerald-50/70 rounded-2xl p-4 border-2 border-emerald-200 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-emerald-600 text-white font-extrabold text-sm flex items-center justify-center">①</span>
+              <span class="font-extrabold text-emerald-950 text-sm md:text-base">二次利用可能なルール</span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-700 leading-relaxed">
+              <strong><ruby>営利目的<rt>えいりもくてき</rt></ruby>・<ruby>非営利目的<rt>ひえいりもくてき</rt></ruby>を問わず</strong>、加工したりアプリに組み込んだり（二次利用）できるルールが適用されていること。
+            </p>
+            <div class="bg-white rounded-xl p-2 text-[11px] text-emerald-800 font-bold border border-emerald-200">
+              💬 つまり：お金を稼ぐ商用アプリに使ってもOK！
+            </div>
+          </div>
+
+          <!-- Condition 2 -->
+          <div class="bg-blue-50/70 rounded-2xl p-4 border-2 border-blue-200 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-blue-600 text-white font-extrabold text-sm flex items-center justify-center">②</span>
+              <span class="font-extrabold text-blue-950 text-sm md:text-base"><ruby>機械判読<rt>きかいはんどく</rt></ruby>に適したもの</span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-700 leading-relaxed">
+              コンピュータのプログラムが自動で読み取って処理しやすい形式（CSVやJSONなど）になっていること。
+            </p>
+            <div class="bg-white rounded-xl p-2 text-[11px] text-blue-800 font-bold border border-blue-200">
+              💬 つまり：紙をスキャンした画像PDFではなく、表計算などでそのまま使えるデータ！
+            </div>
+          </div>
+
+          <!-- Condition 3 -->
+          <div class="bg-amber-50/70 rounded-2xl p-4 border-2 border-amber-200 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-amber-500 text-white font-extrabold text-sm flex items-center justify-center">③</span>
+              <span class="font-extrabold text-amber-950 text-sm md:text-base"><ruby>無償<rt>むしょう</rt></ruby>で利用できるもの</span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-700 leading-relaxed">
+              お金を払わずに、誰でも<strong>無料（タダ）</strong>でダウンロードして利用できること。
+            </p>
+            <div class="bg-white rounded-xl p-2 text-[11px] text-amber-800 font-bold border border-amber-200">
+              💬 つまり：高校生でも個人開発者でも0円で使える！
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Part 3-2: MAIN SIMULATION - オープンデータで街を便利にするアプリを作ろう！ -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-emerald-300 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">体験シミュレーター</span>
+            <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">
+              <i class="fa-solid fa-map-location-dot text-emerald-600 mr-1"></i>
+              自治体のオープンデータを取り込んで「街のお助けマップアプリ」を作ろう！
+            </h3>
+          </div>
+          <div class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl font-bold">
+            <i class="fa-solid fa-door-open text-indigo-500 mr-1"></i>
+            <strong>ポータルサイト</strong>＝さまざまなWebページの「入り口（門）」となるサイト
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-12 gap-6 items-center">
+          <!-- Left: Open Data Portal (5 cols) -->
+          <div class="md:col-span-5 bg-slate-100 rounded-2xl p-4 border-2 border-slate-300 space-y-3">
+            <div class="bg-slate-800 text-white px-3 py-2 rounded-xl flex items-center justify-between text-xs font-extrabold">
+              <span><i class="fa-solid fa-globe mr-1.5 text-cyan-300"></i>自治体オープンデータポータル</span>
+              <span class="bg-emerald-500 text-slate-950 px-2 py-0.5 rounded text-[10px]">CSV配布中</span>
+            </div>
+            <p class="text-xs text-slate-600">
+              取り込みたいデータのボタンを押して、右のスマホアプリに連携させよう！
+            </p>
+
+            <!-- Data Toggle Buttons -->
+            <div class="space-y-2.5">
+              <button onclick="toggleOpenData('aed')" id="od-btn-aed" class="pop-btn w-full p-3 rounded-xl border-2 border-slate-300 bg-white hover:bg-rose-50 flex items-center justify-between transition text-left">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-xs md:text-sm text-slate-800">AEDの設置場所データ.csv</div>
+                    <div class="text-[10px] text-slate-500">緯度・経度・施設名の一覧</div>
+                  </div>
+                </div>
+                <span id="od-tag-aed" class="text-xs font-extrabold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg">＋ 取り込む</span>
+              </button>
+
+              <button onclick="toggleOpenData('fire')" id="od-btn-fire" class="pop-btn w-full p-3 rounded-xl border-2 border-slate-300 bg-white hover:bg-orange-50 flex items-center justify-between transition text-left">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-lg shrink-0">
+                    <i class="fa-solid fa-fire-extinguisher"></i>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-xs md:text-sm text-slate-800">消火器の設置場所データ.csv</div>
+                    <div class="text-[10px] text-slate-500">街角消火器・防火水槽の位置</div>
+                  </div>
+                </div>
+                <span id="od-tag-fire" class="text-xs font-extrabold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg">＋ 取り込む</span>
+              </button>
+
+              <button onclick="toggleOpenData('bus')" id="od-btn-bus" class="pop-btn w-full p-3 rounded-xl border-2 border-slate-300 bg-white hover:bg-blue-50 flex items-center justify-between transition text-left">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg shrink-0">
+                    <i class="fa-solid fa-bus"></i>
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-xs md:text-sm text-slate-800">地域バスの運行ルートデータ</div>
+                    <div class="text-[10px] text-slate-500">バス停位置・時刻表・ルート情報</div>
+                  </div>
+                </div>
+                <span id="od-tag-bus" class="text-xs font-extrabold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg">＋ 取り込む</span>
+              </button>
+            </div>
+
+            <button onclick="enableAllOpenData()" class="pop-btn w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs md:text-sm shadow">
+              <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 3つすべてのデータをアプリに変換！
+            </button>
+          </div>
+
+          <!-- Right: Smartphone Map Preview (7 cols) -->
+          <div class="md:col-span-7 bg-slate-900 rounded-3xl p-4 border-4 border-slate-700 shadow-xl">
+            <div class="flex items-center justify-between text-white text-xs px-2 pb-2 border-b border-slate-700 mb-3">
+              <span class="font-extrabold text-emerald-400"><i class="fa-solid fa-mobile-screen mr-1"></i>高校生が作った「街の安心ナビ」</span>
+              <span id="od-active-count" class="bg-slate-800 px-2.5 py-0.5 rounded-full text-[11px]">連携データ: 0 / 3</span>
+            </div>
+
+            <!-- Interactive Town Map SVG/HTML -->
+            <div class="relative h-64 bg-emerald-950 rounded-2xl overflow-hidden border border-slate-700">
+              <!-- Roads & River Background -->
+              <svg class="w-full h-full" viewBox="0 0 500 260" preserveAspectRatio="none">
+                <!-- Park areas -->
+                <rect x="0" y="0" width="500" height="260" fill="#ecfdf5" />
+                <rect x="30" y="25" width="130" height="80" rx="12" fill="#bbf7d0" />
+                <rect x="320" y="140" width="150" height="90" rx="12" fill="#bbf7d0" />
+                <!-- River -->
+                <path d="M 0 210 Q 180 180 300 260" stroke="#93c5fd" stroke-width="26" fill="none" />
+                <!-- Roads -->
+                <line x1="0" y1="120" x2="500" y2="120" stroke="#cbd5e1" stroke-width="18" />
+                <line x1="230" y1="0" x2="230" y2="260" stroke="#cbd5e1" stroke-width="18" />
+                <!-- Bus Route Path (Hidden by default) -->
+                <path id="map-bus-route" class="hidden flowing-line" d="M 40 120 L 230 120 L 230 50 L 430 50 L 430 190" stroke="#2563eb" stroke-width="6" fill="none" />
+              </svg>
+
+              <!-- Landmarks -->
+              <div class="absolute top-6 left-10 bg-white/90 px-2 py-0.5 rounded text-[10px] font-extrabold text-slate-700 shadow">🏫 高校</div>
+              <div class="absolute top-28 left-52 bg-white/90 px-2 py-0.5 rounded text-[10px] font-extrabold text-slate-700 shadow">🚉 駅前</div>
+              <div class="absolute bottom-6 right-10 bg-white/90 px-2 py-0.5 rounded text-[10px] font-extrabold text-slate-700 shadow">🏥 市民病院</div>
+
+              <!-- AED Pins Layer -->
+              <div id="map-layer-aed" class="hidden">
+                <div class="absolute top-12 left-28 bg-rose-600 text-white px-2 py-1 rounded-full text-xs font-extrabold shadow-lg flex items-center gap-1 float-anim">
+                  <i class="fa-solid fa-heart-pulse"></i> AED
+                </div>
+                <div class="absolute top-24 left-64 bg-rose-600 text-white px-2 py-1 rounded-full text-xs font-extrabold shadow-lg flex items-center gap-1 float-anim">
+                  <i class="fa-solid fa-heart-pulse"></i> AED
+                </div>
+                <div class="absolute bottom-12 right-28 bg-rose-600 text-white px-2 py-1 rounded-full text-xs font-extrabold shadow-lg flex items-center gap-1 float-anim">
+                  <i class="fa-solid fa-heart-pulse"></i> AED
+                </div>
+              </div>
+
+              <!-- Fire Extinguisher Pins Layer -->
+              <div id="map-layer-fire" class="hidden">
+                <div class="absolute top-36 left-16 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-extrabold shadow-lg flex items-center gap-1 float-anim">
+                  <i class="fa-solid fa-fire-extinguisher"></i> 消火器
+                </div>
+                <div class="absolute top-10 right-24 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-extrabold shadow-lg flex items-center gap-1 float-anim">
+                  <i class="fa-solid fa-fire-extinguisher"></i> 消火器
+                </div>
+                <div class="absolute bottom-14 left-44 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-extrabold shadow-lg flex items-center gap-1 float-anim">
+                  <i class="fa-solid fa-fire-extinguisher"></i> 消火器
+                </div>
+              </div>
+
+              <!-- Bus Layer -->
+              <div id="map-layer-bus" class="hidden">
+                <div class="absolute top-24 left-36 bg-blue-600 text-white px-2.5 py-1 rounded-xl text-xs font-extrabold shadow-lg flex items-center gap-1 animate-bounce">
+                  <i class="fa-solid fa-bus"></i> バス走行中 (あと3分)
+                </div>
+                <div class="absolute top-8 right-12 bg-blue-700 text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow">
+                  🚏 バス停
+                </div>
+              </div>
+
+              <!-- Empty Prompt Overlay -->
+              <div id="map-empty-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-4">
+                <i class="fa-solid fa-arrow-left text-2xl text-emerald-400 animate-pulse mb-2"></i>
+                <div class="text-white font-extrabold text-sm md:text-base">左の「オープンデータ」ボタンを押してね！</div>
+                <div class="text-slate-300 text-xs mt-1">公開データを組み合わせるだけで、市民を助ける便利なマップアプリが完成するよ！</div>
+              </div>
+            </div>
+
+            <!-- Citizen Feedback Bar -->
+            <div id="od-feedback-bar" class="mt-3 bg-slate-800 rounded-xl p-2.5 text-xs text-slate-300 flex items-center gap-2">
+              <i class="fa-solid fa-comment-dots text-emerald-400 text-base"></i>
+              <span>まだデータが読み込まれていません。オープンデータを活用してみよう！</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 4: ④ クリエイティブ・コモンズ (CCライセンス)
+         ========================================== -->
+    <section id="tab-content-4" class="hidden space-y-8">
+      <!-- Intro Banner -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-amber-100 flex flex-col md:flex-row items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl shrink-0">
+          <i class="fa-brands fa-creative-commons"></i>
+        </div>
+        <div class="space-y-1">
+          <div class="inline-block bg-amber-100 text-amber-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">教科書 p.119 下部・図4</div>
+          <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">④ クリエイティブ・コモンズ（CCライセンス）</h2>
+          <p class="text-sm md:text-base text-slate-600">
+            オープンデータやネット上の作品を安心して再利用できるように、作者があらかじめ<strong>「この条件を守れば、わざわざ連絡しなくても自由に使っていいよ！」</strong>と意思表示する世界共通のマークだよ。
+          </p>
+        </div>
+      </div>
+
+      <!-- Part 4-1: 4つの基本マーク一覧 -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-slate-200 space-y-4">
+        <h3 class="text-lg md:text-xl font-extrabold text-slate-800">
+          <i class="fa-solid fa-shapes text-amber-500 mr-1"></i>
+          まずは4つの基本マークの意味を覚えよう！
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- BY -->
+          <div class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200 flex flex-col justify-between space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-2xl shrink-0 font-bold">
+                <i class="fa-solid fa-person"></i>
+              </div>
+              <div>
+                <span class="text-xs font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">BY</span>
+                <h4 class="font-extrabold text-base text-slate-800">表示</h4>
+                <div class="text-[10px] text-slate-400">Attribution</div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              作品の<strong>クレジット（作者の氏名、作品タイトルなど）を表示</strong>すること。すべてのCCライセンスに共通する基本条件！
+            </p>
+          </div>
+
+          <!-- NC -->
+          <div class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200 flex flex-col justify-between space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-lg shrink-0 relative font-extrabold">
+                <span>$</span>
+                <div class="absolute w-9 h-0.5 bg-rose-400 rotate-45"></div>
+              </div>
+              <div>
+                <span class="text-xs font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">NC</span>
+                <h4 class="font-extrabold text-base text-slate-800"><ruby>非営利<rt>ひえいり</rt></ruby></h4>
+                <div class="text-[10px] text-slate-400">NonCommercial</div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              <strong>営利目的（お金儲け・ビジネス）での利用をしない</strong>こと。（※$や¥、€に斜線のマークが使われるよ）
+            </p>
+          </div>
+
+          <!-- ND -->
+          <div class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200 flex flex-col justify-between space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-2xl shrink-0 font-extrabold">
+                ＝
+              </div>
+              <div>
+                <span class="text-xs font-extrabold bg-rose-100 text-rose-800 px-2 py-0.5 rounded">ND</span>
+                <h4 class="font-extrabold text-base text-slate-800"><ruby>改変禁止<rt>かいへんきんし</rt></ruby></h4>
+                <div class="text-[10px] text-slate-400">NoDerivatives</div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              元の作品を<strong>改変（色を変える、切り抜く、アレンジするなど）しない</strong>でそのまま使うこと。
+            </p>
+          </div>
+
+          <!-- SA -->
+          <div class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200 flex flex-col justify-between space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center text-xl shrink-0">
+                <i class="fa-solid fa-rotate-left"></i>
+              </div>
+              <div>
+                <span class="text-xs font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">SA</span>
+                <h4 class="font-extrabold text-base text-slate-800"><ruby>継承<rt>けいしょう</rt></ruby></h4>
+                <div class="text-[10px] text-slate-400">ShareAlike</div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              作品を改変したり自分の作品に取り込む際は、<strong>元の作品と同じライセンスで公開</strong>すること。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Part 4-2: MAIN SIMULATOR - CCライセンス組み合わせシミュレーター -->
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-amber-300 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="bg-amber-100 text-amber-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">インタラクティブ判定機</span>
+            <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">
+              <i class="fa-solid fa-sliders text-amber-500 mr-1"></i>
+              CCライセンス組み合わせシミュレーター「この使い方ってOK？NG？」
+            </h3>
+          </div>
+          <!-- Preset Buttons from Textbook Fig 4 -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setCcPreset('by')" class="pop-btn text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl shadow">
+              教科書例①：CC BY（最も自由！）
+            </button>
+            <button onclick="setCcPreset('by-nc-nd')" class="pop-btn text-xs font-extrabold bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl shadow">
+              教科書例②：CC BY-NC-ND
+            </button>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-12 gap-6 items-start">
+          <!-- Left: Switch Controls & Badge Preview (5 cols) -->
+          <div class="md:col-span-5 bg-slate-900 text-white rounded-2xl p-5 space-y-5">
+            <!-- Dynamic License Badge -->
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 text-center space-y-2">
+              <div class="text-[11px] text-slate-400 font-bold">現在のライセンス表記</div>
+              <div id="cc-badge-icons" class="flex items-center justify-center gap-2 text-2xl py-1">
+                <!-- Filled dynamically -->
+              </div>
+              <div id="cc-badge-code" class="text-xl font-extrabold text-amber-300 tracking-wide">CC BY</div>
+              <div id="cc-badge-jp" class="text-xs font-bold text-slate-300">表示</div>
+            </div>
+
+            <!-- Toggle Switches -->
+            <div class="space-y-2.5">
+              <!-- BY (Always ON) -->
+              <div class="flex items-center justify-between bg-slate-800/70 px-3.5 py-2.5 rounded-xl border border-slate-700">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-person"></i></span>
+                  <div>
+                    <div class="text-xs font-extrabold">表示 (BY)</div>
+                    <div class="text-[10px] text-slate-400">作者名・タイトルを表示</div>
+                  </div>
+                </div>
+                <span class="text-xs font-extrabold bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-lg">常に必須</span>
+              </div>
+
+              <!-- NC Toggle -->
+              <label class="flex items-center justify-between bg-slate-800 px-3.5 py-2.5 rounded-xl border border-slate-700 cursor-pointer hover:border-amber-400 transition">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-extrabold">$</span>
+                  <div>
+                    <div class="text-xs font-extrabold">非営利 (NC)</div>
+                    <div class="text-[10px] text-slate-400">お金儲けの商用利用を禁止</div>
+                  </div>
+                </div>
+                <input type="checkbox" id="cc-check-nc" onchange="updateCcSimulator('nc')" class="w-5 h-5 accent-amber-400 rounded cursor-pointer">
+              </label>
+
+              <!-- ND Toggle -->
+              <label class="flex items-center justify-between bg-slate-800 px-3.5 py-2.5 rounded-xl border border-slate-700 cursor-pointer hover:border-rose-400 transition">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-extrabold">＝</span>
+                  <div>
+                    <div class="text-xs font-extrabold">改変禁止 (ND)</div>
+                    <div class="text-[10px] text-slate-400">加工・アレンジを禁止</div>
+                  </div>
+                </div>
+                <input type="checkbox" id="cc-check-nd" onchange="updateCcSimulator('nd')" class="w-5 h-5 accent-rose-500 rounded cursor-pointer">
+              </label>
+
+              <!-- SA Toggle -->
+              <label class="flex items-center justify-between bg-slate-800 px-3.5 py-2.5 rounded-xl border border-slate-700 cursor-pointer hover:border-emerald-400 transition">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-7 h-7 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-xs font-extrabold"><i class="fa-solid fa-rotate-left"></i></span>
+                  <div>
+                    <div class="text-xs font-extrabold">継承 (SA)</div>
+                    <div class="text-[10px] text-slate-400">改変時は同じライセンスで公開</div>
+                  </div>
+                </div>
+                <input type="checkbox" id="cc-check-sa" onchange="updateCcSimulator('sa')" class="w-5 h-5 accent-emerald-400 rounded cursor-pointer">
+              </label>
+            </div>
+
+            <div class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl">
+              ※「改変禁止(ND)」と「継承(SA)」は矛盾するため同時に選ぶことはできません（自動で切り替わります）。
+            </div>
+          </div>
+
+          <!-- Right: Real-time OK/NG Judgment Cards (7 cols) -->
+          <div class="md:col-span-7 space-y-3">
+            <div class="text-xs font-extrabold text-slate-500 px-1">
+              👇 このライセンスの作品を使うとき、以下のアクションはOK？NG？
+            </div>
+
+            <!-- Case 1: Credit -->
+            <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">
+                  <i class="fa-solid fa-user-slash"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-xs md:text-sm text-slate-800">作者名や作品タイトルを書かずに無断で使う</div>
+                  <div class="text-[11px] text-slate-600">クレジット表示（BY）はすべてのCCライセンスで必須！</div>
+                </div>
+              </div>
+              <span class="shrink-0 bg-rose-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl">❌ 絶対NG</span>
+            </div>
+
+            <!-- Case 2: Commercial -->
+            <div id="cc-judge-nc-box" class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white text-slate-700 flex items-center justify-center text-lg shrink-0 shadow-sm">
+                  <i class="fa-solid fa-store"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-xs md:text-sm text-slate-800">グッズや有料アプリにして販売し、利益を得る（営利利用）</div>
+                  <div id="cc-judge-nc-desc" class="text-[11px] text-slate-600">非営利(NC)がついていないので、ビジネスやお金儲けに使ってもOK！</div>
+                </div>
+              </div>
+              <span id="cc-judge-nc-badge" class="shrink-0 bg-emerald-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl">⭕ OK!</span>
+            </div>
+
+            <!-- Case 3: Remix / Modify -->
+            <div id="cc-judge-nd-box" class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white text-slate-700 flex items-center justify-center text-lg shrink-0 shadow-sm">
+                  <i class="fa-solid fa-scissors"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-xs md:text-sm text-slate-800">イラストの色を変えたり、音楽をアレンジ・切り抜きする（改変）</div>
+                  <div id="cc-judge-nd-desc" class="text-[11px] text-slate-600">改変禁止(ND)がついていないので、自由に加工・アレンジしてOK！</div>
+                </div>
+              </div>
+              <span id="cc-judge-nd-badge" class="shrink-0 bg-emerald-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl">⭕ OK!</span>
+            </div>
+
+            <!-- Case 4: ShareAlike Rule -->
+            <div id="cc-judge-sa-box" class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white text-slate-700 flex items-center justify-center text-lg shrink-0 shadow-sm">
+                  <i class="fa-solid fa-share-nodes"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-xs md:text-sm text-slate-800">アレンジした作品を、元とは違うルールで公開する</div>
+                  <div id="cc-judge-sa-desc" class="text-[11px] text-slate-600">継承(SA)がついていないので、改変後の作品を別ルールで公開してもOK！</div>
+                </div>
+              </div>
+              <span id="cc-judge-sa-badge" class="shrink-0 bg-emerald-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl">⭕ OK!</span>
+            </div>
+
+            <!-- Summary Note Box -->
+            <div id="cc-summary-note" class="bg-blue-50 border border-blue-200 rounded-2xl p-3.5 text-xs text-blue-950 font-bold">
+              💡 <strong>【CC BY】は最も自由度が高いライセンス！</strong> 原作者のクレジットさえ表示すれば、改変も営利目的での二次利用もすべて許可されるよ（オープンデータでもよく使われます！）。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 5: ⑤ まとめ確認クイズ
+         ========================================== -->
+    <section id="tab-content-5" class="hidden space-y-6">
+      <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border-2 border-amber-200 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-500 flex items-center justify-center text-3xl shrink-0">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <span class="bg-amber-100 text-amber-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">全5問・4択チャレンジ</span>
+            <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mt-0.5">⑤ ゲーム感覚で復習！まとめ<ruby>確認<rt>かくにん</rt></ruby>クイズ</h2>
+            <p class="text-xs md:text-sm text-slate-600">今日学んだ教科書 p.118〜119 の重要ポイントが身についたかチェックしよう！</p>
+          </div>
+        </div>
+        <div class="bg-slate-900 text-white px-5 py-3 rounded-2xl text-center shrink-0">
+          <div class="text-[10px] text-slate-400 font-bold">現在のスコア</div>
+          <div class="text-2xl font-extrabold text-amber-400"><span id="quiz-score">0</span> / 5 問正解</div>
+        </div>
+      </div>
+
+      <!-- Quiz List Container -->
+      <div id="quiz-container" class="space-y-4">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="text-center pt-2">
+        <button onclick="renderQuizzes()" class="pop-btn bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-6 py-3 rounded-2xl shadow text-sm">
+          <i class="fa-solid fa-rotate-right mr-1"></i> クイズを最初からやり直す
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer Navigation -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-4">
+    <div class="max-w-6xl mx-auto px-4 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+      <div class="font-bold">高校「情報I」理論編 46 情報システムの活用 インタラクティブ教材</div>
+      <div class="flex gap-2">
+        <button onclick="prevTab()" id="prev-tab-btn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 disabled:opacity-40">
+          <i class="fa-solid fa-chevron-left mr-1"></i> 前のタブ
+        </button>
+        <button onclick="nextTab()" id="next-tab-btn" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-bold text-white">
+          次のタブ <i class="fa-solid fa-chevron-right ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // ==========================================
+    // Web Audio API Sound Effects (No external files needed)
+    // ==========================================
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+
+        if (type === 'pipi') {
+          // Suica / IC Card "Pi-Pi!" sound
+          [1600, 2000].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+            gain.gain.setValueAtTime(0.15, now + idx * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.08);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.09);
+            osc.stop(now + idx * 0.09 + 0.08);
+          });
+        } else if (type === 'pop') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } else if (type === 'alert') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(180, now + 0.15);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'correct') {
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.18);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.18);
+          });
+        }
+      } catch (e) {
+        // Ignore audio errors
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      const text = document.getElementById('soundText');
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        text.textContent = '効果音 ON';
+        playSound('pop');
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        text.textContent = '効果音 OFF';
+      }
+    }
+
+    // ==========================================
+    // Tab Navigation
+    // ==========================================
+    let currentTab = 1;
+
+    function switchTab(tabNum) {
+      currentTab = tabNum;
+      playSound('pop');
+
+      for (let i = 1; i <= 5; i++) {
+        const content = document.getElementById(`tab-content-${i}`);
+        const btn = document.getElementById(`tab-btn-${i}`);
+        if (i === tabNum) {
+          content.classList.remove('hidden');
+          btn.className = 'tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition bg-white text-indigo-700 shadow-md';
+        } else {
+          content.classList.add('hidden');
+          btn.className = 'tab-btn shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition text-white/90 hover:bg-white/15';
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function prevTab() {
+      if (currentTab > 1) switchTab(currentTab - 1);
+    }
+    function nextTab() {
+      if (currentTab < 5) switchTab(currentTab + 1);
+    }
+
+    // ==========================================
+    // TAB 1: 電子マネー・RFID・ブロックチェーン
+    // ==========================================
+    function selectEmoneyType(type) {
+      playSound('pop');
+      const btnIc = document.getElementById('emoney-btn-ic');
+      const btnNet = document.getElementById('emoney-btn-net');
+      const cardIc = document.getElementById('emoney-card-ic');
+      const cardNet = document.getElementById('emoney-card-net');
+
+      if (type === 'ic') {
+        btnIc.className = 'py-2.5 px-4 rounded-xl font-extrabold text-sm md:text-base transition bg-blue-600 text-white shadow';
+        btnNet.className = 'py-2.5 px-4 rounded-xl font-extrabold text-sm md:text-base transition text-slate-600 hover:bg-white/60';
+        cardIc.classList.remove('hidden');
+        cardNet.classList.add('hidden');
+      } else {
+        btnNet.className = 'py-2.5 px-4 rounded-xl font-extrabold text-sm md:text-base transition bg-purple-600 text-white shadow';
+        btnIc.className = 'py-2.5 px-4 rounded-xl font-extrabold text-sm md:text-base transition text-slate-600 hover:bg-white/60';
+        cardNet.classList.remove('hidden');
+        cardIc.classList.add('hidden');
+      }
+    }
+
+    // RFID Step-by-Step Animation
+    let rfidTimers = [];
+    let currentBalance = 1000;
+
+    function clearRfidTimers() {
+      rfidTimers.forEach(t => clearTimeout(t));
+      rfidTimers = [];
+    }
+
+    function runRfidTouch() {
+      clearRfidTimers();
+      const cardBox = document.getElementById('rfid-card-box');
+      const coil = document.getElementById('rfid-coil');
+      const chip = document.getElementById('rfid-chip');
+      const electricBadge = document.getElementById('rfid-electric-badge');
+      const commArrows = document.getElementById('rfid-comm-arrows');
+      const balanceEl = document.getElementById('rfid-balance');
+      const stepTitle = document.getElementById('rfid-step-title');
+      const stepDesc = document.getElementById('rfid-step-desc');
+      const pill1 = document.getElementById('rfid-pill-1');
+      const pill2 = document.getElementById('rfid-pill-2');
+      const pill3 = document.getElementById('rfid-pill-3');
+
+      // Move card closer to reader
+      cardBox.classList.remove('translate-x-0');
+      cardBox.classList.add('translate-x-6', 'md:translate-x-16');
+
+      // Highlight Step 1 -> Step 2 (Electromagnetic induction)
+      pill1.className = 'bg-blue-950 border-2 border-blue-400 rounded-xl p-2.5 text-center transition';
+      stepTitle.textContent = '【Step 2】電磁誘導（でんじゆうどう）によってカード内に電流が発生！';
+      stepDesc.textContent = '読み取り機の「磁界」の中にカードのコイルが入ることで、電池がないのにカードの中で電気が生まれたよ！';
+
+      rfidTimers.push(setTimeout(() => {
+        playSound('pop');
+        pill2.className = 'bg-amber-950 border-2 border-amber-400 rounded-xl p-2.5 text-center transition scale-105';
+        coil.className = 'absolute inset-1.5 border-2 border-amber-300 rounded-xl pointer-events-none transition-all duration-300 shadow-[0_0_15px_#facc15]';
+        chip.classList.add('spark-active');
+        electricBadge.classList.remove('hidden');
+        electricBadge.classList.add('inline-flex');
+      }, 400));
+
+      // Step 3: Power supplied to IC chip & Wireless communication
+      rfidTimers.push(setTimeout(() => {
+        playSound('pipi');
+        pill3.className = 'bg-emerald-950 border-2 border-emerald-400 rounded-xl p-2.5 text-center transition scale-105';
+        commArrows.classList.remove('hidden');
+        commArrows.classList.add('flex');
+        currentBalance = currentBalance >= 160 ? currentBalance - 160 : 1000;
+        balanceEl.textContent = `¥${currentBalance.toLocaleString()}`;
+        balanceEl.className = 'text-lg md:text-xl font-extrabold font-mono bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-lg transition-all scale-110';
+        stepTitle.textContent = '【Step 3】ICチップに電力が供給され、ピピッと無線通信して決済完了！';
+        stepDesc.textContent = '発生した電流でICチップが起動し、読み取り機と無線通信して残高データが書き換えられました！';
+      }, 1500));
+    }
+
+    function resetRfid() {
+      clearRfidTimers();
+      playSound('pop');
+      currentBalance = 1000;
+      document.getElementById('rfid-card-box').className = 'relative z-20 transition-all duration-700 transform translate-x-0';
+      document.getElementById('rfid-coil').className = 'absolute inset-1.5 border-2 border-dashed border-white/30 rounded-xl pointer-events-none transition-all duration-300';
+      document.getElementById('rfid-chip').classList.remove('spark-active');
+      document.getElementById('rfid-electric-badge').className = 'hidden bg-amber-400 text-slate-950 text-xs font-extrabold px-2 py-0.5 rounded-full items-center gap-1 shadow';
+      document.getElementById('rfid-comm-arrows').className = 'hidden flex-col items-center justify-center z-20 mx-auto';
+      document.getElementById('rfid-balance').textContent = '¥1,000';
+      document.getElementById('rfid-balance').className = 'text-lg md:text-xl font-extrabold font-mono bg-black/30 px-2.5 py-0.5 rounded-lg text-white transition-all';
+      document.getElementById('rfid-pill-1').className = 'bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-center transition';
+      document.getElementById('rfid-pill-2').className = 'bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-center transition';
+      document.getElementById('rfid-pill-3').className = 'bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-center transition';
+      document.getElementById('rfid-step-title').textContent = '【Step 1】読み取り機からは常に「磁界（じかい）」が出ているよ';
+      document.getElementById('rfid-step-desc').textContent = '下の「改札にタッチ！」ボタンを押して、カードを近づけてみよう。電池が入っていないカードがどうやって動くかな？';
+    }
+
+    // Blockchain Tamper Experiment
+    let bcBusy = false;
+    function runBlockchainHack() {
+      if (bcBusy) return;
+      bcBusy = true;
+      playSound('alert');
+
+      const node3 = document.getElementById('bc-node-3');
+      const val3 = document.getElementById('bc-node3-val');
+      const status3 = document.getElementById('bc-node3-status');
+      const msg = document.getElementById('bc-status-msg');
+
+      // Step 1: Tamper Node 3
+      node3.className = 'bg-rose-950 border-2 border-rose-500 rounded-2xl p-3 text-center space-y-2 transition-all shake-anim';
+      val3.textContent = 'Cさん残高: 9999コイン';
+      val3.className = 'text-rose-400 font-extrabold transition-all';
+      status3.textContent = '⚠️ 改ざん発生！';
+      status3.className = 'inline-block text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold';
+      msg.innerHTML = '<strong class="text-rose-400">🚨 異常発生！</strong> Cさんが自分のデータを「9999コイン」に書き換えました！周りのAさん・Bさん・Dさんのデータと照合します…';
+
+      // Step 2: Majority Check & Auto Restore
+      setTimeout(() => {
+        playSound('correct');
+        node3.className = 'bg-slate-800 border-2 border-emerald-400 rounded-2xl p-3 text-center space-y-2 transition-all';
+        val3.textContent = 'Cさん残高: 100コイン';
+        val3.className = 'text-emerald-400 font-bold transition-all';
+        status3.textContent = '🛡️ 改ざんを無効化！';
+        status3.className = 'inline-block text-[10px] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full font-extrabold';
+        msg.innerHTML = '<strong class="text-emerald-300">✨ 改ざんブロック成功！</strong> 大勢で同じ取引データを持ち合っているため、1人だけ書き換えても多数決でズレが見破られ、正しい「100コイン」に戻されました！';
+        bcBusy = false;
+      }, 1900);
+    }
+
+    // ==========================================
+    // TAB 2: DX & マイナンバー
+    // ==========================================
+    function setDxStage(stage) {
+      playSound('pop');
+      for (let i = 1; i <= 3; i++) {
+        const view = document.getElementById(`dx-view-${i}`);
+        const btn = document.getElementById(`dx-btn-${i}`);
+        if (i === stage) {
+          view.classList.remove('hidden');
+          btn.className = 'pop-btn p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 bg-purple-50 border-purple-500 shadow-md';
+        } else {
+          view.classList.add('hidden');
+          btn.className = 'pop-btn p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 bg-white border-slate-200 hover:bg-slate-50';
+        }
+      }
+    }
+
+    let myNumberLinked = false;
+    function toggleMyNumber() {
+      myNumberLinked = !myNumberLinked;
+      const btn = document.getElementById('mynum-btn');
+      const hub = document.getElementById('mynum-hub');
+      const hubIcon = document.getElementById('mynum-hub-icon');
+      const hubText = document.getElementById('mynum-hub-text');
+      const userStatus = document.getElementById('mynum-user-status');
+      const badges = document.querySelectorAll('.agency-badge');
+
+      if (myNumberLinked) {
+        playSound('correct');
+        btn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> バラバラ管理に戻す';
+        btn.className = 'pop-btn bg-slate-700 hover:bg-slate-600 text-white font-extrabold px-5 py-2.5 rounded-xl shadow flex items-center gap-2 text-xs md:text-sm';
+        hub.className = 'w-28 h-28 rounded-full bg-indigo-600 border-4 border-emerald-400 flex flex-col items-center justify-center text-center p-2 shadow-[0_0_25px_#6366f1] transition-all scale-105';
+        hubIcon.className = 'fa-solid fa-link text-2xl text-amber-300';
+        hubText.textContent = 'マイナンバーで連携完了！';
+        hubText.className = 'text-[11px] font-extrabold text-white mt-1';
+        userStatus.className = 'text-xs text-emerald-300 font-bold bg-emerald-950/70 border border-emerald-500/50 rounded-lg p-2';
+        userStatus.textContent = '✨「マイナンバーで各機関のデータが関連付けられ、手続きがワンストップで超スピーディーに！」';
+
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`agency-${i}`).className = 'bg-indigo-950/90 border-2 border-emerald-400 rounded-xl p-3 flex items-center justify-between transition-all';
+        }
+        badges.forEach(b => {
+          b.textContent = '🔗 連携中';
+          b.className = 'agency-badge text-[10px] bg-emerald-400 text-slate-950 font-extrabold px-2 py-0.5 rounded';
+        });
+      } else {
+        playSound('pop');
+        btn.innerHTML = '<i class="fa-solid fa-link"></i> マイナンバーで関連付ける！';
+        btn.className = 'pop-btn bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold px-5 py-2.5 rounded-xl shadow flex items-center gap-2 text-xs md:text-sm';
+        hub.className = 'w-24 h-24 rounded-full bg-slate-800 border-4 border-dashed border-slate-600 flex flex-col items-center justify-center text-center p-2 transition-all';
+        hubIcon.className = 'fa-solid fa-unlink text-2xl text-slate-400';
+        hubText.textContent = 'バラバラに管理';
+        hubText.className = 'text-[11px] font-extrabold text-slate-400 mt-1';
+        userStatus.className = 'text-xs text-rose-300 font-bold bg-rose-950/60 border border-rose-700/50 rounded-lg p-2';
+        userStatus.textContent = '💦「引越しや手続きのたびに、全部の窓口へ書類を出しに行くのが大変…」';
+
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`agency-${i}`).className = 'bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center justify-between transition-all';
+        }
+        badges.forEach(b => {
+          b.textContent = '個別管理';
+          b.className = 'agency-badge text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300';
+        });
+      }
+    }
+
+    // ==========================================
+    // TAB 3: オープンデータ マップシミュレーター
+    // ==========================================
+    const openDataState = { aed: false, fire: false, bus: false };
+
+    function toggleOpenData(key) {
+      openDataState[key] = !openDataState[key];
+      playSound('pop');
+      renderOpenDataMap();
+    }
+
+    function enableAllOpenData() {
+      openDataState.aed = true;
+      openDataState.fire = true;
+      openDataState.bus = true;
+      playSound('correct');
+      renderOpenDataMap();
+    }
+
+    function renderOpenDataMap() {
+      const keys = ['aed', 'fire', 'bus'];
+      let activeCount = 0;
+
+      keys.forEach(k => {
+        const isOn = openDataState[k];
+        if (isOn) activeCount++;
+
+        const layer = document.getElementById(`map-layer-${k}`);
+        const tag = document.getElementById(`od-tag-${k}`);
+        const btn = document.getElementById(`od-btn-${k}`);
+
+        if (isOn) {
+          layer.classList.remove('hidden');
+          tag.textContent = '✅ 連携中';
+          tag.className = 'text-xs font-extrabold bg-emerald-600 text-white px-2.5 py-1 rounded-lg';
+          btn.classList.add('border-emerald-500', 'bg-emerald-50/40');
+        } else {
+          layer.classList.add('hidden');
+          tag.textContent = '＋ 取り込む';
+          tag.className = 'text-xs font-extrabold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg';
+          btn.classList.remove('border-emerald-500', 'bg-emerald-50/40');
+        }
+      });
+
+      // Bus route line
+      const busRoute = document.getElementById('map-bus-route');
+      if (openDataState.bus) {
+        busRoute.classList.remove('hidden');
+      } else {
+        busRoute.classList.add('hidden');
+      }
+
+      // Overlay & Feedback
+      const overlay = document.getElementById('map-empty-overlay');
+      const countEl = document.getElementById('od-active-count');
+      const feedback = document.getElementById('od-feedback-bar');
+
+      countEl.textContent = `連携データ: ${activeCount} / 3`;
+
+      if (activeCount === 0) {
+        overlay.classList.remove('hidden');
+        feedback.innerHTML = '<i class="fa-solid fa-comment-dots text-emerald-400 text-base"></i><span>まだデータが読み込まれていません。オープンデータを活用してみよう！</span>';
+      } else {
+        overlay.classList.add('hidden');
+        if (activeCount === 3) {
+          feedback.innerHTML = '<i class="fa-solid fa-face-laugh-beam text-amber-300 text-base"></i><span class="text-emerald-300 font-bold">住民の声：「AEDも消火器もバスの位置も1つのスマホアプリで見られて、街の暮らしがすごく豊かで安心になったよ！」</span>';
+        } else {
+          feedback.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i><span>オープンデータを ${activeCount}件 取り込みました！残りのデータも連携させてみよう！</span>`;
+        }
+      }
+    }
+
+    // ==========================================
+    // TAB 4: CCライセンス シミュレーター
+    // ==========================================
+    function updateCcSimulator(changedKey) {
+      playSound('pop');
+      const ncCheck = document.getElementById('cc-check-nc');
+      const ndCheck = document.getElementById('cc-check-nd');
+      const saCheck = document.getElementById('cc-check-sa');
+
+      // ND and SA are mutually exclusive
+      if (changedKey === 'nd' && ndCheck.checked) {
+        saCheck.checked = false;
+      } else if (changedKey === 'sa' && saCheck.checked) {
+        ndCheck.checked = false;
+      }
+
+      const nc = ncCheck.checked;
+      const nd = ndCheck.checked;
+      const sa = saCheck.checked;
+
+      // Update Badge Icons, Code, Japanese label
+      let codeParts = ['BY'];
+      let jpParts = ['表示'];
+      let iconsHtml = `
+        <span class="w-9 h-9 rounded-full bg-white text-slate-900 inline-flex items-center justify-center font-extrabold text-sm">CC</span>
+        <span class="w-9 h-9 rounded-full bg-blue-500 text-white inline-flex items-center justify-center text-base" title="表示(BY)"><i class="fa-solid fa-person"></i></span>
+      `;
+
+      if (nc) {
+        codeParts.push('NC');
+        jpParts.push('非営利');
+        iconsHtml += `<span class="w-9 h-9 rounded-full bg-amber-400 text-slate-950 inline-flex items-center justify-center font-extrabold text-base" title="非営利(NC)">$</span>`;
+      }
+      if (nd) {
+        codeParts.push('ND');
+        jpParts.push('改変禁止');
+        iconsHtml += `<span class="w-9 h-9 rounded-full bg-rose-500 text-white inline-flex items-center justify-center font-extrabold text-base" title="改変禁止(ND)">＝</span>`;
+      }
+      if (sa) {
+        codeParts.push('SA');
+        jpParts.push('継承');
+        iconsHtml += `<span class="w-9 h-9 rounded-full bg-emerald-400 text-slate-950 inline-flex items-center justify-center font-extrabold text-base" title="継承(SA)"><i class="fa-solid fa-rotate-left"></i></span>`;
+      }
+
+      document.getElementById('cc-badge-icons').innerHTML = iconsHtml;
+      document.getElementById('cc-badge-code').textContent = 'CC ' + codeParts.join('-');
+      document.getElementById('cc-badge-jp').textContent = jpParts.join(' - ');
+
+      // Update Judgment Card 2: Commercial (NC)
+      const ncBox = document.getElementById('cc-judge-nc-box');
+      const ncDesc = document.getElementById('cc-judge-nc-desc');
+      const ncBadge = document.getElementById('cc-judge-nc-badge');
+      if (nc) {
+        ncBox.className = 'bg-rose-50 border-2 border-rose-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        ncDesc.textContent = '非営利(NC)がついているため、お金儲け（営利目的）での利用はできません！';
+        ncBadge.textContent = '❌ NG';
+        ncBadge.className = 'shrink-0 bg-rose-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      } else {
+        ncBox.className = 'bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        ncDesc.textContent = '非営利(NC)がついていないので、ビジネスやお金儲けに使ってもOK！';
+        ncBadge.textContent = '⭕ OK!';
+        ncBadge.className = 'shrink-0 bg-emerald-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      }
+
+      // Update Judgment Card 3: Modify (ND)
+      const ndBox = document.getElementById('cc-judge-nd-box');
+      const ndDesc = document.getElementById('cc-judge-nd-desc');
+      const ndBadge = document.getElementById('cc-judge-nd-badge');
+      if (nd) {
+        ndBox.className = 'bg-rose-50 border-2 border-rose-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        ndDesc.textContent = '改変禁止(ND)がついているため、元の作品を加工・アレンジしてはいけません！';
+        ndBadge.textContent = '❌ NG';
+        ndBadge.className = 'shrink-0 bg-rose-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      } else {
+        ndBox.className = 'bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        ndDesc.textContent = '改変禁止(ND)がついていないので、自由に加工・アレンジしてOK！';
+        ndBadge.textContent = '⭕ OK!';
+        ndBadge.className = 'shrink-0 bg-emerald-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      }
+
+      // Update Judgment Card 4: ShareAlike (SA)
+      const saBox = document.getElementById('cc-judge-sa-box');
+      const saDesc = document.getElementById('cc-judge-sa-desc');
+      const saBadge = document.getElementById('cc-judge-sa-badge');
+      if (nd) {
+        saBox.className = 'bg-slate-100 border-2 border-slate-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        saDesc.textContent = '改変禁止(ND)のため、そもそも作品をアレンジすることができません。';
+        saBadge.textContent = 'ー 改変不可';
+        saBadge.className = 'shrink-0 bg-slate-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      } else if (sa) {
+        saBox.className = 'bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        saDesc.textContent = '継承(SA)がついているため、改変した作品は「元と同じライセンス」で公開すればOK！別ルールはNG！';
+        saBadge.textContent = '⚠️ 同条件ならOK';
+        saBadge.className = 'shrink-0 bg-amber-500 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      } else {
+        saBox.className = 'bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all';
+        saDesc.textContent = '継承(SA)がついていないので、改変後の作品を別ルールで公開してもOK！';
+        saBadge.textContent = '⭕ OK!';
+        saBadge.className = 'shrink-0 bg-emerald-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl';
+      }
+
+      // Summary Note
+      const note = document.getElementById('cc-summary-note');
+      if (!nc && !nd && !sa) {
+        note.innerHTML = '💡 <strong>【CC BY】は最も自由度が高いライセンス！</strong> 原作者のクレジットさえ表示すれば、改変も営利目的での二次利用もすべて許可されるよ（教科書 図4の例①）。';
+      } else if (nc && nd && !sa) {
+        note.innerHTML = '💡 <strong>【CC BY-NC-ND】は教科書 図4の例②！</strong> クレジットを表示し、非営利目的であり、元の作品を改変しないことを条件に、作品を自由に再配布できるライセンスだよ。';
+      } else {
+        note.innerHTML = `💡 現在の組み合わせは <strong>CC ${codeParts.join('-')}（${jpParts.join('・')}）</strong> です。マークの組み合わせを見るだけで利用条件が一目でわかるね！`;
+      }
+    }
+
+    function setCcPreset(preset) {
+      const ncCheck = document.getElementById('cc-check-nc');
+      const ndCheck = document.getElementById('cc-check-nd');
+      const saCheck = document.getElementById('cc-check-sa');
+
+      if (preset === 'by') {
+        ncCheck.checked = false;
+        ndCheck.checked = false;
+        saCheck.checked = false;
+      } else if (preset === 'by-nc-nd') {
+        ncCheck.checked = true;
+        ndCheck.checked = true;
+        saCheck.checked = false;
+      }
+      updateCcSimulator();
+    }
+
+    // ==========================================
+    // TAB 5: 確認クイズ (5 Questions)
+    // ==========================================
+    const quizData = [
+      {
+        q: '第1問：交通系ICカードなどの「非接触型ICカード（RFID）」が、カードの中に電池がないのに読み取り機と無線通信できるのはなぜ？',
+        options: [
+          '読み取り機から発生する磁界を利用し、電磁誘導によって電流を発生させてICチップに電力を供給するから',
+          'カードの表面にある太陽電池パネルが駅の照明の光を電気に変えているから',
+          'タッチした瞬間の摩擦熱（まさつねつ）を電気エネルギーに変換しているから',
+          'あらかじめコンビニでカード内部のバッテリーに充電してから使っているから'
+        ],
+        answer: 0,
+        explanation: '正解！読み取り機から発生する「磁界」によって、電磁誘導でカード内に電流が発生し、ICチップに電力が供給されて無線通信ができます（教科書 p.118 図1）。'
+      },
+      {
+        q: '第2問：暗号資産（仮想通貨）などで使われている、取引データをブロックという単位にまとめ、大勢で分散して持ち合うことで改ざんを難しくする技術を何という？',
+        options: [
+          'クラウドコンピューティング',
+          'ブロックチェーン',
+          'マイナンバーシステム',
+          'ポータルサイト'
+        ],
+        answer: 1,
+        explanation: '正解！「ブロックチェーン」は大勢で同じ取引データを持ち合う（分散管理する）ことで、改ざんが難しくなり、運用コストも下がる仕組みです（教科書 p.118）。'
+      },
+      {
+        q: '第3問：既存の仕組みをデジタル化するだけでなく、データ連携などによって「世の中の仕組みの在り方や価値観に大きな影響を与えるような変革」を何という？',
+        options: [
+          'RFID（無線自動識別）',
+          'CC（クリエイティブ・コモンズ）',
+          'DX（デジタルトランスフォーメーション）',
+          'IC（集積回路）'
+        ],
+        answer: 2,
+        explanation: '正解！単に電話をメールに変えるだけでなく、学習管理システム等と連携して新しい学びの方法や価値を生み出すような変革を「DX（デジタルトランスフォーメーション）」といいます（教科書 p.119）。'
+      },
+      {
+        q: '第4問：国や自治体が公開する「オープンデータ」の3つの条件として、【間違っているもの】はどれ？',
+        options: [
+          '営利目的・非営利目的を問わず二次利用可能なルールが適用されたもの',
+          '機械判読（コンピュータでの自動処理）に適したもの',
+          '無償（無料）で利用できるもの',
+          '非営利目的（お金儲けをしない場合）に限定して利用できるもの'
+        ],
+        answer: 3,
+        explanation: '正解！オープンデータは「①営利目的・非営利目的を問わず二次利用可能」「②機械判読に適したもの」「③無償で利用できるもの」の3条件を満たすデータです（教科書 p.119）。'
+      },
+      {
+        q: '第5問：クリエイティブ・コモンズ・ライセンスのうち、原作者のクレジットを表示すれば、改変も営利目的の利用も自由に行える「最も自由度が高いライセンス」はどれ？',
+        options: [
+          'CC BY（表示）',
+          'CC BY-NC（表示-非営利）',
+          'CC BY-ND（表示-改変禁止）',
+          'CC BY-NC-ND（表示-非営利-改変禁止）'
+        ],
+        answer: 0,
+        explanation: '正解！「CC BY（表示）」は原作者のクレジット（氏名やタイトルなど）を表示することだけを条件に、改変も営利利用も許可される最も自由度の高いライセンスです（教科書 p.119 図4）。'
+      }
+    ];
+
+    let quizAnswered = [];
+    let currentScore = 0;
+
+    function renderQuizzes() {
+      quizAnswered = new Array(quizData.length).fill(false);
+      currentScore = 0;
+      document.getElementById('quiz-score').textContent = '0';
+
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = quizData.map((item, qIdx) => `
+        <div class="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-slate-200 space-y-4">
+          <div class="font-extrabold text-base md:text-lg text-slate-800">${item.q}</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5" id="quiz-options-${qIdx}">
+            ${item.options.map((opt, oIdx) => `
+              <button onclick="answerQuiz(${qIdx}, ${oIdx})" id="quiz-btn-${qIdx}-${oIdx}" class="pop-btn text-left p-3.5 rounded-2xl border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 font-bold text-xs md:text-sm text-slate-700 transition flex items-start gap-2.5">
+                <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">${['ア','イ','ウ','エ'][oIdx]}</span>
+                <span>${opt}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div id="quiz-exp-${qIdx}" class="hidden rounded-2xl p-4 text-xs md:text-sm font-bold"></div>
+        </div>
+      `).join('');
+    }
+
+    function answerQuiz(qIdx, selectedIdx) {
+      if (quizAnswered[qIdx]) return;
+      quizAnswered[qIdx] = true;
+
+      const item = quizData[qIdx];
+      const isCorrect = selectedIdx === item.answer;
+      const expBox = document.getElementById(`quiz-exp-${qIdx}`);
+
+      if (isCorrect) {
+        currentScore++;
+        playSound('correct');
+        document.getElementById('quiz-score').textContent = currentScore;
+      } else {
+        playSound('alert');
+      }
+
+      item.options.forEach((_, oIdx) => {
+        const btn = document.getElementById(`quiz-btn-${qIdx}-${oIdx}`);
+        btn.disabled = true;
+        if (oIdx === item.answer) {
+          btn.className = 'text-left p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 font-extrabold text-xs md:text-sm text-emerald-950 flex items-start gap-2.5';
+        } else if (oIdx === selectedIdx && !isCorrect) {
+          btn.className = 'text-left p-3.5 rounded-2xl border-2 border-rose-400 bg-rose-50 font-bold text-xs md:text-sm text-rose-900 flex items-start gap-2.5 opacity-80';
+        } else {
+          btn.className = 'text-left p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs md:text-sm text-slate-400 flex items-start gap-2.5 opacity-60';
+        }
+      });
+
+      expBox.classList.remove('hidden');
+      if (isCorrect) {
+        expBox.className = 'rounded-2xl p-4 text-xs md:text-sm font-bold bg-emerald-100 text-emerald-950 border border-emerald-300';
+        expBox.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> <strong>大正解！</strong> ${item.explanation}`;
+      } else {
+        expBox.className = 'rounded-2xl p-4 text-xs md:text-sm font-bold bg-rose-100 text-rose-950 border border-rose-300';
+        expBox.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600 mr-1"></i> <strong>おしい！</strong> ${item.explanation}`;
+      }
+    }
+
+    // Initialize on load
+    window.onload = function() {
+      updateCcSimulator();
+      renderQuizzes();
+    };
+  </script>
+</body>
+</html>
